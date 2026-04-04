@@ -208,6 +208,21 @@
                   0 8px 25px rgba(0, 0, 0, 0.6);
     }
 
+    /* Card: Tìm Pattern — Green theme */
+    .card-pattern {
+      --card-bg: linear-gradient(145deg, rgba(10, 80, 30, 0.5), rgba(5, 20, 10, 0.7));
+      --card-border: rgba(34, 197, 94, 0.5);
+      --card-glow: rgba(34, 197, 94, 0.35);
+      --card-accent: #22c55e;
+      --card-accent-light: #86efac;
+    }
+    .card-pattern:hover {
+      border-color: rgba(34, 197, 94, 0.7) !important;
+      box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.5),
+                  0 20px 60px rgba(34, 197, 94, 0.25),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
     /* Initial border state */
     .card-ludo   { border-color: rgba(220, 38, 38, 0.2);
                    box-shadow: 0 4px 30px rgba(220, 38, 38, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
@@ -215,8 +230,10 @@
                    box-shadow: 0 4px 30px rgba(236, 72, 153, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-memory { border-color: rgba(0, 200, 255, 0.18);
                    box-shadow: 0 4px 30px rgba(0, 200, 255, 0.1), 0 2px 12px rgba(0,0,0,0.5); }
-    .card-time   { border-color: rgba(212, 175, 55, 0.2);
+    .card-time    { border-color: rgba(212, 175, 55, 0.2);
                    box-shadow: 0 4px 30px rgba(212, 175, 55, 0.1), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-pattern { border-color: rgba(34, 197, 94, 0.2);
+                   box-shadow: 0 4px 30px rgba(34, 197, 94, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
 
     .card-emoji {
       font-size: 3.8rem;
@@ -280,7 +297,8 @@
     .card-ludo   .card-ring { border-color: rgba(220,38,38,0.35); box-shadow: 0 0 18px rgba(220,38,38,0.2) inset; }
     .card-math   .card-ring { border-color: rgba(236,72,153,0.35); box-shadow: 0 0 18px rgba(236,72,153,0.2) inset; }
     .card-memory .card-ring { border-color: rgba(0,200,255,0.3); box-shadow: 0 0 18px rgba(0,200,255,0.15) inset; }
-    .card-time   .card-ring { border-color: rgba(212,175,55,0.3); box-shadow: 0 0 18px rgba(212,175,55,0.15) inset; }
+    .card-time    .card-ring { border-color: rgba(212,175,55,0.3);  box-shadow: 0 0 18px rgba(212,175,55,0.15) inset; }
+    .card-pattern .card-ring { border-color: rgba(34,197,94,0.35);  box-shadow: 0 0 18px rgba(34,197,94,0.2) inset; }
 
     /* ===== APP VIEWER ===== */
     #app-viewer {
@@ -451,6 +469,15 @@
         <div class="card-name">Thời gian</div>
         <div class="card-desc">Học xem giờ bằng đồng hồ kim và điện tử, hỗ trợ cả tiếng Việt và tiếng Đức!</div>
         <div class="card-badge">🇻🇳 · 🇩🇪</div>
+      </div>
+
+      <!-- Tìm Pattern -->
+      <div class="app-card card-pattern card-enter" onclick="openApp('xoai-pattern/index.html', '🔍 Tìm Pattern')" style="grid-column: span 2; max-width: 360px; margin: 0 auto; width: 100%;">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🔍</div>
+        <div class="card-name">Tìm Pattern</div>
+        <div class="card-desc">Khám phá quy luật ẩn trong các dãy số thú vị! 7 loại bài khác nhau.</div>
+        <div class="card-badge">7 loại bài · 5 câu / ván</div>
       </div>
 
     </div>
