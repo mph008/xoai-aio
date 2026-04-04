@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>� Xoài Tìm Pattern</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Bangers&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      background: #060618;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 15% 10%, rgba(99,102,241,.16) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 45% at 85% 85%, rgba(236,72,153,.12) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(34,197,94,.06) 0%, transparent 65%);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; min-height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ===== NUMBER BOXES ===== */
+    .num-box {
+      min-width: 44px;
+      height: 54px;
+      padding: 0 6px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.45rem; font-weight: 900;
+      flex-shrink: 0;
+      transition: transform .15s, box-shadow .15s, background .2s;
+      position: relative;
+    }
+    .num-box.normal {
+      background: rgba(255,255,255,.1);
+      border: 2px solid rgba(255,255,255,.2);
+      color: #f1f5f9;
+    }
+    .num-box.question {
+      background: rgba(0,200,255,.12);
+      border: 2.5px solid rgba(0,200,255,.9);
+      color: #00d4ff;
+      font-size: 1.6rem;
+      animation: pulseGlow 1.6s ease-in-out infinite;
+    }
+    .num-box.clickable {
+      cursor: pointer;
+      background: rgba(255,255,255,.08);
+      border: 2px solid rgba(255,255,255,.22);
+    }
+    .num-box.clickable:hover { transform: translateY(-4px) scale(1.08); background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.5); }
+    .num-box.clickable:active { transform: scale(.95); }
+    .num-box.box-correct { background: rgba(34,197,94,.3) !important; border-color: #22c55e !important; animation: bounceIn .4s ease; }
+    .num-box.box-wrong   { background: rgba(239,68,68,.3) !important; border-color: #ef4444 !important; animation: shake .4s ease; }
+
+    /* ===== CHOICE BUTTONS ===== */
+    .choice-btn {
+      border-radius: 18px;
+      padding: 18px 12px;
+      font-size: 1.55rem; font-weight: 900;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      transition: transform .15s, box-shadow .15s, opacity .2s;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      font-family: 'Nunito', sans-serif;
+    }
+    .choice-btn:hover:not(:disabled) { transform: translateY(-4px) scale(1.04); }
+    .choice-btn:active:not(:disabled) { transform: scale(.94); }
+    .c0 { background: rgba(59,130,246,.2);  border-color: rgba(59,130,246,.5);  color: #93c5fd; }
+    .c1 { background: rgba(239,68,68,.2);   border-color: rgba(239,68,68,.5);   color: #fca5a5; }
+    .c2 { background: rgba(34,197,94,.2);   border-color: rgba(34,197,94,.5);   color: #86efac; }
+    .c3 { background: rgba(168,85,247,.2);  border-color: rgba(168,85,247,.5);  color: #d8b4fe; }
+    .choice-btn.ch-correct { background: rgba(34,197,94,.4) !important; border-color: #22c55e !important; animation: bounceIn .4s ease; }
+    .choice-btn.ch-wrong   { background: rgba(239,68,68,.3) !important; border-color: #ef4444 !important; animation: shake .35s ease; }
+    .choice-btn.ch-dim     { opacity: .28; }
+
+    /* ===== HOME CARDS ===== */
+    .type-card {
+      border-radius: 22px;
+      padding: 22px 16px 18px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform .22s cubic-bezier(.175,.885,.32,1.275), box-shadow .22s, border-color .2s;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .type-card:hover  { transform: translateY(-7px) scale(1.02); }
+    .type-card:active { transform: scale(.97); }
+
+    /* ===== PROGRESS BAR ===== */
+    .prog-track { height: 7px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+    .prog-fill  { height: 100%; border-radius: 4px; transition: width .55s cubic-bezier(.4,0,.2,1); }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed; top: 68px; left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: rgba(10,10,30,.92);
+      backdrop-filter: blur(10px);
+      border-radius: 14px; padding: 10px 22px;
+      font-weight: 900; font-size: .95rem;
+      opacity: 0; transition: all .3s ease;
+      pointer-events: none; z-index: 1000; white-space: nowrap;
+      border: 1.5px solid rgba(255,255,255,.1);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== CONFETTI ===== */
+    .cf {
+      position: fixed; top: -20px; opacity: 0; border-radius: 3px;
+      animation: cfFall linear forwards; z-index: 9999; pointer-events: none;
+    }
+
+    /* ===== SEPARATOR ===== */
+    .num-sep { color: rgba(255,255,255,.3); font-size: 1.2rem; font-weight: 900; flex-shrink: 0; padding: 0 1px; }
+
+    /* ===== HINT BOX ===== */
+    .hint-box {
+      background: rgba(255,215,0,.12); border: 1.5px solid rgba(255,215,0,.3);
+      border-radius: 14px; padding: 10px 16px; color: #fde68a;
+      font-size: .88rem; font-weight: 800; text-align: center; max-width: 320px;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,200,255,.35), 0 0 10px rgba(0,200,255,.3); }
+      50%      { box-shadow: 0 0 0 8px rgba(0,200,255,0), 0 0 28px rgba(0,200,255,.7); }
+    }
+    @keyframes shake {
+      0%,100%{ transform:translateX(0); }
+      20%    { transform:translateX(-9px); }
+      40%    { transform:translateX(8px); }
+      60%    { transform:translateX(-5px); }
+      80%    { transform:translateX(5px); }
+    }
+    @keyframes bounceIn {
+      0%  { transform:scale(.75); }
+      60% { transform:scale(1.12); }
+      100%{ transform:scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(32px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes popIn {
+      from { opacity:0; transform:scale(.5) rotate(-6deg); }
+      to   { opacity:1; transform:scale(1) rotate(0deg); }
+    }
+    @keyframes cfFall {
+      0%   { opacity:1; transform:translateY(0) rotate(0deg); }
+      100% { opacity:0; transform:translateY(110vh) rotate(640deg); }
+    }
+    .anim-su  { animation: slideUp .45s ease both; }
+    .anim-bi  { animation: bounceIn .4s ease both; }
+    .anim-pop { animation: popIn .5s cubic-bezier(.175,.885,.32,1.275) both; }
+    .star-anim { display:inline-block; animation:popIn .4s ease backwards; }
+
+    /* ===== CLICK HINT CHIP ===== */
+    .click-hint-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 99px; padding: 8px 18px;
+      font-size: .82rem; font-weight: 800;
+      color: rgba(255,255,255,.55);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast"></div>
+<!-- Confetti -->
+<div id="cf-container"></div>
+
+<!-- ═══════════════════ HOME ═══════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="flex flex-col items-center px-4 pt-10 pb-10 gap-8 w-full max-w-lg mx-auto">
+
+    <!-- Header -->
+    <div class="text-center anim-su">
+
+      <h1 style="font-family:'Bangers',sans-serif;font-size:3rem;letter-spacing:4px;
+                 background:linear-gradient(135deg,#818cf8,#a78bfa,#ec4899);
+                 -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+                 text-shadow:none;line-height:1.1">XOÀI TÌM PATTERN</h1>
+      <p class="text-white/45 font-bold text-sm mt-2 tracking-widest uppercase">Chọn loại bài để luyện tập!</p>
+    </div>
+
+    <!-- Type cards grid -->
+    <div id="home-grid" class="grid grid-cols-2 gap-3 w-full"></div>
+
+    <p class="text-white/20 text-xs font-bold tracking-wider text-center">5 câu hỏi · Khó dần theo vòng</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ GAME ═══════════════════ -->
+<div id="screen-game" class="screen">
+
+  <!-- Top bar -->
+  <div class="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+       style="background:rgba(6,6,24,.9);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)">
+    <button onclick="goHome()"
+      class="font-black text-sm px-3 py-1.5 rounded-xl transition"
+      style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.65)">
+      ← Menu
+    </button>
+    <div id="type-badge" class="px-3 py-1 rounded-full text-xs font-black flex-1 text-center truncate"></div>
+    <div id="round-label" class="font-black text-sm whitespace-nowrap" style="color:rgba(255,255,255,.6)">1 / 5</div>
+  </div>
+
+  <!-- Progress + stats -->
+  <div class="px-4 pt-3 pb-1 flex-shrink-0">
+    <div class="prog-track">
+      <div id="prog-fill" class="prog-fill" style="width:0%"></div>
+    </div>
+    <div class="flex justify-between mt-1.5">
+      <span id="score-lbl" class="text-xs font-black" style="color:rgba(255,255,255,.45)">⭐ 0 điểm</span>
+      <span id="hint-lbl"  class="text-xs font-black" style="color:rgba(255,255,255,.45)">💡 3 gợi ý</span>
+    </div>
+  </div>
+
+  <!-- Main game area -->
+  <div class="flex-1 flex flex-col items-center justify-center px-4 py-4 gap-6 w-full max-w-lg mx-auto">
+
+    <!-- Instruction -->
+    <p id="game-inst" class="text-white/65 font-bold text-base text-center"></p>
+
+    <!-- Sequence -->
+    <div id="seq-wrap" class="w-full flex justify-center">
+      <div id="seq-display" class="flex items-center gap-1.5 overflow-x-auto py-3 px-2" style="max-width:100%;scroll-snap-type:x mandatory"></div>
+    </div>
+
+    <!-- Choices (2×2) OR click-mode chip -->
+    <div id="choices-area" class="w-full max-w-sm grid grid-cols-2 gap-3"></div>
+
+    <!-- Hint reveal -->
+    <div id="hint-box" class="hint-box hidden"></div>
+
+    <!-- Hint button -->
+    <button id="hint-btn" onclick="showHint()"
+      class="font-bold text-sm transition underline underline-offset-2"
+      style="color:rgba(253,230,138,.55)">💡 Xem gợi ý</button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ SUMMARY ═══════════════════ -->
+<div id="screen-summary" class="screen items-center justify-center p-5">
+  <div id="sum-card" class="rounded-3xl p-8 text-center w-full max-w-sm shadow-2xl anim-pop"
+       style="background:linear-gradient(160deg,#0d0d22,#08081a);border:1.5px solid rgba(255,255,255,.1)">
+    <div id="sum-emoji" class="text-6xl mb-3 select-none"></div>
+    <h2 id="sum-title" style="font-family:'Bangers',sans-serif;font-size:2.2rem;letter-spacing:2px" class="text-white mb-1"></h2>
+    <div id="sum-stars" class="flex justify-center gap-1 my-4 text-3xl"></div>
+    <p id="sum-msg" class="font-bold text-sm mb-6" style="color:rgba(255,255,255,.55)"></p>
+    <div class="flex flex-col gap-3">
+      <button onclick="replayGame()" class="py-3.5 rounded-2xl font-black text-sm text-white transition active:scale-95"
+        style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🔄 Chơi lại bài này</button>
+      <button onclick="goHome()" class="py-3.5 rounded-2xl font-black text-sm transition active:scale-95"
+        style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.65)">
+        🏠 Về trang chủ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const TYPES = [
+  { id:'missing',     name:'Điền Số Còn Thiếu', emoji:'❓', color:'#00d4ff', border:'rgba(0,200,255,.5)',  bg:'rgba(0,180,220,.13)',  desc:'Tìm số bị ẩn trong dãy',       ex:'2 – 4 – 6 – ❓ – 10',       prog:'#00d4ff' },
+  { id:'rule',        name:'Tìm Quy Luật',       emoji:'📏', color:'#22c55e', border:'rgba(34,197,94,.5)', bg:'rgba(34,197,94,.13)',  desc:'Dãy tăng hay giảm theo quy luật?', ex:'50 – 45 – 40 – ❓',          prog:'#22c55e' },
+  { id:'alternating', name:'Xen Kẽ Quy Luật',    emoji:'🔀', color:'#a855f7', border:'rgba(168,85,247,.5)',bg:'rgba(168,85,247,.13)', desc:'Hai quy luật luân phiên nhau',  ex:'2 – 5 – 3 – 6 – 4 – ❓',     prog:'#a855f7' },
+  { id:'chunk',       name:'Nhóm Lặp Lại',        emoji:'🔁', color:'#f97316', border:'rgba(249,115,22,.5)',bg:'rgba(249,115,22,.13)', desc:'Nhóm số lặp đi lặp lại',       ex:'1 – 2 – 3 – 1 – 2 – ❓',     prog:'#f97316' },
+  { id:'growing',     name:'Bước Nhảy Tăng Dần',  emoji:'📈', color:'#ec4899', border:'rgba(236,72,153,.5)',bg:'rgba(236,72,153,.13)', desc:'Mỗi bước nhảy lớn hơn bước trước', ex:'1 – 2 – 4 – 7 – ❓',      prog:'#ec4899' },
+  { id:'fibonacci',   name:'Tổng Hai Số Trước',   emoji:'🌀', color:'#d4af37', border:'rgba(212,175,55,.5)',bg:'rgba(212,175,55,.13)', desc:'Mỗi số là tổng của hai số trước', ex:'1 – 2 – 3 – 5 – ❓',        prog:'#d4af37' },
+  { id:'findwrong',   name:'Phát Hiện Số Sai',    emoji:'🔍', color:'#ef4444', border:'rgba(239,68,68,.5)', bg:'rgba(239,68,68,.13)',  desc:'Bấm vào số không theo quy luật', ex:'2 – 4 – 6 – 9 – 10',         prog:'#ef4444' },
+];
+
+const ROUNDS  = 5;
+const CHEERS  = ['Xuất sắc! 🌟','Tuyệt vời! ✨','Đúng rồi! 🎉','Giỏi lắm! 👏','Hoàn hảo! 💯'];
+const MISSES  = ['Cố lên! 💪','Không sao! 😊','Sắp đúng rồi! 🤔','Lần sau nhé! 🙂'];
+const CF_CLR  = ['#ef4444','#3b82f6','#22c55e','#f97316','#a855f7','#ec4899','#d4af37','#00d4ff'];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let gs = { typeIdx:0, round:0, score:0, q:null, done:false, hintsLeft:3 };
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const pick = a  => a[Math.floor(Math.random()*a.length)];
+function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){const j=rand(0,i);[r[i],r[j]]=[r[j],r[i]];} return r; }
+
+// ═══════════════════════════════════════════
+// GENERATORS
+// ═══════════════════════════════════════════
+function generateQ(typeId, r) {
+  switch(typeId){
+    case 'missing':     return genMissing(r);
+    case 'rule':        return genRule(r);
+    case 'alternating': return genAlternating(r);
+    case 'chunk':       return genChunk(r);
+    case 'growing':     return genGrowing(r);
+    case 'fibonacci':   return genFibonacci(r);
+    case 'findwrong':   return genFindWrong(r);
+    default:            return genMissing(r);
+  }
+}
+
+// ── 1. Missing Number (arithmetic +k) ──────────────────────────
+function genMissing(r) {
+  const start = rand(1, r<=2?5:8);
+  const step  = pick(r<=1?[2,3,5]: r<=3?[2,3,4,5]:[2,3,4,5]);
+  const len   = r<=2 ? 5 : 6;
+  const seq   = [];
+  for(let i=0;i<len;i++){ const v=start+i*step; if(v>30) break; seq.push(v); }
+  if(seq.length<4) return genMissing(r);
+  const hideIdx = rand(r<=2?1:0, seq.length-1);
+  const answer  = seq[hideIdx];
+  return { type:'missing', seq, hideIdx, answer, mode:'choice',
+    inst:'Tìm số còn thiếu trong dãy:',
+    hint:`💡 Quy luật: +${step} mỗi bước`,
+    choices: makeChoices(answer, seq, step)
+  };
+}
+
+// ── 2. Rule (arithmetic / ×2 / –k) ────────────────────────────
+function genRule(r) {
+  const pool = r<=2
+    ? [{sym:'+2',op:n=>n+2},{sym:'+3',op:n=>n+3},{sym:'+5',op:n=>n+5},{sym:'-2',op:n=>n-2},{sym:'-3',op:n=>n-3}]
+    : [{sym:'+3',op:n=>n+3},{sym:'+4',op:n=>n+4},{sym:'+2',op:n=>n+2},{sym:'+5',op:n=>n+5},
+       {sym:'-2',op:n=>n-2},{sym:'-3',op:n=>n-3},{sym:'-4',op:n=>n-4},{sym:'×2',op:n=>n*2}];
+  let rule, start, seq, tries=0;
+  do {
+    tries++; rule=pick(pool);
+    if(rule.sym.startsWith('-')){ const k=parseInt(rule.sym.slice(1)); start=rand(k*3,Math.min(30,k*4+5)); }
+    else if(rule.sym==='×2')    { start=rand(1,3); }
+    else                         { start=rand(1,r<=2?10:15); }
+    seq=[start];
+    for(let i=0;i<5;i++){ const n=rule.op(seq[seq.length-1]); if(n<1||n>30) break; seq.push(n); }
+  } while(seq.length<4 && tries<25);
+  if(seq.length<4) return genRule(r);
+  const hideIdx = rand(seq.length-2, seq.length-1);
+  const answer  = seq[hideIdx];
+  return { type:'rule', seq, hideIdx, answer, mode:'choice',
+    inst:'Số tiếp theo trong dãy là số mấy?',
+    hint:`💡 Quy luật: ${rule.sym} mỗi bước`,
+    choices: makeChoices(answer, seq, r<=2?3:5)
+  };
+}
+
+// ── 3. Alternating (+k1, -k2, +k1, -k2…) ─────────────────────
+function genAlternating(r) {
+  const k1=rand(2,r<=2?3:4), k2=rand(1,r<=2?2:3);
+  let start=rand(3,10), seq=[start];
+  for(let i=0;i<9;i++){
+    const last=seq[seq.length-1];
+    const next=i%2===0 ? last+k1 : last-k2;
+    if(next<1||next>30) break;
+    seq.push(next);
+  }
+  if(seq.length<5) return genAlternating(r);
+  const hideIdx=rand(Math.floor(seq.length/2), seq.length-1);
+  const answer =seq[hideIdx];
+  return { type:'alternating', seq, hideIdx, answer, mode:'choice',
+    inst:'Tìm số còn thiếu trong dãy xen kẽ:',
+    hint:`💡 Quy luật: +${k1}, -${k2}, +${k1}, -${k2}...`,
+    choices: makeChoices(answer, seq, r<=2?2:4)
+  };
+}
+
+// ── 4. Chunk (repeating group) ─────────────────────────────────
+function genChunk(r) {
+  const patLen=r<=2?2:3, max=r<=2?9:12;
+  let pattern, tries=0;
+  do{ tries++; pattern=Array.from({length:patLen},()=>rand(1,max)); }
+  while(new Set(pattern).size<patLen && tries<40);
+  // build sequence: 3 full repetitions
+  const full=[];
+  for(let rep=0;rep<3;rep++) for(const v of pattern) full.push(v);
+  const displayLen=Math.min(full.length, patLen*2+3);
+  const seq=full.slice(0,displayLen);
+  const hideIdx=rand(patLen, displayLen-1);
+  const answer =seq[hideIdx];
+  return { type:'chunk', seq, hideIdx, answer, mode:'choice',
+    inst:'Tìm số còn thiếu trong nhóm lặp:',
+    hint:`💡 Nhóm lặp: [${pattern.join(', ')}]`,
+    choices: makeChoices(answer, seq, 2)
+  };
+}
+
+// ── 5. Growing (step increases by 1 each time) ────────────────
+function genGrowing(r) {
+  const start=rand(1,r<=2?3:5);
+  let initStep=r<=2?1:rand(1,2), seq=[start], step=initStep;
+  while(seq.length<7){ const n=seq[seq.length-1]+step; if(n>30) break; seq.push(n); step++; }
+  if(seq.length<4) return genGrowing(r);
+  const hideIdx=seq.length-1;
+  const answer =seq[hideIdx];
+  return { type:'growing', seq, hideIdx, answer, mode:'choice',
+    inst:'Bước nhảy ngày càng lớn hơn — số tiếp theo là?',
+    hint:`💡 Các bước: +${initStep}, +${initStep+1}, +${initStep+2}...`,
+    choices: makeChoices(answer, seq, r<=2?2:4)
+  };
+}
+
+// ── 6. Fibonacci-like ──────────────────────────────────────────
+function genFibonacci(r) {
+  const a=rand(1,r<=2?3:5), b=rand(1,r<=2?5:8);
+  let seq=[a,b];
+  while(seq.length<7){ const n=seq[seq.length-1]+seq[seq.length-2]; if(n>30) break; seq.push(n); }
+  if(seq.length<4) return genFibonacci(r);
+  const hideIdx=seq.length-1;
+  const answer =seq[hideIdx];
+  return { type:'fibonacci', seq, hideIdx, answer, mode:'choice',
+    inst:'Mỗi số = tổng 2 số trước — số tiếp theo là?',
+    hint:`💡 Gợi ý: ${seq[hideIdx-2]} + ${seq[hideIdx-1]} = ?`,
+    choices: makeChoices(answer, seq, r<=2?3:6)
+  };
+}
+
+// ── 7. Find Wrong ──────────────────────────────────────────────
+function genFindWrong(r) {
+  const step =pick(r<=2?[2,3]:[2,3,4]);
+  const len  =r<=2?5:6;
+  const maxStart=Math.max(1, 30-step*(len-1));
+  const start=rand(1, Math.min(10, maxStart));
+  const correct=Array.from({length:len},(_,i)=>start+i*step);
+  const wrongIdx=r<=2 ? rand(1,len-2) : rand(0,len-1);
+  const offsets=shuffle([1,2,3,-1,-2,step-1,step+1]).filter(v=>v!==0);
+  let wrongVal=correct[wrongIdx];
+  for(const off of offsets){
+    const c=correct[wrongIdx]+off;
+    if(c>=1&&c<=30&&!correct.includes(c)){ wrongVal=c; break; }
+  }
+  const seq=[...correct]; seq[wrongIdx]=wrongVal;
+  return { type:'findwrong', seq, correctSeq:correct,
+    hideIdx:wrongIdx, answer:wrongIdx, mode:'click', choices:[],
+    inst:'Có một số bị sai — bấm vào số đó! 👆',
+    hint:`💡 Dãy đúng phải là: ${correct.join(' – ')}`
+  };
+}
+
+// ── Choices generator ─────────────────────────────────────────
+function makeChoices(answer, seq, spread) {
+  spread=spread||3;
+  const used=new Set(seq); // avoid any number already in the sequence
+  const set =new Set([answer]);
+  const offs=shuffle([-1,1,-2,2,-3,3,-4,4,-5,5,spread,-(spread)]);
+  for(const o of offs){
+    if(set.size>=4) break;
+    const d=answer+o;
+    if(d>0&&d<=30&&!used.has(d)) set.add(d);
+  }
+  let safety=0;
+  while(set.size<4&&safety++<60){
+    const d=rand(Math.max(1,answer-6),Math.min(30,answer+6));
+    if(!used.has(d)) set.add(d);
+  }
+  return shuffle([...set]);
+}
+
+// ═══════════════════════════════════════════
+// SCREEN
+// ═══════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){ showScreen('screen-home'); }
+
+// ═══════════════════════════════════════════
+// HOME SCREEN
+// ═══════════════════════════════════════════
+function renderHome(){
+  document.getElementById('home-grid').innerHTML=TYPES.map((t,i)=>`
+    <div class="type-card anim-su"
+         style="background:${t.bg};border-color:${t.border};
+                box-shadow:0 4px 22px rgba(0,0,0,.35);
+                animation-delay:${i*0.07}s"
+         onclick="startGame(${i})">
+      <div class="text-4xl text-center mb-2 select-none">${t.emoji}</div>
+      <div class="font-black text-sm text-center mb-1.5 leading-tight" style="color:${t.color}">${t.name}</div>
+      <div class="font-bold text-center leading-tight mb-2" style="font-size:.74rem;color:rgba(255,255,255,.45)">${t.desc}</div>
+      <div class="text-center font-bold tracking-wide" style="font-size:.72rem;color:rgba(255,255,255,.25)">${t.ex}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// GAME FLOW
+// ═══════════════════════════════════════════
+function startGame(idx){
+  gs={typeIdx:idx, round:0, score:0, q:null, done:false, hintsLeft:3};
+  nextRound();
+}
+function replayGame(){ startGame(gs.typeIdx); }
+
+function nextRound(){
+  if(gs.round>=ROUNDS){ showSummary(); return; }
+  gs.done=false;
+  gs.q=generateQ(TYPES[gs.typeIdx].id, gs.round+1);
+  showScreen('screen-game');
+  renderGame();
+}
+
+// ═══════════════════════════════════════════
+// GAME UI
+// ═══════════════════════════════════════════
+function renderGame(){
+  const t=TYPES[gs.typeIdx];
+  // Top bar
+  const badge=document.getElementById('type-badge');
+  badge.textContent=`${t.emoji} ${t.name}`;
+  badge.style.cssText=`background:${t.bg};color:${t.color};border:1px solid ${t.border};padding:4px 14px;border-radius:99px;`;
+  document.getElementById('round-label').textContent=`${gs.round+1} / ${ROUNDS}`;
+  // Progress
+  document.getElementById('prog-fill').style.width=`${(gs.round/ROUNDS)*100}%`;
+  document.getElementById('prog-fill').style.background=t.prog;
+  // Stats
+  document.getElementById('score-lbl').textContent=`⭐ ${gs.score} điểm`;
+  const hl=document.getElementById('hint-lbl');
+  hl.textContent=`💡 ${gs.hintsLeft} gợi ý`;
+  // Instruction
+  document.getElementById('game-inst').textContent=gs.q.inst;
+  // Hide hint
+  document.getElementById('hint-box').classList.add('hidden');
+  const hb=document.getElementById('hint-btn');
+  if(gs.hintsLeft<=0){ hb.style.opacity='.3'; hb.disabled=true; hb.textContent='💡 Hết gợi ý'; }
+  else { hb.style.opacity='1'; hb.disabled=false; hb.textContent=`💡 Xem gợi ý (còn ${gs.hintsLeft} lần)`; }
+  // Render
+  renderSeq();
+  renderChoices();
+}
+
+function renderSeq(){
+  const q=gs.q;
+  const wrap=document.getElementById('seq-display');
+  wrap.innerHTML='';
+  q.seq.forEach((num,i)=>{
+    // Group: [box] + [sep?] keeps them together on wrap
+    const grp=document.createElement('div');
+    grp.style.cssText='display:flex;align-items:center;gap:6px;flex-shrink:0';
+    const box=document.createElement('div');
+    box.className='num-box anim-bi';
+    box.style.animationDelay=`${i*0.065}s`;
+    if(q.mode==='click'){
+      box.classList.add('clickable');
+      box.textContent=num;
+      box.dataset.idx=i;
+      box.onclick=()=>handleClick(i);
+    } else if(i===q.hideIdx){
+      box.classList.add('question');
+      box.textContent='?';
+    } else {
+      box.classList.add('normal');
+      box.textContent=num;
+    }
+    grp.appendChild(box);
+    if(i<q.seq.length-1){
+      const sep=document.createElement('span');
+      sep.className='num-sep';
+      sep.textContent='–';
+      grp.appendChild(sep);
+    }
+    wrap.appendChild(grp);
+  });
+}
+
+function renderChoices(){
+  const area=document.getElementById('choices-area');
+  area.innerHTML='';
+  if(gs.q.mode==='click'){
+    // Show a "click the wrong number" chip
+    area.style.gridTemplateColumns='1fr';
+    const chip=document.createElement('div');
+    chip.className='click-hint-chip w-full justify-center anim-bi';
+    chip.innerHTML='👆 Bấm vào số không theo quy luật';
+    area.appendChild(chip);
+    return;
+  }
+  area.style.gridTemplateColumns='1fr 1fr';
+  const colors=['c0','c1','c2','c3'];
+  gs.q.choices.forEach((val,i)=>{
+    const btn=document.createElement('button');
+    btn.className=`choice-btn ${colors[i]} anim-bi`;
+    btn.style.animationDelay=`${0.18+i*0.07}s`;
+    btn.textContent=val;
+    btn.dataset.val=val;
+    btn.onclick=()=>handleChoice(val,btn);
+    area.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════
+// ANSWERS
+// ═══════════════════════════════════════════
+function handleChoice(val,btn){
+  if(gs.done) return;
+  gs.done=true;
+  const correct=(+val===gs.q.answer);
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.disabled=true;
+    const bv=+b.dataset.val;
+    if(bv===gs.q.answer) b.classList.add('ch-correct');
+    else if(b===btn&&!correct) b.classList.add('ch-wrong');
+    else b.classList.add('ch-dim');
+  });
+  afterAnswer(correct);
+}
+
+function handleClick(idx){
+  if(gs.done) return;
+  gs.done=true;
+  const correct=(idx===gs.q.answer);
+  document.querySelectorAll('#seq-display .num-box').forEach(box=>{
+    box.onclick=null;
+    const bi=+box.dataset.idx;
+    if(bi===gs.q.answer)     box.classList.add('box-correct');
+    else if(bi===idx&&!correct) box.classList.add('box-wrong');
+  });
+  afterAnswer(correct);
+}
+
+function afterAnswer(correct){
+  if(correct){
+    gs.score++;
+    document.getElementById('score-lbl').textContent=`⭐ ${gs.score} điểm`;
+    showToast(pick(CHEERS),'#22c55e','rgba(34,197,94,.3)');
+    launchCF(correct&&gs.score===ROUNDS?55:12);
+  } else {
+    const wrongDisplay=gs.q.mode==='click' ? gs.q.seq[gs.q.answer] : gs.q.answer;
+    showToast(`Chưa đúng! Đáp án: ${wrongDisplay}`,'#fca5a5','rgba(239,68,68,.25)');
+  }
+  setTimeout(()=>{
+    gs.round++;
+    document.getElementById('prog-fill').style.width=`${(gs.round/ROUNDS)*100}%`;
+    setTimeout(nextRound,280);
+  },1500);
+}
+
+// ═══════════════════════════════════════════
+// HINT
+// ═══════════════════════════════════════════
+function showHint(){
+  if(gs.hintsLeft<=0||gs.done) return;
+  gs.hintsLeft--;
+  document.getElementById('hint-lbl').textContent=`💡 ${gs.hintsLeft} gợi ý`;
+  const hb=document.getElementById('hint-btn');
+  if(gs.hintsLeft<=0){ hb.style.opacity='.3'; hb.disabled=true; hb.textContent='💡 Hết gợi ý'; }
+  else hb.textContent=`💡 Xem gợi ý (còn ${gs.hintsLeft} lần)`;
+  const box=document.getElementById('hint-box');
+  box.textContent=gs.q.hint;
+  box.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════
+// SUMMARY
+// ═══════════════════════════════════════════
+function showSummary(){
+  showScreen('screen-summary');
+  const sc=gs.score;
+  const t=TYPES[gs.typeIdx];
+  const [emoji,title,msg]=
+    sc===5 ? ['🏆','Tuyệt Vời!','Đúng tất cả 5 câu! Con giỏi quá! 🌟']
+    :sc>=4  ? ['🎉','Xuất Sắc!', `Đúng ${sc}/5 câu — cố lên thêm chút!`]
+    :sc>=3  ? ['😊','Giỏi Lắm!', `Đúng ${sc}/5 câu — luyện thêm nhé!`]
+    :sc>=2  ? ['🤔','Cố Lên!',   `Đúng ${sc}/5 câu — nhìn kỹ lại quy luật!`]
+    :         ['😅','Thử Lại!',  `Đúng ${sc}/5 câu — xem gợi ý để hiểu hơn!`];
+  document.getElementById('sum-emoji').textContent=emoji;
+  document.getElementById('sum-title').textContent=title;
+  document.getElementById('sum-msg').textContent=msg;
+  const starEl=document.getElementById('sum-stars');
+  starEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const s=document.createElement('span');
+    s.className='star-anim';
+    s.textContent=i<sc?'⭐':'☆';
+    s.style.filter=i<sc?'':'grayscale(1) opacity(.3)';
+    s.style.animationDelay=`${i*0.1}s`;
+    starEl.appendChild(s);
+  }
+  const card=document.getElementById('sum-card');
+  card.style.borderColor=t.border;
+  card.style.boxShadow=`0 0 50px ${t.bg}, 0 8px 40px rgba(0,0,0,.5)`;
+  if(sc===5) launchCF(70);
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let _toastT=null;
+function showToast(msg,color,bg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.color=color||'#fff';
+  t.style.borderColor=color||'rgba(255,255,255,.2)';
+  t.style.background=bg||'rgba(10,10,30,.92)';
+  t.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ═══════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════
+function launchCF(n){
+  const cont=document.getElementById('cf-container');
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');
+    p.className='cf';
+    const dur=(Math.random()*1.6+1.1).toFixed(2);
+    const sz=rand(7,13);
+    p.style.cssText=`left:${Math.random()*100}vw;width:${sz}px;height:${sz+4}px;
+      background:${pick(CF_CLR)};
+      animation-duration:${dur}s;animation-delay:${(Math.random()*.5).toFixed(2)}s;
+      border-radius:${Math.random()>.5?'50%':'3px'};`;
+    cont.appendChild(p);
+  }
+  setTimeout(()=>cont.innerHTML='',3800);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderHome();
+</script>
+</body>
+</html>
