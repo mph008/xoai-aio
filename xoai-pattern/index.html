@@ -321,7 +321,7 @@ function genMissing(r) {
   const step  = pick(r<=1?[2,3,5]: r<=3?[2,3,4,5]:[2,3,4,5]);
   const len   = r<=2 ? 5 : 6;
   const seq   = [];
-  for(let i=0;i<len;i++){ const v=start+i*step; if(v>30) break; seq.push(v); }
+  for(let i=0;i<len;i++){ const v=start+i*step; if(v>58) break; seq.push(v); }
   if(seq.length<4) return genMissing(r);
   const hideIdx = rand(r<=2?1:0, seq.length-1);
   const answer  = seq[hideIdx];
@@ -341,11 +341,11 @@ function genRule(r) {
   let rule, start, seq, tries=0;
   do {
     tries++; rule=pick(pool);
-    if(rule.sym.startsWith('-')){ const k=parseInt(rule.sym.slice(1)); start=rand(k*3,Math.min(30,k*4+5)); }
-    else if(rule.sym==='×2')    { start=rand(1,3); }
-    else                         { start=rand(1,r<=2?10:15); }
+    if(rule.sym.startsWith('-')){ const k=parseInt(rule.sym.slice(1)); start=rand(k*3,Math.min(58,k*4+10)); }
+    else if(rule.sym==='×2')    { start=rand(1,6); }
+    else                         { start=rand(1,r<=2?20:30); }
     seq=[start];
-    for(let i=0;i<5;i++){ const n=rule.op(seq[seq.length-1]); if(n<1||n>30) break; seq.push(n); }
+    for(let i=0;i<5;i++){ const n=rule.op(seq[seq.length-1]); if(n<1||n>58) break; seq.push(n); }
   } while(seq.length<4 && tries<25);
   if(seq.length<4) return genRule(r);
   const hideIdx = rand(seq.length-2, seq.length-1);
@@ -359,12 +359,12 @@ function genRule(r) {
 
 // ── 3. Alternating (+k1, -k2, +k1, -k2…) ─────────────────────
 function genAlternating(r) {
-  const k1=rand(2,r<=2?3:4), k2=rand(1,r<=2?2:3);
-  let start=rand(3,10), seq=[start];
+  const k1=rand(2,r<=2?4:6), k2=rand(1,r<=2?3:4);
+  let start=rand(3,20), seq=[start];
   for(let i=0;i<9;i++){
     const last=seq[seq.length-1];
     const next=i%2===0 ? last+k1 : last-k2;
-    if(next<1||next>30) break;
+    if(next<1||next>58) break;
     seq.push(next);
   }
   if(seq.length<5) return genAlternating(r);
@@ -401,7 +401,7 @@ function genChunk(r) {
 function genGrowing(r) {
   const start=rand(1,r<=2?3:5);
   let initStep=r<=2?1:rand(1,2), seq=[start], step=initStep;
-  while(seq.length<7){ const n=seq[seq.length-1]+step; if(n>30) break; seq.push(n); step++; }
+  while(seq.length<7){ const n=seq[seq.length-1]+step; if(n>58) break; seq.push(n); step++; }
   if(seq.length<4) return genGrowing(r);
   const hideIdx=seq.length-1;
   const answer =seq[hideIdx];
@@ -416,7 +416,7 @@ function genGrowing(r) {
 function genFibonacci(r) {
   const a=rand(1,r<=2?3:5), b=rand(1,r<=2?5:8);
   let seq=[a,b];
-  while(seq.length<7){ const n=seq[seq.length-1]+seq[seq.length-2]; if(n>30) break; seq.push(n); }
+  while(seq.length<7){ const n=seq[seq.length-1]+seq[seq.length-2]; if(n>58) break; seq.push(n); }
   if(seq.length<4) return genFibonacci(r);
   const hideIdx=seq.length-1;
   const answer =seq[hideIdx];
@@ -431,15 +431,15 @@ function genFibonacci(r) {
 function genFindWrong(r) {
   const step =pick(r<=2?[2,3]:[2,3,4]);
   const len  =r<=2?5:6;
-  const maxStart=Math.max(1, 30-step*(len-1));
-  const start=rand(1, Math.min(10, maxStart));
+  const maxStart=Math.max(1, 58-step*(len-1));
+  const start=rand(1, Math.min(20, maxStart));
   const correct=Array.from({length:len},(_,i)=>start+i*step);
   const wrongIdx=r<=2 ? rand(1,len-2) : rand(0,len-1);
   const offsets=shuffle([1,2,3,-1,-2,step-1,step+1]).filter(v=>v!==0);
   let wrongVal=correct[wrongIdx];
   for(const off of offsets){
     const c=correct[wrongIdx]+off;
-    if(c>=1&&c<=30&&!correct.includes(c)){ wrongVal=c; break; }
+    if(c>=1&&c<=58&&!correct.includes(c)){ wrongVal=c; break; }
   }
   const seq=[...correct]; seq[wrongIdx]=wrongVal;
   return { type:'findwrong', seq, correctSeq:correct,
@@ -458,11 +458,11 @@ function makeChoices(answer, seq, spread) {
   for(const o of offs){
     if(set.size>=4) break;
     const d=answer+o;
-    if(d>0&&d<=30&&!used.has(d)) set.add(d);
+    if(d>0&&d<=58&&!used.has(d)) set.add(d);
   }
   let safety=0;
   while(set.size<4&&safety++<60){
-    const d=rand(Math.max(1,answer-6),Math.min(30,answer+6));
+    const d=rand(Math.max(1,answer-8),Math.min(58,answer+8));
     if(!used.has(d)) set.add(d);
   }
   return shuffle([...set]);
