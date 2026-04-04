@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xoài All-In-One 🥭</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bangers&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4af37;
+    }
+
+    body {
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      background-color: #080810;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 0%, rgba(180, 30, 10, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(0, 100, 200, 0.14) 0%, transparent 60%),
+        linear-gradient(170deg, #0a050f 0%, #080810 50%, #050810 100%);
+      overflow-x: hidden;
+    }
+
+    /* ===== HOME SCREEN ===== */
+    #home {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px 60px;
+      gap: 40px;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo {
+      font-size: 4rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 20px rgba(255, 180, 0, 0.5));
+      animation: floatLogo 3s ease-in-out infinite;
+    }
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-8px); }
+    }
+    .header-title {
+      font-family: 'Bangers', 'Impact', sans-serif;
+      font-size: 3rem;
+      letter-spacing: 4px;
+      color: var(--gold);
+      text-shadow:
+        0 0 30px rgba(212, 175, 55, 0.8),
+        0 0 60px rgba(212, 175, 55, 0.4),
+        0 3px 8px rgba(0, 0, 0, 0.9);
+    }
+    .header-sub {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ===== CARDS GRID ===== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      width: 100%;
+      max-width: 720px;
+    }
+
+    @media (max-width: 480px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+        max-width: 380px;
+      }
+    }
+
+    /* ===== APP CARD ===== */
+    .app-card {
+      position: relative;
+      border-radius: 24px;
+      padding: 32px 24px;
+      cursor: pointer;
+      overflow: hidden;
+      border: 1.5px solid transparent;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                  box-shadow 0.25s ease,
+                  border-color 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      background: var(--card-bg);
+      z-index: 0;
+    }
+
+    /* Shimmer line on hover */
+    .app-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+      transition: left 0.6s ease;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .app-card:hover::after {
+      left: 120%;
+    }
+
+    .app-card:hover {
+      transform: translateY(-8px) scale(1.02);
+    }
+
+    .app-card:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .app-card > * {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Card: Cá ngựa (ludo) — Red/Dark theme */
+    .card-ludo {
+      --card-bg: linear-gradient(145deg, rgba(100, 10, 10, 0.5), rgba(30, 5, 5, 0.7));
+      --card-border: rgba(220, 38, 38, 0.5);
+      --card-glow: rgba(220, 38, 38, 0.35);
+      --card-accent: #ef4444;
+      --card-accent-light: #fca5a5;
+    }
+    .card-ludo:hover {
+      border-color: rgba(220, 38, 38, 0.7) !important;
+      box-shadow: 0 0 0 1.5px rgba(220, 38, 38, 0.5),
+                  0 20px 60px rgba(220, 38, 38, 0.25),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Card: Toán — Pink/Purple theme */
+    .card-math {
+      --card-bg: linear-gradient(145deg, rgba(80, 0, 80, 0.5), rgba(20, 5, 30, 0.7));
+      --card-border: rgba(236, 72, 153, 0.5);
+      --card-glow: rgba(236, 72, 153, 0.35);
+      --card-accent: #ec4899;
+      --card-accent-light: #f9a8d4;
+    }
+    .card-math:hover {
+      border-color: rgba(236, 72, 153, 0.7) !important;
+      box-shadow: 0 0 0 1.5px rgba(236, 72, 153, 0.5),
+                  0 20px 60px rgba(236, 72, 153, 0.25),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Card: Trí nhớ (memory) — Cyan theme */
+    .card-memory {
+      --card-bg: linear-gradient(145deg, rgba(0, 50, 80, 0.5), rgba(2, 12, 25, 0.7));
+      --card-border: rgba(0, 200, 255, 0.45);
+      --card-glow: rgba(0, 200, 255, 0.3);
+      --card-accent: #00c8ff;
+      --card-accent-light: #7dd3fc;
+    }
+    .card-memory:hover {
+      border-color: rgba(0, 200, 255, 0.7) !important;
+      box-shadow: 0 0 0 1.5px rgba(0, 200, 255, 0.5),
+                  0 20px 60px rgba(0, 200, 255, 0.2),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Card: Thời gian (time) — Gold/Amber theme */
+    .card-time {
+      --card-bg: linear-gradient(145deg, rgba(80, 50, 0, 0.5), rgba(20, 12, 0, 0.7));
+      --card-border: rgba(212, 175, 55, 0.45);
+      --card-glow: rgba(212, 175, 55, 0.3);
+      --card-accent: #d4af37;
+      --card-accent-light: #fde68a;
+    }
+    .card-time:hover {
+      border-color: rgba(212, 175, 55, 0.7) !important;
+      box-shadow: 0 0 0 1.5px rgba(212, 175, 55, 0.5),
+                  0 20px 60px rgba(212, 175, 55, 0.2),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Initial border state */
+    .card-ludo   { border-color: rgba(220, 38, 38, 0.2);
+                   box-shadow: 0 4px 30px rgba(220, 38, 38, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-math   { border-color: rgba(236, 72, 153, 0.2);
+                   box-shadow: 0 4px 30px rgba(236, 72, 153, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-memory { border-color: rgba(0, 200, 255, 0.18);
+                   box-shadow: 0 4px 30px rgba(0, 200, 255, 0.1), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-time   { border-color: rgba(212, 175, 55, 0.2);
+                   box-shadow: 0 4px 30px rgba(212, 175, 55, 0.1), 0 2px 12px rgba(0,0,0,0.5); }
+
+    .card-emoji {
+      font-size: 3.8rem;
+      line-height: 1;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      transition: transform 0.2s ease;
+    }
+    .app-card:hover .card-emoji {
+      transform: scale(1.15) rotate(-5deg);
+    }
+
+    .card-name {
+      font-family: 'Bangers', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      color: var(--card-accent);
+      text-shadow: 0 0 20px var(--card-glow), 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    .card-desc {
+      color: var(--card-accent-light);
+      font-size: 0.82rem;
+      font-weight: 700;
+      opacity: 0.75;
+      line-height: 1.5;
+    }
+
+    .card-badge {
+      margin-top: 6px;
+      padding: 5px 16px;
+      border-radius: 99px;
+      font-size: 0.73rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.5);
+      transition: background 0.2s, color 0.2s;
+    }
+    .app-card:hover .card-badge {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    /* Animated ring on card */
+    .card-ring {
+      position: absolute;
+      inset: -1px;
+      border-radius: 25px;
+      background: transparent;
+      border: 1.5px solid transparent;
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .app-card:hover .card-ring {
+      opacity: 1;
+    }
+    .card-ludo   .card-ring { border-color: rgba(220,38,38,0.35); box-shadow: 0 0 18px rgba(220,38,38,0.2) inset; }
+    .card-math   .card-ring { border-color: rgba(236,72,153,0.35); box-shadow: 0 0 18px rgba(236,72,153,0.2) inset; }
+    .card-memory .card-ring { border-color: rgba(0,200,255,0.3); box-shadow: 0 0 18px rgba(0,200,255,0.15) inset; }
+    .card-time   .card-ring { border-color: rgba(212,175,55,0.3); box-shadow: 0 0 18px rgba(212,175,55,0.15) inset; }
+
+    /* ===== APP VIEWER ===== */
+    #app-viewer {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      flex-direction: column;
+      background: #000;
+    }
+    #app-viewer.active {
+      display: flex;
+    }
+
+    /* Top bar */
+    .viewer-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      height: 48px;
+      background: rgba(8, 8, 16, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    #back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Nunito', sans-serif;
+      white-space: nowrap;
+    }
+    #back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    #back-btn:active {
+      transform: scale(0.95);
+    }
+
+    .viewer-app-name {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 1px;
+      flex: 1;
+    }
+
+    #app-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #000;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      color: rgba(255, 255, 255, 0.2);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    /* ===== SLIDE IN ANIMATION ===== */
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-enter {
+      animation: slideInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+    .card-enter:nth-child(1) { animation-delay: 0.05s; }
+    .card-enter:nth-child(2) { animation-delay: 0.12s; }
+    .card-enter:nth-child(3) { animation-delay: 0.19s; }
+    .card-enter:nth-child(4) { animation-delay: 0.26s; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-enter {
+      animation: fadeSlideIn 0.6s ease both;
+    }
+
+    /* ===== VIEWER TRANSITION ===== */
+    @keyframes viewerIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #app-viewer.active {
+      animation: viewerIn 0.25s ease both;
+    }
+
+    /* Decorative background rings */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(110vw, 800px);
+      height: min(110vw, 800px);
+      border-radius: 50%;
+      border: 1px solid rgba(212, 175, 55, 0.05);
+      box-shadow: 0 0 80px 10px rgba(212, 175, 55, 0.03) inset;
+      pointer-events: none;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div id="home">
+    <div class="header header-enter">
+      <div class="header-logo">🥭</div>
+      <h1 class="header-title">XOÀI ALL-IN-ONE</h1>
+      <p class="header-sub">Chọn một trò chơi để bắt đầu!</p>
+    </div>
+
+    <div class="cards-grid">
+
+      <!-- Cá ngựa -->
+      <div class="app-card card-ludo card-enter" onclick="openApp('xoai-ludo/index.html', '🎲 Cá ngựa')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🎲</div>
+        <div class="card-name">Cá ngựa</div>
+        <div class="card-desc">Board game cá ngựa với 4 nhân vật Avengers. 2–4 người chơi hoặc vs AI!</div>
+        <div class="card-badge">2 – 4 Người chơi</div>
+      </div>
+
+      <!-- Toán -->
+      <div class="app-card card-math card-enter" onclick="openApp('xoai-math/index.html', '🔢 Toán')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🔢</div>
+        <div class="card-name">Toán</div>
+        <div class="card-desc">Luyện tính nhẩm cộng, trừ, nhân có giới hạn thời gian. Nhanh tay nào!</div>
+        <div class="card-badge">+  −  ×</div>
+      </div>
+
+      <!-- Trí nhớ -->
+      <div class="app-card card-memory card-enter" onclick="openApp('xoai-memory/index.html', '🧩 Trí nhớ')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🧩</div>
+        <div class="card-name">Trí nhớ</div>
+        <div class="card-desc">Ghi nhớ vị trí các mảnh LEGO rồi lắp lại đúng chỗ trong thời gian quy định!</div>
+        <div class="card-badge">Dễ · Vừa · Khó</div>
+      </div>
+
+      <!-- Thời gian -->
+      <div class="app-card card-time card-enter" onclick="openApp('xoai-time/index.html', '🕐 Thời gian')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🕐</div>
+        <div class="card-name">Thời gian</div>
+        <div class="card-desc">Học xem giờ bằng đồng hồ kim và điện tử, hỗ trợ cả tiếng Việt và tiếng Đức!</div>
+        <div class="card-badge">🇻🇳 · 🇩🇪</div>
+      </div>
+
+    </div>
+
+    <p class="footer">Xoài · 2026</p>
+  </div>
+
+  <!-- ===== APP VIEWER ===== -->
+  <div id="app-viewer">
+    <div class="viewer-bar">
+      <button id="back-btn" onclick="goHome()">
+        ← Trang chủ
+      </button>
+      <span id="viewer-app-name" class="viewer-app-name"></span>
+    </div>
+    <iframe id="app-frame" src="" allow="autoplay" title="Mini App"></iframe>
+  </div>
+
+  <script>
+    function openApp(url, name) {
+      const frame = document.getElementById('app-frame');
+      const viewer = document.getElementById('app-viewer');
+      const nameEl = document.getElementById('viewer-app-name');
+
+      frame.src = url;
+      nameEl.textContent = name;
+      viewer.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function goHome() {
+      const frame = document.getElementById('app-frame');
+      const viewer = document.getElementById('app-viewer');
+
+      viewer.classList.remove('active');
+      // Brief delay before clearing src so animation plays first
+      setTimeout(() => { frame.src = ''; }, 250);
+      document.body.style.overflow = '';
+    }
+  </script>
+
+</body>
+</html>
