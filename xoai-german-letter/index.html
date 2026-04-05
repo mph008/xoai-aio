@@ -26,6 +26,7 @@
         body {
             font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
             min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
             background: #060618;
             background-image:
                 radial-gradient(ellipse 70% 50% at 15% 10%, rgba(99,102,241,.18) 0%, transparent 55%),
@@ -253,6 +254,8 @@
         .option-btn.wrong   { background: rgba(239,68,68,0.2);   border-color: #ef4444; color: #fca5a5; animation: shake 0.4s ease; }
         @keyframes bounceIn { 0%{transform:scale(.75)} 60%{transform:scale(1.12)} 100%{transform:scale(1)} }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+        .option-btn:focus, .option-btn:focus-visible { outline: none; box-shadow: none; }
+        .option-btn:focus:not(:focus-visible) { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
         .option-btn:disabled { cursor: default; }
 
         /* Drag & Drop word builder */
@@ -806,12 +809,17 @@ function buildRounds(lv) {
 //  RENDER ROUND
 // =====================================================
 function renderRound() {
+    // Safari fix: forcefully clear focus/active state so no button from the
+    // previous round carries its highlight into the next round's DOM position.
+    document.activeElement?.blur();
+
     const lv = state.currentLevel;
     const round = state.rounds[state.roundIndex];
     const total = state.rounds.length;
     document.getElementById('q-progress').style.width = (state.roundIndex / total * 100) + '%';
 
     const card = document.getElementById('game-card');
+    card.innerHTML = ''; // flush old DOM before injecting new content (Safari repaint)
     const checkBtn = document.getElementById('btn-check');
     checkBtn.style.display = 'none';
     state.pendingAnswer = null;
@@ -858,7 +866,7 @@ function selectOptionLetter(btn, chosen, target) {
     if (chosen === target) {
         btn.classList.add('correct');
         showFeedback(true, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1200);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1200);
     } else {
         btn.classList.add('wrong');
         state.errors++;
@@ -869,7 +877,7 @@ function selectOptionLetter(btn, chosen, target) {
             if (b.textContent.trim() === target) b.classList.add('correct');
         });
         showFeedback(false, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1600);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1600);
     }
 }
 
@@ -976,7 +984,7 @@ function checkBuildWord() {
     if (built === target) {
         slots.forEach(s => s.classList.add('correct-slot'));
         showFeedback(true, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1300);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1300);
     } else {
         state.errors++;
         loseLife();
@@ -1030,7 +1038,7 @@ function checkMissingLetter() {
         input.style.borderBottomColor = 'var(--success)';
         input.style.color = 'var(--success)';
         showFeedback(true, state.dragTarget || answer);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1300);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1300);
     } else {
         state.errors++;
         loseLife();
@@ -1074,7 +1082,7 @@ function selectWordOption(btn, chosen, target) {
     if (chosen === target) {
         btn.classList.add('correct');
         showFeedback(true, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1200);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1200);
     } else {
         btn.classList.add('wrong');
         state.errors++;
@@ -1083,7 +1091,7 @@ function selectWordOption(btn, chosen, target) {
             if (b.onclick?.toString().includes(`'${target}'`)) b.classList.add('correct');
         });
         showFeedback(false, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1600);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1600);
     }
 }
 
@@ -1152,7 +1160,7 @@ function mazeClick(i) {
                 document.getElementById(`maze-${idx}`).classList.replace('selected','correct-path');
             });
             showFeedback(true, state.rounds[state.roundIndex].wordKey);
-            setTimeout(() => { hideFeedback(); nextRound(); }, 1300);
+            setTimeout(() => { nextRound(); hideFeedback(); }, 1300);
         }
     } else {
         state.errors++;
@@ -1243,7 +1251,7 @@ function checkAnagram() {
             el.style.color = 'var(--success)';
         });
         showFeedback(true, wordKey);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1300);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1300);
     } else {
         state.errors++;
         loseLife();
@@ -1292,7 +1300,7 @@ function selectStoryOption(btn, chosen, target) {
         blank.style.color = 'var(--success)';
         btn.classList.add('correct');
         showFeedback(true, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1400);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1400);
     } else {
         blank.style.borderBottomColor = 'var(--error)';
         blank.style.color = 'var(--error)';
@@ -1303,7 +1311,7 @@ function selectStoryOption(btn, chosen, target) {
             if (b.textContent.includes(target)) b.classList.add('correct');
         });
         showFeedback(false, target);
-        setTimeout(() => { hideFeedback(); nextRound(); }, 1700);
+        setTimeout(() => { nextRound(); hideFeedback(); }, 1700);
     }
 }
 
