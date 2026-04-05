@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deutsch Start</title>
+    <title>Deutsch Start – Lernen mit Spiel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Baloo+2:wght@700;800&family=Bangers&display=swap');
@@ -847,6 +847,7 @@ function renderAnlaut(card, round, lv) {
         <div class="game-question">Từ này bắt đầu bằng chữ nào?</div>
         <div class="big-image">${wd.e}</div>
         <div class="word-display">${wordKey}</div>
+        <button class="btn-audio" onclick="speakWord('${wordKey}')">🔊</button>
         <div class="options-grid cols-2">
             ${options.map(o => `<button class="option-btn" onclick="selectOptionLetter(this,'${o}','${target}')">${o}</button>`).join('')}
         </div>
