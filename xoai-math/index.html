@@ -3,215 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xoài học toán</title>
+    <title>🔢 Xoài học toán</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Sử dụng font chữ hệ thống và tùy chỉnh để trông vui nhộn */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bangers&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background-color: #0a0a0f;
+            background-image:
+                linear-gradient(rgba(0,0,0,0.60), rgba(0,0,0,0.68)),
+                url('https://i.postimg.cc/L4v5CWJM/ironman.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background-image: url('https://i.postimg.cc/L4v5CWJM/ironman.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            justify-content: flex-start;
+            padding: 20px 14px 32px;
+            color: #fff;
+            overflow-x: hidden;
         }
 
-        /* Thêm hiệu ứng đổ bóng và làm đậm chữ để trông nổi bật hơn */
-        h1, label, button, input[type="number"], #question, #timer, #score, #results-list li {
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-            font-weight: 500; /* Làm đậm chữ vừa phải */
+        /* Arc reactor ring */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(85vw, 600px);
+            height: min(85vw, 600px);
+            border-radius: 50%;
+            border: 1.5px solid rgba(220, 38, 38, 0.1);
+            box-shadow: 0 0 60px 8px rgba(220,38,38,0.05), inset 0 0 60px 8px rgba(220,38,38,0.04);
+            animation: arcPulse 3.5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes arcPulse {
+            0%,100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+            50%      { opacity: 1;   transform: translate(-50%,-50%) scale(1.03); }
         }
 
         #game-container {
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+            background: rgba(12, 3, 3, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(220, 38, 38, 0.3);
+            border-radius: 24px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 0 50px rgba(220,38,38,0.15), 0 20px 60px rgba(0,0,0,0.6);
             text-align: center;
-            width: 90%;
-            max-width: 600px;
+            margin: auto 0;
         }
 
         h1 {
-            color: #ff4081;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-family: 'Bangers', sans-serif;
+            font-size: 3.2rem;
+            letter-spacing: 4px;
+            color: #d4af37;
+            text-shadow: 0 0 28px rgba(212,175,55,0.7), 0 2px 8px #000;
+            margin-bottom: 24px;
+            line-height: 1.1;
         }
 
-        #question {
-            font-size: 2.2em;
-            margin-bottom: 25px;
-            color: #e91e63;
-        }
-
-        input[type="number"] {
-            padding: 15px;
-            font-size: 1.3em;
-            border: 2px solid #f06292;
-            border-radius: 12px;
-            width: 100px;
-            text-align: center;
-            margin-bottom: 20px;
-            outline: none;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 1.3em;
-            background-color: #ba68c8;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #9c27b0;
-            transform: scale(1.05);
-        }
-
-        #result {
-            margin-top: 25px;
-            font-size: 1.4em;
-            font-weight: bold;
-        }
-
-        #timer {
-            font-size: 1.3em;
-            margin-top: 15px;
-            color: #7e57c2;
-        }
-
+        /* ===== SETTINGS ===== */
         #settings {
-            margin-top: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-
-        #settings label,
-        #settings input {
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        #score {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin-top: 20px;
-            color: #ff7043;
-        }
-
-        #start-button {
-            padding: 15px 30px;
-            font-size: 1.3em;
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s ease;
-        }
-
-        #start-button:hover {
-            background-color: #388e3c;
-            transform: scale(1.05);
-        }
-
-        .correct {
-            background-color: rgba(76, 175, 80, 0.7);
-            color: white;
-        }
-
-        .incorrect {
-            background-color: rgba(244, 67, 54, 0.7);
-            color: white;
-        }
-
-        #results-list {
-            margin-top: 20px;
-            text-align: left;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        #results-list li {
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            list-style-type: none;
-        }
-
-        #results-list .correct {
-            color: #fff;
-        }
-
-        #results-list .incorrect {
-            color: #fff;
-        }
-
-        .icon {
-            display: none; /* Hide the icon */
-        }
-
-        /* Progress Dots */
-        #progress-container {
-            display: flex;
-            justify-content: center;
+            gap: 14px;
             margin-bottom: 20px;
         }
 
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+            max-width: 340px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(220,38,38,0.2);
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+
+        .setting-row label {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.65);
+            text-align: left;
+            flex: 1;
+        }
+
+        .setting-row input {
+            background: rgba(0,0,0,0.5);
+            border: 1.5px solid rgba(220,38,38,0.4);
+            border-radius: 10px;
+            color: #d4af37;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 6px 10px;
+            width: 90px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .setting-row input:focus { border-color: #d4af37; box-shadow: 0 0 10px rgba(212,175,55,0.3); }
+
+        /* ===== START BUTTON ===== */
+        #start-button {
+            width: 100%;
+            max-width: 340px;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #dc2626, #7f1d1d);
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(220,38,38,0.5);
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+        #start-button:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(220,38,38,0.7); background: linear-gradient(135deg,#ef4444,#991b1b); }
+        #start-button:active { transform: scale(0.97); }
+
+        /* ===== PROGRESS DOTS ===== */
+        #progress-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 20px;
+            min-height: 20px;
+        }
+
         .progress-dot {
-            width: 15px;
-            height: 15px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background-color: #ccc; /* Gray */
-            margin: 5px;
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+        }
+        .progress-dot.correct  { background: #22c55e; border-color: #16a34a; box-shadow: 0 0 8px rgba(34,197,94,0.6); }
+        .progress-dot.incorrect{ background: #ef4444; border-color: #dc2626; box-shadow: 0 0 8px rgba(239,68,68,0.6); }
+
+        /* ===== QUESTION ===== */
+        #question {
+            font-family: 'Nunito', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #f1f5f9;
+            margin-bottom: 20px;
+            min-height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .progress-dot.correct {
-            background-color: #4caf50; /* Green */
+        /* ===== ANSWER INPUT ===== */
+        #answer {
+            background: rgba(0,0,0,0.6);
+            border: 2.5px solid rgba(220,38,38,0.5);
+            border-radius: 14px;
+            color: #d4af37;
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px 16px;
+            width: min(120px, 35vw);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        #answer:focus { border-color: #d4af37; box-shadow: 0 0 16px rgba(212,175,55,0.4); }
+        #answer:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* ===== CHECK BUTTON ===== */
+        .check-btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #dc2626, #7f1d1d);
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(220,38,38,0.45);
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+        .check-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(220,38,38,0.65); background: linear-gradient(135deg,#ef4444,#991b1b); }
+        .check-btn:active:not(:disabled) { transform: scale(0.97); }
+        .check-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+        /* ===== RESULT FLASH ===== */
+        #result {
+            font-size: 1.1rem;
+            font-weight: 900;
+            min-height: 1.6rem;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            padding: 4px 12px;
+            transition: background 0.2s;
+        }
+        #result.correct   { color: #4ade80; }
+        #result.incorrect { color: #f87171; }
+
+        /* ===== TIMER ===== */
+        #timer {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
 
-        .progress-dot.incorrect {
-            background-color: #f44336; /* Red */
+        /* ===== SCORE ===== */
+        #score {
+            font-family: 'Bangers', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: #d4af37;
+            text-shadow: 0 0 16px rgba(212,175,55,0.5);
+            margin-top: 12px;
         }
 
+        /* ===== DIVIDER ===== */
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            margin: 18px 0;
+        }
+
+        /* ===== RESULTS LIST ===== */
+        #results-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+            max-height: 40vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #results-list::-webkit-scrollbar { width: 4px; }
+        #results-list::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.35); border-radius: 2px; }
+
+        #results-list li {
+            padding: 9px 14px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 800;
+            text-align: left;
+        }
+        #results-list li.correct   { background: rgba(34,197,94,0.15);  border: 1px solid rgba(34,197,94,0.3);  color: #86efac; }
+        #results-list li.incorrect { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
+
+        @media (max-width: 480px) {
+            #game-container { padding: 20px 14px; border-radius: 18px; }
+            h1 { font-size: 2.6rem; letter-spacing: 2px; margin-bottom: 16px; }
+            #question { font-size: 1.55rem; min-height: 2.4rem; margin-bottom: 14px; }
+            #answer { font-size: 1.4rem; padding: 8px 12px; margin-bottom: 12px; }
+            .setting-row { padding: 10px 12px; }
+            .setting-row label { font-size: 0.78rem; }
+            .setting-row input { font-size: 0.9rem; width: 80px; padding: 5px 8px; }
+            #start-button, .check-btn { font-size: 0.95rem; padding: 12px; }
+            .divider { margin: 12px 0; }
+            #score { font-size: 1.3rem; }
+            #results-list li { font-size: 0.8rem; padding: 7px 10px; }
+        }
+
+        @media (max-width: 360px) {
+            h1 { font-size: 2.2rem; }
+            #question { font-size: 1.3rem; }
+            #answer { font-size: 1.2rem; }
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <h1>
-            <span class="icon"></span> Xoài học toán
-        </h1>
+        <h1>Xoài học toán</h1>
 
         <div id="settings">
-            <label for="time-limit">Thời gian mỗi câu (mm:ss):</label>
-            <input type="text" id="time-limit" placeholder="Ví dụ: 03:00" value="03:00">
-
-            <label for="question-count">Số lượng câu hỏi:</label>
-            <input type="number" id="question-count" placeholder="Ví dụ: 10" value="10" min="1">
+            <div class="setting-row">
+                <label for="time-limit">⏱ Thời gian mỗi câu</label>
+                <input type="text" id="time-limit" placeholder="mm:ss" value="03:00">
+            </div>
+            <div class="setting-row">
+                <label for="question-count">📋 Số câu hỏi</label>
+                <input type="number" id="question-count" placeholder="10" value="10" min="1">
+            </div>
         </div>
 
-        <button id="start-button" onclick="startGame()">Bắt đầu</button>
+        <button id="start-button" onclick="startGame()">🚀 Bắt đầu!</button>
+
+        <hr class="divider">
 
         <div id="progress-container"></div>
 
         <div id="question"></div>
-        <input type="number" id="answer" disabled>
-        <button onclick="checkAnswer()" disabled>Tiếp</button>
+        <div>
+            <input type="number" id="answer" disabled placeholder="?">
+        </div>
+        <button class="check-btn" onclick="checkAnswer()" disabled>✅ Tiếp theo</button>
+
         <div id="result"></div>
         <div id="timer"></div>
         <div id="score"></div>
