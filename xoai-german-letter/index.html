@@ -524,28 +524,58 @@
 // Vocabulary sets (word, emoji, category)
 const WORDS = {
     animals: [
-        { w:'MAUS', e:'🐭', t:'die Maus' },
-        { w:'HUND', e:'🐶', t:'der Hund' },
-        { w:'KATZE', e:'🐱', t:'die Katze' },
-        { w:'FISCH', e:'🐟', t:'der Fisch' },
-        { w:'VOGEL', e:'🐦', t:'der Vogel' },
-        { w:'ENTE', e:'🦆', t:'die Ente' },
-        { w:'IGEL', e:'🦔', t:'der Igel' },
-        { w:'LÖWE', e:'🦁', t:'der Löwe' },
-        { w:'BÄR',  e:'🐻', t:'der Bär' },
-        { w:'FUCHS', e:'🦊', t:'der Fuchs' },
+        { w:'MAUS',    e:'🐭', t:'die Maus' },
+        { w:'HUND',    e:'🐶', t:'der Hund' },
+        { w:'KATZE',   e:'🐱', t:'die Katze' },
+        { w:'FISCH',   e:'🐟', t:'der Fisch' },
+        { w:'VOGEL',   e:'🐦', t:'der Vogel' },
+        { w:'ENTE',    e:'🦆', t:'die Ente' },
+        { w:'IGEL',    e:'🦔', t:'der Igel' },
+        { w:'LÖWE',    e:'🦁', t:'der Löwe' },
+        { w:'BÄR',     e:'🐻', t:'der Bär' },
+        { w:'FUCHS',   e:'🦊', t:'der Fuchs' },
+        { w:'TIGER',   e:'🐯', t:'der Tiger' },
+        { w:'PFERD',   e:'🐴', t:'das Pferd' },
+        { w:'SCHAF',   e:'🐑', t:'das Schaf' },
+        { w:'AFFE',    e:'🐒', t:'der Affe' },
+        { w:'ELEFANT', e:'🐘', t:'der Elefant' },
+        { w:'EULE',    e:'🦉', t:'die Eule' },
+        { w:'FROSCH',  e:'🐸', t:'der Frosch' },
+        { w:'HAI',     e:'🦈', t:'der Hai' },
+        { w:'ZEBRA',   e:'🦓', t:'das Zebra' },
+        { w:'KRABBE',  e:'🦀', t:'die Krabbe' },
     ],
     things: [
-        { w:'BALL',  e:'⚽', t:'der Ball' },
-        { w:'HAUS',  e:'🏠', t:'das Haus' },
-        { w:'AUTO',  e:'🚗', t:'das Auto' },
-        { w:'BUCH',  e:'📚', t:'das Buch' },
-        { w:'BAUM',  e:'🌳', t:'der Baum' },
-        { w:'BOOT',  e:'⛵', t:'das Boot' },
-        { w:'MILCH', e:'🥛', t:'die Milch' },
-        { w:'BLUME', e:'🌸', t:'die Blume' },
-        { w:'SCHULE',e:'🏫', t:'die Schule' },
-        { w:'APFEL', e:'🍎', t:'der Apfel' },
+        { w:'BALL',    e:'⚽', t:'der Ball' },
+        { w:'HAUS',    e:'🏠', t:'das Haus' },
+        { w:'AUTO',    e:'🚗', t:'das Auto' },
+        { w:'BUCH',    e:'📚', t:'das Buch' },
+        { w:'BAUM',    e:'🌳', t:'der Baum' },
+        { w:'BOOT',    e:'⛵', t:'das Boot' },
+        { w:'MILCH',   e:'🥛', t:'die Milch' },
+        { w:'BLUME',   e:'🌸', t:'die Blume' },
+        { w:'SCHULE',  e:'🏫', t:'die Schule' },
+        { w:'APFEL',   e:'🍎', t:'der Apfel' },
+        { w:'BROT',    e:'🍞', t:'das Brot' },
+        { w:'TISCH',   e:'🪑', t:'der Tisch' },
+        { w:'SONNE',   e:'☀️', t:'die Sonne' },
+        { w:'MOND',    e:'🌙', t:'der Mond' },
+        { w:'STERN',   e:'⭐', t:'der Stern' },
+        { w:'WOLKE',   e:'☁️', t:'die Wolke' },
+        { w:'FEUER',   e:'🔥', t:'das Feuer' },
+        { w:'KUCHEN',  e:'🎂', t:'der Kuchen' },
+        { w:'BANANE',  e:'🍌', t:'die Banane' },
+        { w:'ORANGE',  e:'🍊', t:'die Orange' },
+        { w:'BIRNE',   e:'🍐', t:'die Birne' },
+        { w:'KAROTTE', e:'🥕', t:'die Karotte' },
+        { w:'LAMPE',   e:'💡', t:'die Lampe' },
+        { w:'HERZ',    e:'❤️', t:'das Herz' },
+        { w:'WASSER',  e:'💧', t:'das Wasser' },
+        { w:'BETT',    e:'🛏️', t:'das Bett' },
+        { w:'GABEL',   e:'🍴', t:'die Gabel' },
+        { w:'TRAUBE',  e:'🍇', t:'die Traube' },
+        { w:'KEKS',    e:'🍪', t:'der Keks' },
+        { w:'PIZZA',   e:'🍕', t:'die Pizza' },
     ],
 };
 const ALL_WORDS = [...WORDS.animals, ...WORDS.things];
@@ -559,6 +589,14 @@ const STORIES = [
     { sentence: 'Der ___ bellt laut.', blank: 'HUND', emoji: '🐶', options: ['HUND','KATZE','VOGEL'] },
     { sentence: 'Das ___ fährt schnell.', blank: 'AUTO', emoji: '🚗', options: ['AUTO','BOOT','BALL'] },
     { sentence: 'Der ___ ist rund.', blank: 'BALL', emoji: '⚽', options: ['BALL','BAUM','FISCH'] },
+    { sentence: 'Der ___ ist groß.', blank: 'BAUM', emoji: '🌳', options: ['BAUM','HAUS','BUCH'] },
+    { sentence: 'Die ___ ist süß.', blank: 'BANANE', emoji: '🍌', options: ['BANANE','APFEL','BLUME'] },
+    { sentence: 'Die ___ scheint hell.', blank: 'SONNE', emoji: '☀️', options: ['SONNE','MOND','WOLKE'] },
+    { sentence: 'Der ___ schwimmt im Wasser.', blank: 'FISCH', emoji: '🐟', options: ['FISCH','HUND','VOGEL'] },
+    { sentence: 'Der ___ leuchtet am Himmel.', blank: 'STERN', emoji: '⭐', options: ['STERN','MOND','SONNE'] },
+    { sentence: 'Die ___ hat bunte Blätter.', blank: 'BLUME', emoji: '🌸', options: ['BLUME','BAUM','KAROTTE'] },
+    { sentence: 'Der ___ ist warm und lecker.', blank: 'KUCHEN', emoji: '🎂', options: ['KUCHEN','BROT','APFEL'] },
+    { sentence: 'Das ___ ist kalt und frisch.', blank: 'WASSER', emoji: '💧', options: ['WASSER','MILCH','BROT'] },
 ];
 
 // =====================================================
@@ -567,29 +605,45 @@ const STORIES = [
 // type: 'choose-letter' | 'hear-letter' | 'anlaut' | 'build-word' | 'missing-letter' | 'hear-word' | 'maze' | 'anagram' | 'story'
 const LEVELS = [
     // --- STAGE 1: Làm quen chữ (1-5) ---
-    { id:1,  title:'Chữ A–E',       stage:1, type:'choose-letter', letters:['A','B','C','D','E'], rounds:6 },
-    { id:2,  title:'Chữ F–L',       stage:1, type:'choose-letter', letters:['F','G','H','I','K','L'], rounds:6 },
-    { id:3,  title:'Nghe A–E',      stage:1, type:'hear-letter',   letters:['A','B','C','D','E'], rounds:6 },
-    { id:4,  title:'Nghe F–L',      stage:1, type:'hear-letter',   letters:['F','G','H','I','K','L'], rounds:6 },
-    { id:5,  title:'Nghe M–Z',      stage:1, type:'hear-letter',   letters:['M','N','O','P','R','S','T','U','W'], rounds:7 },
+    // letters > rounds → each replay visits a fresh balanced subset
+    { id:1,  title:'Chữ A–E',  stage:1, type:'choose-letter', letters:['A','B','C','D','E'], rounds:8 },
+    { id:2,  title:'Chữ F–L',  stage:1, type:'choose-letter', letters:['F','G','H','I','J','K','L'], rounds:8 },
+    { id:3,  title:'Nghe A–E', stage:1, type:'hear-letter',   letters:['A','B','C','D','E'], rounds:8 },
+    { id:4,  title:'Nghe F–L', stage:1, type:'hear-letter',   letters:['F','G','H','I','J','K','L'], rounds:8 },
+    { id:5,  title:'Nghe M–Z', stage:1, type:'hear-letter',   letters:['M','N','O','P','R','S','T','U','V','W'], rounds:9 },
     // --- STAGE 2: Âm → từ (6-10) ---
-    { id:6,  title:'Anlaut 1',      stage:2, type:'anlaut', words: ['MAUS','HUND','FISCH','VOGEL','BÄR'], rounds:5 },
-    { id:7,  title:'Anlaut 2',      stage:2, type:'anlaut', words: ['KATZE','ENTE','LÖWE','IGEL','FUCHS'], rounds:5 },
-    { id:8,  title:'Ghép từ 1',     stage:2, type:'build-word', words:['MAUS','HAUS','BALL'], rounds:3 },
-    { id:9,  title:'Ghép từ 2',     stage:2, type:'build-word', words:['HUND','AUTO','BUCH'], rounds:3 },
-    { id:10, title:'Ghép từ 3',     stage:2, type:'build-word', words:['KATZE','BAUM','BOOT'], rounds:3 },
+    // words > rounds → each replay shows a different mix
+    { id:6,  title:'Anlaut 1', stage:2, type:'anlaut',
+      words:['MAUS','HUND','FISCH','VOGEL','BÄR','TIGER','ENTE','AFFE','FROSCH','BALL'], rounds:6 },
+    { id:7,  title:'Anlaut 2', stage:2, type:'anlaut',
+      words:['KATZE','LÖWE','IGEL','FUCHS','PFERD','ZEBRA','ELEFANT','SCHAF','KRABBE','SONNE'], rounds:6 },
+    { id:8,  title:'Ghép từ 1', stage:2, type:'build-word',
+      words:['MAUS','HAUS','BALL','BROT','AUTO','KEKS'], rounds:4 },
+    { id:9,  title:'Ghép từ 2', stage:2, type:'build-word',
+      words:['HUND','BUCH','BETT','HERZ','AFFE','EULE'], rounds:4 },
+    { id:10, title:'Ghép từ 3', stage:2, type:'build-word',
+      words:['KATZE','BAUM','BOOT','MOND','ENTE','BIRNE'], rounds:4 },
     // --- STAGE 3: Đọc & suy luận (11-15) ---
-    { id:11, title:'Chữ thiếu 1',   stage:3, type:'missing-letter', words:['BALL','MAUS','BUCH','HUND'], rounds:4 },
-    { id:12, title:'Chữ thiếu 2',   stage:3, type:'missing-letter', words:['HAUS','AUTO','BAUM','BOOT'], rounds:4 },
-    { id:13, title:'Nghe từ 1',     stage:3, type:'hear-word', words:['MAUS','HUND','KATZE','FISCH','BALL'], rounds:5 },
-    { id:14, title:'Nghe từ 2',     stage:3, type:'hear-word', words:['HAUS','AUTO','BUCH','BAUM','BOOT'], rounds:5 },
-    { id:15, title:'Nghe từ 3',     stage:3, type:'hear-word', words:['VOGEL','ENTE','BÄR','LÖWE','FUCHS'], rounds:5 },
+    { id:11, title:'Chữ thiếu 1', stage:3, type:'missing-letter',
+      words:['BALL','MAUS','BUCH','HUND','BROT','KEKS','AFFE'], rounds:5 },
+    { id:12, title:'Chữ thiếu 2', stage:3, type:'missing-letter',
+      words:['HAUS','AUTO','BAUM','BOOT','BETT','EULE','HERZ','MOND'], rounds:5 },
+    { id:13, title:'Nghe từ 1', stage:3, type:'hear-word',
+      words:['MAUS','HUND','KATZE','FISCH','BALL','TIGER','AFFE','FROSCH'], rounds:5 },
+    { id:14, title:'Nghe từ 2', stage:3, type:'hear-word',
+      words:['HAUS','AUTO','BUCH','BAUM','BOOT','BROT','KEKS','LAMPE'], rounds:5 },
+    { id:15, title:'Nghe từ 3', stage:3, type:'hear-word',
+      words:['VOGEL','ENTE','BÄR','LÖWE','FUCHS','PFERD','ZEBRA','ELEFANT','SCHAF','EULE'], rounds:5 },
     // --- STAGE 4: Logic + chữ (16-20) ---
-    { id:16, title:'Mê cung 1',     stage:4, type:'maze', words:['MAUS','HAUS','HUND'], rounds:3 },
-    { id:17, title:'Mê cung 2',     stage:4, type:'maze', words:['BALL','AUTO','BUCH'], rounds:3 },
-    { id:18, title:'Xếp chữ 1',    stage:4, type:'anagram', words:['MAUS','HAUS','HUND','BALL'], rounds:4 },
-    { id:19, title:'Xếp chữ 2',    stage:4, type:'anagram', words:['AUTO','BAUM','BOOT','FISCH'], rounds:4 },
-    { id:20, title:'Mini Story',    stage:4, type:'story', stories: STORIES, rounds:4 },
+    { id:16, title:'Mê cung 1', stage:4, type:'maze',
+      words:['MAUS','HAUS','HUND','BROT','AFFE'], rounds:4 },
+    { id:17, title:'Mê cung 2', stage:4, type:'maze',
+      words:['BALL','AUTO','BUCH','BETT','EULE'], rounds:4 },
+    { id:18, title:'Xếp chữ 1', stage:4, type:'anagram',
+      words:['MAUS','HAUS','HUND','BALL','BROT','KEKS'], rounds:5 },
+    { id:19, title:'Xếp chữ 2', stage:4, type:'anagram',
+      words:['AUTO','BAUM','BOOT','FISCH','AFFE','HAI','BIRNE'], rounds:5 },
+    { id:20, title:'Mini Story', stage:4, type:'story', stories: STORIES, rounds:6 },
 ];
 
 const STAGE_NAMES = {
@@ -698,11 +752,14 @@ function buildRounds(lv) {
     const count = lv.rounds;
     switch (lv.type) {
         case 'choose-letter':
-            for (let i = 0; i < count; i++) rounds.push({ target: pick(lv.letters) });
+        case 'hear-letter': {
+            // Balanced bag-draw: cycle through shuffled letters so every letter
+            // appears before any repeats – no single letter dominates a session
+            const pool = [];
+            while (pool.length < count) pool.push(...shuffle([...lv.letters]));
+            pool.slice(0, count).forEach(t => rounds.push({ target: t }));
             break;
-        case 'hear-letter':
-            for (let i = 0; i < count; i++) rounds.push({ target: pick(lv.letters) });
-            break;
+        }
         case 'anlaut': {
             const wds = shuffle([...lv.words]).slice(0, count);
             wds.forEach(w => rounds.push({ wordKey: w }));
@@ -1347,15 +1404,19 @@ function hideFeedback() {
 //  SPEECH
 // =====================================================
 function speakLetter(letter) {
-    // Map German letters to phonetic pronunciation for SpeechSynthesis
+    // Official German Duden letter names, tuned for reliable de-DE TTS output.
+    // Key rules used:
+    //   "ie" is always [iː] in German → use for I
+    //   Dehnungs-h (vowel+h) makes vowel long → use for A,E,O,U,Ä,Ö,Ü
     const phonetics = {
-        'A':'ah','B':'beh','C':'tseh','D':'deh','E':'eh','F':'ef',
-        'G':'geh','H':'hah','I':'ih','J':'yot','K':'kah','L':'el',
-        'M':'em','N':'en','O':'oh','P':'peh','Q':'kuh','R':'er',
-        'S':'es','T':'teh','U':'uh','V':'fau','W':'veh','X':'iks',
-        'Y':'üpsilon','Z':'tset','Ä':'ä','Ö':'ö','Ü':'ü',
+        'A':'Ah',  'B':'Beh',  'C':'Tseh', 'D':'Deh', 'E':'Eh',
+        'F':'Ef',  'G':'Geh',  'H':'Hah',  'I':'I',   'J':'Jott',
+        'K':'Kah', 'L':'El',   'M':'Em',   'N':'En',  'O':'Oh',
+        'P':'Peh', 'Q':'Ku',   'R':'Er',   'S':'Es',  'T':'Teh',
+        'U':'Uh',  'V':'Fau',  'W':'Weh',  'X':'Iks', 'Y':'Ypsilon',
+        'Z':'Zett','Ä':'Äh',   'Ö':'Öh',   'Ü':'Üh',
     };
-    speak(phonetics[letter] || letter, 'de-DE', 0.85);
+    speak(phonetics[letter] || letter, 'de-DE', 0.75);
 }
 
 function speakWord(word) {
@@ -1373,13 +1434,21 @@ function getGermanVoice() {
 function speak(text, lang, rate) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'de-DE';
-    u.rate = rate || 0.85;
-    u.pitch = 1.1;
-    const voice = getGermanVoice();
-    if (voice) u.voice = voice;
-    window.speechSynthesis.speak(u);
+    const doSpeak = () => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'de-DE';
+        u.rate = rate || 0.85;
+        u.pitch = 1.1;
+        const voice = getGermanVoice();
+        if (voice) u.voice = voice;
+        window.speechSynthesis.speak(u);
+    };
+    // Safari loads voices lazily – wait for voiceschanged if list not ready yet
+    if (window.speechSynthesis.getVoices().length === 0) {
+        window.speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true });
+    } else {
+        doSpeak();
+    }
 }
 
 // =====================================================
