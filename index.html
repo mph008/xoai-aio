@@ -84,8 +84,21 @@
     @media (max-width: 480px) {
       .cards-grid {
         grid-template-columns: 1fr;
-        max-width: 380px;
+        gap: 12px;
+        max-width: 100%;
       }
+      .card-span-full {
+        grid-column: span 1 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+      }
+    }
+
+    .card-span-full {
+      grid-column: span 2;
+      max-width: 360px;
+      margin: 0 auto;
+      width: 100%;
     }
 
     /* ===== APP CARD ===== */
@@ -240,6 +253,13 @@
       line-height: 1;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
       transition: transform 0.2s ease;
+    }
+    @media (max-width: 480px) {
+      .app-card { padding: 20px 14px; border-radius: 18px; }
+      .card-emoji { font-size: 2.6rem; }
+      .card-name { font-size: 1.3rem; }
+      .card-desc { font-size: 0.72rem; }
+      .card-badge { font-size: 0.65rem; padding: 4px 10px; }
     }
     .app-card:hover .card-emoji {
       transform: scale(1.15) rotate(-5deg);
@@ -472,7 +492,7 @@
       </div>
 
       <!-- Tìm Pattern -->
-      <div class="app-card card-pattern card-enter" onclick="openApp('xoai-pattern/index.html', '🔍 Tìm Pattern')" style="grid-column: span 2; max-width: 360px; margin: 0 auto; width: 100%;">
+      <div class="app-card card-pattern card-enter card-span-full" onclick="openApp('xoai-pattern/index.html', '🔍 Tìm Pattern')">
         <div class="card-ring"></div>
         <div class="card-emoji">🔍</div>
         <div class="card-name">Tìm Pattern</div>
