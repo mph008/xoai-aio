@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>📖 Storybuch Leser</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Bangers&display=swap" rel="stylesheet">
+
+  <!-- TailwindCSS CDN (Play CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tesseract.js v5 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      background: #060618;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 10% 5%,  rgba(251,146,60,.14) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 45% at 90% 90%, rgba(168,85,247,.12)  0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(251,146,60,.05)  0%, transparent 65%);
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+
+    /* ── Glass panel ──────────────────────────────────────────────── */
+    .glass {
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(255,255,255,.09);
+      border-radius: 22px;
+    }
+
+    /* ── Page title ───────────────────────────────────────────────── */
+    .page-title {
+      font-family: 'Bangers', 'Impact', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 4px;
+      color: #fb923c;
+      text-shadow:
+        0 0 28px rgba(251,146,60,.7),
+        0 0 56px rgba(251,146,60,.3),
+        0 3px 8px rgba(0,0,0,.9);
+    }
+
+    /* ── Sentence blocks ───────────────────────────────────────────── */
+    .sent-block {
+      background: rgba(255,255,255,.06);
+      border: 2px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.75;
+      color: #f1f5f9;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, transform 0.1s, box-shadow 0.25s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .sent-block:active  { transform: scale(0.97); }
+    .sent-block:hover   { background: rgba(255,255,255,.1); border-color: rgba(251,146,60,.4); }
+    .sent-block.s-now   {
+      background: rgba(251,146,60,.18);
+      border-color: #fb923c;
+      color: #fed7aa;
+      box-shadow: 0 0 18px rgba(251,146,60,.25);
+    }
+    .sent-block.s-done  {
+      background: rgba(34,197,94,.1);
+      border-color: rgba(34,197,94,.5);
+      color: #86efac;
+    }
+
+    /* ── Big touch buttons ─────────────────────────────────────────── */
+    .btn-lg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 68px;
+      padding: 14px 20px;
+      font-size: 22px;
+      font-weight: 900;
+      font-family: 'Nunito', sans-serif;
+      border-radius: 20px;
+      border: 2.5px solid transparent;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: transform 0.12s, box-shadow 0.12s;
+      text-decoration: none;
+    }
+    .btn-lg:active { transform: scale(0.94); }
+
+    .btn-lg.capture {
+      background: rgba(251,146,60,.18);
+      border-color: rgba(251,146,60,.7);
+      color: #fed7aa;
+      box-shadow: 0 6px 24px rgba(251,146,60,.25);
+    }
+    .btn-lg.capture:hover { background: rgba(251,146,60,.28); box-shadow: 0 8px 28px rgba(251,146,60,.4); }
+
+    .btn-lg.new-photo {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.18);
+      color: rgba(255,255,255,.7);
+    }
+    .btn-lg.new-photo:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    #playBtn {
+      background: rgba(34,197,94,.2);
+      border-color: rgba(34,197,94,.7);
+      color: #86efac;
+      box-shadow: 0 6px 20px rgba(34,197,94,.25);
+    }
+    #stopBtn {
+      background: rgba(239,68,68,.2);
+      border-color: rgba(239,68,68,.6);
+      color: #fca5a5;
+      box-shadow: 0 6px 20px rgba(239,68,68,.2);
+    }
+
+    /* ── Spinner ──────────────────────────────────────────────────── */
+    @keyframes spin360 { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 5px solid rgba(251,146,60,.2);
+      border-top-color: #fb923c;
+      border-radius: 50%;
+      animation: spin360 0.9s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── OCR progress bar ─────────────────────────────────────────── */
+    .ocr-fill {
+      height: 10px;
+      background: linear-gradient(to right, #fb923c, #f43f5e);
+      border-radius: 5px;
+      min-width: 0;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Range slider ─────────────────────────────────────────────── */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(251,146,60,.2);
+      outline: none;
+      width: 100%;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: #fb923c;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(251,146,60,.6);
+    }
+
+    /* ── Section label ────────────────────────────────────────────── */
+    .sec-label {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.3);
+    }
+
+    /* ── Animations ───────────────────────────────────────────────── */
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(24px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes floatLogo {
+      0%,100% { transform:translateY(0); }
+      50%      { transform:translateY(-7px); }
+    }
+    .anim-su  { animation: slideUp .45s ease both; }
+    .float    { animation: floatLogo 3s ease-in-out infinite; }
+
+    /* ── Editable textarea ────────────────────────────────────── */
+    #ocrEditArea {
+      width: 100%;
+      min-height: 180px;
+      background: rgba(255,255,255,.07);
+      border: 2px solid rgba(251,146,60,.4);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+      caret-color: #fb923c;
+    }
+    #ocrEditArea:focus {
+      border-color: #fb923c;
+      box-shadow: 0 0 0 3px rgba(251,146,60,.15);
+    }
+  </style>
+</head>
+
+<body style="min-height:100vh;padding-bottom:110px;">
+<div style="max-width:520px;margin:0 auto;padding:32px 18px 0;">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════════ -->
+  <div style="text-align:center;margin-bottom:36px;">
+    <p class="float" style="font-size:4rem;line-height:1;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(251,146,60,.55));">📖</p>
+    <h1 class="page-title">STORYBUCH</h1>
+    <p style="color:rgba(255,255,255,.38);font-size:.95rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-top:6px;">Lies mit mir! ✨</p>
+  </div>
+
+  <!-- ═══ CAMERA BUTTON (shown only before first photo) ═══════════════ -->
+  <div id="cameraSection" style="margin-bottom:18px;">
+    <label for="photoPicker" class="btn-lg capture"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.5"/></svg></label>
+    <input type="file" id="photoPicker"
+           accept="image/*"
+           style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+  </div>
+
+  <!-- ═══ IMAGE PREVIEW ════════════════════════════════════════════════ -->
+  <div id="imgSection" class="hidden" style="margin-bottom:18px;">
+    <div class="glass" style="padding:8px;">
+      <img id="imgPreview"
+           style="width:100%;max-height:320px;border-radius:16px;object-fit:contain;display:block;"
+           alt="Buchseite Vorschau">
+    </div>
+  </div>
+
+  <!-- ═══ OCR LOADING ══════════════════════════════════════════════════ -->
+  <div id="ocrWrap" class="hidden glass" style="margin-bottom:18px;padding:22px 20px;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <div class="spinner"></div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:1.15rem;font-weight:900;color:#fed7aa;">Text wird erkannt...</p>
+        <p id="ocrMsg" style="color:rgba(255,255,255,.45);font-size:.95rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Einen Moment!</p>
+      </div>
+    </div>
+    <div style="background:rgba(251,146,60,.12);border-radius:5px;overflow:hidden;">
+      <div id="ocrFill" class="ocr-fill" style="width:0%"></div>
+    </div>
+  </div>
+  <!-- ═══ TEXT REVIEW — parent-only drawer (hidden by default) ═══════════ -->
+  <div id="reviewWrap" class="hidden glass anim-su" style="margin-bottom:18px;padding:20px 18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <p style="font-size:1rem;font-weight:900;color:#fed7aa;">✏️ Text korrigieren (Eltern)</p>
+      <button id="closeReviewBtn" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:1.4rem;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
+    </div>
+    <textarea id="ocrEditArea" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+    <button id="confirmTextBtn" class="btn-lg" style="margin-top:14px;background:rgba(251,146,60,.22);border:2.5px solid rgba(251,146,60,.75);color:#fed7aa;box-shadow:0 6px 20px rgba(251,146,60,.2);">
+      ✅ Bestätigen
+    </button>
+  </div>
+  <!-- ═══ TEXT SECTION (after OCR) ═════════════════════════════════════ -->
+  <div id="mainContent" class="hidden">
+
+    <!-- Speed control -->
+    <div class="glass anim-su" style="padding:18px 20px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-size:1rem;font-weight:900;color:rgba(255,255,255,.55);">Lesetempo</span>
+        <span id="speedTag" style="font-size:1rem;font-weight:900;color:#fb923c;">🐢 Langsam</span>
+      </div>
+      <input type="range" id="speedSlider" min="0.4" max="1.0" step="0.05" value="0.65">
+    </div>
+
+    <!-- Sentences -->
+    <div class="glass anim-su" style="padding:18px 16px 20px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <p class="sec-label">Tippen zum Wiederholen</p>
+        <!-- Small parent-only edit icon -->
+        <button id="editTextBtn" title="Text korrigieren (Eltern)"
+          style="background:rgba(251,146,60,.18);border:1.5px solid rgba(251,146,60,.55);border-radius:10px;padding:5px 12px;font-size:1rem;cursor:pointer;color:rgba(251,146,60,.95);line-height:1;transition:background .2s,border-color .2s;">
+          ✏️ <span style="font-size:.75rem;font-weight:900;vertical-align:middle;letter-spacing:.5px;">Text</span>
+        </button>
+      </div>
+      <div id="sentWrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STICKY BOTTOM BAR ══════════════════════════════════════════ -->
+  <div id="stickyBar" style="
+    display:block;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    z-index:50;
+    padding:10px 16px 16px;
+    background:rgba(6,6,24,.92);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-top:1px solid rgba(255,255,255,.07);
+    box-shadow:0 -8px 32px rgba(0,0,0,.5);
+  ">
+    <div style="max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <button id="playBtn" class="btn-lg" style="font-size:1.8rem;">▶</button>
+      <button id="stopBtn" class="btn-lg" style="font-size:1.8rem;">⏹</button>
+      <label for="photoPicker" class="btn-lg new-photo"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.5"/></svg></label>
+    </div>
+  </div>
+
+  <!-- ═══ ERROR ═════════════════════════════════════════════════════════ -->
+  <div id="errWrap" class="hidden" style="margin-bottom:18px;background:rgba(239,68,68,.1);border:2px solid rgba(239,68,68,.35);border-radius:22px;padding:20px 22px;">
+    <p style="font-size:1.4rem;font-weight:900;color:#fca5a5;">😕 Hoppla!</p>
+    <p id="errMsg" style="font-size:1.05rem;color:rgba(252,165,165,.75);margin-top:8px;"></p>
+    <p style="color:rgba(255,255,255,.3);margin-top:10px;font-size:.9rem;font-weight:800;">Versuche nochmal ein Foto zu machen.</p>
+  </div>
+
+  <!-- Footer -->
+  <p style="text-align:center;color:rgba(255,255,255,.18);font-size:.75rem;font-weight:800;letter-spacing:1px;margin-top:24px;">Storybuch · Xoài · 2026</p>
+
+</div><!-- /max-w -->
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════════ -->
+<script>
+(() => {
+  'use strict';
+
+  // ── State ─────────────────────────────────────────────────────────────
+  let sentences     = [];
+  let curIdx        = -1;
+  let reading       = false;
+  let isPaused      = false; // iOS Safari TTS.paused is unreliable — track manually
+  let epoch         = 0;   // incremented on every cancel/restart — invalidates stale callbacks
+  let speedDebounce = null;
+  const TTS         = window.speechSynthesis;
+
+  // ── DOM refs ──────────────────────────────────────────────────────────
+  const photoPicker = document.getElementById('photoPicker');
+  const newPhoto    = document.getElementById('newPhoto');
+  const imgPreview  = document.getElementById('imgPreview');
+  const imgSection  = document.getElementById('imgSection');
+  const ocrWrap     = document.getElementById('ocrWrap');
+  const ocrFill     = document.getElementById('ocrFill');
+  const ocrMsg      = document.getElementById('ocrMsg');
+  const mainContent = document.getElementById('mainContent');
+  const sentWrap       = document.getElementById('sentWrap');
+  const playBtn         = document.getElementById('playBtn');
+  const stopBtn         = document.getElementById('stopBtn');
+  const speedSlider     = document.getElementById('speedSlider');
+  const speedTag        = document.getElementById('speedTag');
+  const errWrap         = document.getElementById('errWrap');
+  const errMsg          = document.getElementById('errMsg');
+  const reviewWrap      = document.getElementById('reviewWrap');
+  const ocrEditArea     = document.getElementById('ocrEditArea');
+  const confirmTextBtn  = document.getElementById('confirmTextBtn');
+  const closeReviewBtn   = document.getElementById('closeReviewBtn');
+  const editTextBtn      = document.getElementById('editTextBtn');
+  const cameraSection    = document.getElementById('cameraSection');
+
+  // ── Parent edit drawer ────────────────────────────────────────────
+  function openEditDrawer() {
+    // Populate textarea with current sentences joined by newline
+    ocrEditArea.value = sentences.join('\n');
+    reviewWrap.classList.remove('hidden');
+    ocrEditArea.focus();
+  }
+
+  editTextBtn.addEventListener('click', openEditDrawer);
+
+  closeReviewBtn.addEventListener('click', () => {
+    reviewWrap.classList.add('hidden');
+  });
+
+  confirmTextBtn.addEventListener('click', () => {
+    const edited = ocrEditArea.value.trim();
+    if (!edited) {
+      showErr('Bitte gib einen Text ein!');
+      return;
+    }
+    reviewWrap.classList.add('hidden');
+    buildSentences(edited);
+  });
+
+  // ── File / Camera handler ─────────────────────────────────────────────
+  function onFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    e.target.value = ''; // allow re-selecting same file on iOS
+
+    clearErr();
+    halt();
+    mainContent.classList.add('hidden');
+    reviewWrap.classList.add('hidden');
+    cameraSection.style.display = 'none'; // hide after first use
+
+    const url = URL.createObjectURL(file);
+    imgPreview.src = url;
+    imgPreview.onload = () => URL.revokeObjectURL(url);
+    imgSection.classList.remove('hidden');
+
+    doOCR(file);
+  }
+
+  photoPicker.addEventListener('change', onFile);
+
+  // ── OCR ───────────────────────────────────────────────────────────────
+  async function doOCR(file) {
+    ocrFill.style.width = '0%';
+    ocrMsg.textContent  = 'Wird geladen…';
+    ocrWrap.classList.remove('hidden');
+
+    try {
+      // Tesseract.js v5: createWorker(lang, oem, options)
+      const worker = await Tesseract.createWorker('deu', 1, {
+        logger(m) {
+          if (m.status === 'recognizing text') {
+            const pct = Math.round((m.progress || 0) * 100);
+            ocrFill.style.width = pct + '%';
+            ocrMsg.textContent  = 'Erkenne Text … ' + pct + '%';
+          } else if (m.status) {
+            ocrMsg.textContent = 'Lade Sprachpaket…';
+          }
+        }
+      });
+
+      // Get word-level data with confidence scores
+      const { data } = await worker.recognize(file);
+      await worker.terminate();
+      ocrWrap.classList.add('hidden');
+
+      // ── Tiered confidence filtering ───────────────────────────────────
+      // Children's books use decorative fonts → lower Tesseract confidence.
+      // Try progressively looser thresholds until we get enough text.
+      // If everything fails, fall back to raw text so the user can clean it.
+      const TIERS = [
+        { confWord: 52, confBlock: 48, linePass: 0.60 }, // strict
+        { confWord: 38, confBlock: 35, linePass: 0.45 }, // relaxed
+        { confWord: 20, confBlock: 18, linePass: 0.30 }, // very relaxed
+      ];
+
+      function filterByTier(data, { confWord, confBlock, linePass }) {
+        let out = '';
+        const blocks = (data.blocks && data.blocks.length) ? data.blocks : null;
+
+        if (blocks) {
+          for (const block of blocks) {
+            const blockWords = (block.paragraphs || [])
+              .flatMap(p => (p.lines || []))
+              .flatMap(l => (l.words || []));
+            if (!blockWords.length) continue;
+
+            const avgConf = blockWords.reduce((s, w) => s + w.confidence, 0) / blockWords.length;
+            if (avgConf < confBlock) continue;
+            if (blockWords.length < 3 && avgConf < 65) continue;
+
+            let blockText = '';
+            const blockLines = (block.paragraphs || []).flatMap(p => p.lines || []);
+            for (const line of blockLines) {
+              const words = line.words || [];
+              if (!words.length) continue;
+              const goodWords = words.filter(w => w.confidence >= confWord);
+              if (!goodWords.length) continue;
+              if (goodWords.length < words.length * linePass) continue;
+              blockText += goodWords.map(w => w.text).join(' ') + '\n';
+            }
+            if (blockText.trim()) out += blockText + '\n';
+          }
+        } else if (data.lines && data.lines.length) {
+          for (const line of data.lines) {
+            const words = line.words || [];
+            if (!words.length) continue;
+            const goodWords = words.filter(w => w.confidence >= confWord);
+            if (!goodWords.length) continue;
+            if (goodWords.length < words.length * linePass) continue;
+            out += goodWords.map(w => w.text).join(' ') + '\n';
+          }
+        }
+        return out;
+      }
+
+      let filteredText = '';
+      for (const tier of TIERS) {
+        filteredText = filterByTier(data, tier);
+        const cleaned = cleanOCR(filteredText.trim());
+        if (cleaned.length >= 10) {          // enough text found
+          filteredText = filteredText;
+          break;
+        }
+        filteredText = '';
+      }
+
+      // Last resort: use Tesseract's raw text — let user clean in textarea
+      if (!filteredText.trim()) {
+        filteredText = data.text || '';
+      }
+
+      const clean = cleanOCR(filteredText.trim());
+      const displayText = clean.length >= 5 ? clean : filteredText.trim();
+      if (!displayText) {
+        showErr('Kein Text gefunden — bitte mach ein neues Foto! 📸');
+        return;
+      }
+      // Go straight to sentences — child can tap play immediately
+      buildSentences(displayText);
+
+    } catch (err) {
+      console.error('OCR error:', err);
+      ocrWrap.classList.add('hidden');
+      showErr('Texterkennung fehlgeschlagen. Bitte versuche es noch einmal!');
+    }
+  }
+
+  // ── Text processing ───────────────────────────────────────────────────
+  // ── OCR noise cleaner ─────────────────────────────────────────────────
+  // German vowels (lower + upper, incl. Umlauts)
+  const DE_VOWELS = /[aeiouäöüAEIOUÄÖÜ]/;
+
+  // Very common German short words that have no/few vowels or are 1–2 chars
+  const SHORT_OK = new Set([
+    'in','an','zu','da','es','er','sie','wir','ihr','ich','du','ist','hat',
+    'war','ein','eine','einer','einem','einen','eines','die','der','das','den',
+    'dem','des','und','oder','auch','von','mit','bei','zum','zur','im','am',
+    'um','auf','ab','ob','so','ja','nein','nie','nun','noch','sehr','schon',
+    'gibt','hat','kam','geht','sagt','las','saß','lag','lief','rief',
+    'durch','über','unter','nach','vor','seit','bis','aus','ohne','gegen',
+  ]);
+
+  function isLikelyRealWord(token) {
+    // Strip surrounding punctuation for analysis
+    const w = token.replace(/^[^a-zA-Z\u00C0-\u024F]+|[^a-zA-Z\u00C0-\u024F]+$/g, '');
+    if (!w) return false;
+    const wl = w.toLowerCase();
+
+    // Very short: allow only known words
+    if (w.length <= 2) return SHORT_OK.has(wl) || DE_VOWELS.test(w);
+
+    // Reject runs of 3+ identical characters (artifact: "llll", "|||")
+    if (/(.)\1{2,}/u.test(w)) return false;
+
+    // Reject if no vowel at all (very rare in real German words)
+    if (!DE_VOWELS.test(w)) return false;
+
+    // Reject if vowel ratio is too low (< 1 vowel per 6 chars → noise)
+    const vowelCount = (w.match(/[aeiouäöüAEIOUÄÖÜ]/g) || []).length;
+    if (vowelCount / w.length < (1 / 6)) return false;
+
+    return true;
+  }
+
+  function cleanOCR(raw) {
+    // Split into paragraphs first (blank lines = block separator from Tesseract)
+    const paragraphs = raw.split(/\n{2,}/);
+
+    const cleanedParas = paragraphs.map(para => {
+      const lines = para
+        .split('\n')
+        .map(line => {
+          // 1. Keep only characters valid in German text
+          let l = line.replace(/[^\p{L}\p{N}\s.,!?;:()\-"„"''\/]/gu, ' ');
+          // 2. Collapse spaces
+          l = l.replace(/\s{2,}/g, ' ').trim();
+          return l;
+        })
+        // 3. Drop lines with too low a letter ratio
+        .filter(line => {
+          if (line.length < 2) return false;
+          const letters = (line.match(/\p{L}/gu) || []).length;
+          const total   = line.replace(/\s/g, '').length;
+          return total > 0 && (letters / total) >= 0.55;
+        })
+        // 4. Drop lines where fewer than half tokens look like real words
+        .filter(line => {
+          const tokens = line.split(/\s+/).filter(t => t.length > 0);
+          if (!tokens.length) return false;
+          const realWords = tokens.filter(isLikelyRealWord).length;
+          return (realWords / tokens.length) >= 0.5;
+        })
+        // 5. Drop individual garbage tokens within each line
+        .map(line =>
+          line.split(/\s+/)
+              .filter(t => isLikelyRealWord(t) || /^[.,!?;:()\-"„"'']+$/.test(t))
+              .join(' ')
+        )
+        .filter(line => line.length >= 2);
+
+      // 6. Smart line joining within paragraph (handle soft hyphens)
+      let result = '';
+      for (let i = 0; i < lines.length; i++) {
+        const cur  = lines[i];
+        const next = lines[i + 1];
+        if (!next)                 { result += cur; }
+        else if (cur.endsWith('-')) { result += cur.slice(0, -1); } // "schö-\nnes" → "schönes"
+        else                       { result += cur + ' '; }
+      }
+      return result.replace(/\s{2,}/g, ' ').trim();
+    }).filter(p => p.length >= 2);
+
+    // Join paragraphs with newline — textarea shows each block on its own line
+    return cleanedParas.join('\n');
+  }
+
+  function buildSentences(raw) {
+    // Collapse newlines and extra spaces
+    const norm = raw.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+
+    // ── Protect periods that are NOT sentence endings ──────────────────
+    // Use a non-printable placeholder so the splitter ignores them.
+    const ORD = '\x01';
+
+    const guarded = norm
+      // Ordinal numbers followed by space:   "8. Jahrhundert" → "8\x01 Jahrhundert"
+      .replace(/(\d+)\.(\s)/g, '$1' + ORD + '$2')
+      // Ordinal numbers followed by slash:   "10./11." → "10\x01/11\x01 "
+      .replace(/(\d+)\.(\/)/g, '$1' + ORD + '$2')
+      // Decimal / version numbers:           "3.14"  → "3\x0114"
+      .replace(/(\d+)\.(\d)/g, '$1' + ORD + '$2')
+      // German abbreviations that end in period + space
+      .replace(/\b(bzw|usw|etc|Dr|Prof|Mr|Mrs|St|vs|ca|ggf|inkl|max|min|Nr|Abs|Art|evtl|sog|u\.a|z\.B|d\.h)\.\s/gi,
+               (m, abbr) => abbr + ORD + ' ');
+
+    // Split at sentence-ending punctuation (Safari-compatible — no lookbehind)
+    const parts = guarded.match(/[^.!?]*[.!?]+\s*/g);
+    sentences = parts
+      ? parts.map(s => s.replace(/\x01/g, '.').trim()).filter(s => s.length > 2)
+      : (norm.length > 2 ? [norm] : []);
+
+    if (!sentences.length) {
+      showErr('Text zu kurz — bitte versuche ein besseres Foto!');
+      return;
+    }
+
+    // Persist for next session
+    try { localStorage.setItem('xoai_sents', JSON.stringify(sentences)); } catch (_) {}
+
+    renderSentences();
+    mainContent.classList.remove('hidden');
+  }
+
+  // ── Render sentence blocks ────────────────────────────────────────────
+  function renderSentences() {
+    sentWrap.innerHTML = '';
+    sentences.forEach((text, i) => {
+      const el = document.createElement('div');
+      el.className = 'sent-block';
+      el.textContent = text;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', 'Satz ' + (i + 1) + ' vorlesen');
+      el.addEventListener('click', () => {
+        halt();
+        reading  = true;
+        isPaused = false;
+        setActiveBtn();
+        speakAt(i, false);
+      });
+      sentWrap.appendChild(el);
+    });
+  }
+
+  // ── TTS helpers ───────────────────────────────────────────────────────
+  function getRate() {
+    return parseFloat(speedSlider.value);
+  }
+
+  function deVoice() {
+    const voices = TTS.getVoices();
+    return (
+      voices.find(v => v.lang === 'de-DE') ||
+      voices.find(v => v.lang && v.lang.startsWith('de')) ||
+      null
+    );
+  }
+
+  function speakAt(idx, chain) {
+    // Finished all sentences
+    if (idx < 0 || idx >= sentences.length) {
+      reading = false;
+      curIdx  = -1;
+      clearHL();
+      setIdleBtn();
+      return;
+    }
+
+    curIdx = idx;
+    setHL(idx);
+
+    const myEpoch = epoch; // snapshot — if epoch changes this utterance is stale
+
+    const utt   = new SpeechSynthesisUtterance(sentences[idx]);
+    utt.lang    = 'de-DE';
+    utt.rate    = getRate();
+    utt.pitch   = 1.05;
+    const voice = deVoice();
+    if (voice) utt.voice = voice;
+
+    utt.onend = () => {
+      if (epoch !== myEpoch || !reading || curIdx !== idx) return;
+      setTimeout(() => speakAt(idx + 1, true), 500);
+    };
+    utt.onerror = (e) => {
+      // 'canceled' / 'interrupted' fires when TTS.cancel() is called — ignore
+      if (e && (e.error === 'canceled' || e.error === 'interrupted')) return;
+      if (epoch !== myEpoch || !reading) return;
+      setTimeout(() => speakAt(idx + 1, true), 600);
+    };
+
+    TTS.speak(utt);
+  }
+
+  function play() {
+    if (!sentences.length) return;
+    reading  = true;
+    isPaused = false;
+    epoch++;
+    TTS.cancel();
+    clearHL();
+    setActiveBtn();
+    speakAt(0, true);
+  }
+
+  function halt() {
+    reading  = false;
+    isPaused = false;
+    curIdx   = -1;
+    epoch++;
+    TTS.cancel();
+    clearHL();
+    setIdleBtn();
+  }
+
+  // ── Highlight management ──────────────────────────────────────────────
+  function setHL(activeIdx) {
+    const blocks = sentWrap.querySelectorAll('.sent-block');
+    blocks.forEach((b, i) => {
+      b.classList.toggle('s-now',  i === activeIdx);
+      b.classList.toggle('s-done', i <  activeIdx);
+    });
+    if (blocks[activeIdx]) {
+      blocks[activeIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function clearHL() {
+    sentWrap.querySelectorAll('.sent-block').forEach(b => {
+      b.classList.remove('s-now', 's-done');
+    });
+  }
+
+  // ── Play button visual state ──────────────────────────────────────────
+  function setActiveBtn() {
+    playBtn.textContent         = '⏸';
+    playBtn.style.background    = 'rgba(251,146,60,.25)';
+    playBtn.style.borderColor   = 'rgba(251,146,60,.8)';
+    playBtn.style.color         = '#fed7aa';
+    playBtn.style.boxShadow     = '0 6px 20px rgba(251,146,60,.3)';
+  }
+
+  function setIdleBtn() {
+    playBtn.textContent         = '▶';
+    playBtn.style.background    = 'rgba(34,197,94,.2)';
+    playBtn.style.borderColor   = 'rgba(34,197,94,.7)';
+    playBtn.style.color         = '#86efac';
+    playBtn.style.boxShadow     = '0 6px 20px rgba(34,197,94,.25)';
+  }
+
+  // ── Button listeners ──────────────────────────────────────────────────
+  playBtn.addEventListener('click', () => {
+    if (!sentences.length) return;
+
+    if (reading && !isPaused) {
+      // Currently playing → pause
+      isPaused = true;
+      TTS.pause();          // best-effort; may not work on iOS
+      TTS.cancel();         // ensure silence on iOS (cancel is more reliable than pause)
+      epoch++;              // prevent stale onend from advancing
+      playBtn.textContent       = '▶';
+      playBtn.style.background  = 'rgba(168,85,247,.22)';
+      playBtn.style.borderColor = 'rgba(168,85,247,.7)';
+      playBtn.style.color       = '#d8b4fe';
+      playBtn.style.boxShadow   = '0 6px 20px rgba(168,85,247,.3)';
+    } else if (reading && isPaused) {
+      // Paused → resume from current sentence
+      isPaused = false;
+      setActiveBtn();
+      speakAt(curIdx >= 0 ? curIdx : 0, true);
+    } else {
+      play();
+    }
+  });
+
+  stopBtn.addEventListener('click', halt);
+
+  // ── Speed slider ──────────────────────────────────────────────────────
+  speedSlider.addEventListener('input', () => {
+    const v = parseFloat(speedSlider.value);
+    if      (v < 0.50) speedTag.textContent = '🐢🐢 Sehr langsam';
+    else if (v < 0.67) speedTag.textContent = '🐢 Langsam';
+    else if (v < 0.82) speedTag.textContent = '🚶 Normal';
+    else               speedTag.textContent = '🚀 Schnell';
+
+    // Debounce: restart only after user stops dragging (400 ms)
+    if (reading && curIdx >= 0) {
+      clearTimeout(speedDebounce);
+      const restartIdx = curIdx;
+      speedDebounce = setTimeout(() => {
+        if (!reading) return;
+        epoch++;        // invalidate any pending onend/onerror
+        TTS.cancel();
+        setTimeout(() => { if (reading) speakAt(restartIdx, true); }, 120);
+      }, 400);
+    }
+  });
+
+  // ── Error ─────────────────────────────────────────────────────────────
+  function showErr(msg) {
+    errMsg.textContent = msg;
+    errWrap.classList.remove('hidden');
+  }
+
+  function clearErr() {
+    errWrap.classList.add('hidden');
+  }
+
+  // ── Restore last session from localStorage ────────────────────────────
+  try {
+    const saved = JSON.parse(localStorage.getItem('xoai_sents') || 'null');
+    if (Array.isArray(saved) && saved.length > 0) {
+      sentences = saved;
+      renderSentences();
+      mainContent.classList.remove('hidden');
+      cameraSection.style.display = 'none';
+    }
+  } catch (_) {}
+
+  // ── Pre-load voices (iOS Safari requires this) ────────────────────────
+  TTS.getVoices();
+  if (typeof TTS.addEventListener === 'function') {
+    TTS.addEventListener('voiceschanged', () => TTS.getVoices());
+  } else {
+    TTS.onvoiceschanged = () => TTS.getVoices();
+  }
+
+})();
+</script>
+</body>
+</html>
