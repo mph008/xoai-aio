@@ -355,8 +355,18 @@
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
           <span style="font-size:.8rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);">Stimme</span>
           <span id="voiceCount" style="font-size:.75rem;color:rgba(255,255,255,.2);font-weight:800;"></span>
+          <button id="voiceHintBtn" style="margin-left:auto;background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:2px 9px;font-size:.72rem;font-weight:900;color:rgba(216,180,254,.8);cursor:pointer;letter-spacing:.5px;line-height:1.6;">+ Stimmen</button>
         </div>
         <select id="voiceSelect"><option value="">Lade Stimmen…</option></select>
+        <!-- iOS hint panel -->
+        <div id="voiceHint" style="display:none;margin-top:10px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:12px 14px;">
+          <p style="font-size:.82rem;font-weight:900;color:#e9d5ff;margin-bottom:6px;">📱 Mehr Stimmen auf iPad/iPhone:</p>
+          <p style="font-size:.8rem;color:rgba(233,213,255,.7);line-height:1.6;font-weight:800;">
+            <b style="color:#e9d5ff;">Einstellungen</b> → <b style="color:#e9d5ff;">Bedienungshilfen</b><br>
+            → <b style="color:#e9d5ff;">Gesprochene Inhalte</b> → <b style="color:#e9d5ff;">Stimmen</b><br>
+            → <b style="color:#e9d5ff;">Deutsch</b> → z.B. <em>Yannick (Enhanced)</em> herunterladen
+          </p>
+        </div>
       </div>
     </div>
 
@@ -793,21 +803,41 @@
   }
 
   function buildSentences(raw) {
-    // ── Title detection: check if first non-empty line looks like a title ──────
-    // A title is: short (1–6 words, ≤60 chars), no terminal sentence punctuation,
-    // and clearly separated from the body by a newline.
+    // ── Title detection ────────────────────────────────────────────────────────
+    // A line is a title ONLY when multiple strong signals are present:
+    //   • short  : ≤5 words AND ≤50 chars
+    //   • no terminal punctuation (. ! ? , ; :)
+    //   • needs 3+ total lines so there is a real body after it
+    //   • PLUS at least one of:
+    //       – ALL CAPS (e.g. "DER KLEINE PRINZ")
+    //       – Title Case (every word starts with uppercase: "Die Drei Freunde")
+    //       – Significantly shorter than body lines (word count < 45 % of avg)
     titleIndices = new Set();
     const rawLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     let bodyRaw = raw;
     let extractedTitle = null;
 
-    if (rawLines.length >= 2) {
+    if (rawLines.length >= 3) {                         // need a real body after title
       const first = rawLines[0];
       const words = first.split(/\s+/).filter(w => w.length > 0);
+
+      // Signal 1 – ALL CAPS
+      const isAllCaps = /[A-ZÄÖÜ]/.test(first) && first === first.toUpperCase();
+
+      // Signal 2 – Title Case (ALL words begin with uppercase, ≥2 words)
+      const isTitleCase = words.length >= 2 && words.every(w => /^[A-ZÄÖÜ]/.test(w));
+
+      // Signal 3 – noticeably shorter than average body-line word count
+      const bodyWords = rawLines.slice(1).map(l => l.split(/\s+/).filter(w => w.length > 0).length);
+      const avgBodyWords = bodyWords.reduce((s, n) => s + n, 0) / bodyWords.length;
+      const isSignificantlyShorter = avgBodyWords > 0 && words.length < avgBodyWords * 0.45;
+
       const looksLikeTitle =
-        words.length >= 1 && words.length <= 6 &&
-        first.length <= 60 &&
-        !/[.!?]\s*$/.test(first);   // ends without sentence punctuation
+        words.length >= 1 && words.length <= 5 &&
+        first.length <= 50 &&
+        !/[.!?,;:]\s*$/.test(first) &&                 // no terminal punctuation
+        (isAllCaps || isTitleCase || isSignificantlyShorter);
+
       if (looksLikeTitle) {
         extractedTitle = first;
         // Remove the title line from the body before further processing
@@ -968,12 +998,22 @@
     }
 
     voiceCount.textContent = `(${list.length})`;
+
+    // On iOS Safari there is usually only 1 German voice — hide the whole
+    // selector row when there is nothing to choose from.
+    const voiceRow = voiceSelect.closest('div[style]') || voiceSelect.parentElement;
+    if (voiceRow) voiceRow.style.display = list.length > 1 ? '' : 'none';
   }
 
   function deVoice() {
     const voices = TTS.getVoices();
     return voices.find(v => v.name === voiceSelect.value) || null;
   }
+
+  document.getElementById('voiceHintBtn').addEventListener('click', () => {
+    const hint = document.getElementById('voiceHint');
+    hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+  });
 
   voiceSelect.addEventListener('change', () => {
     try { localStorage.setItem(VOICE_KEY, voiceSelect.value); } catch (_) {}
