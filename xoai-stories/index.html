@@ -79,6 +79,48 @@
       color: #86efac;
     }
 
+    /* ── Confidence badge ─────────────────────────────────────────────── */
+    .conf-badge {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      border-radius: 20px;
+      padding: 2px 9px;
+      border: 1px solid transparent;
+      pointer-events: none;
+    }
+    .conf-high { background: rgba(34,197,94,.14);  color: #86efac;  border-color: rgba(34,197,94,.3); }
+    .conf-mid  { background: rgba(251,146,60,.15); color: #fed7aa;  border-color: rgba(251,146,60,.3); }
+    .conf-low  { background: rgba(239,68,68,.15);  color: #fca5a5;  border-color: rgba(239,68,68,.3); }
+
+    /* ── Title block ──────────────────────────────────────────────── */
+    .sent-block.is-title {
+      background: rgba(168,85,247,.14);
+      border-color: rgba(168,85,247,.45);
+      color: #e9d5ff;
+      font-size: 24px;
+      letter-spacing: 1px;
+      box-shadow: 0 0 14px rgba(168,85,247,.15);
+    }
+    .sent-block.is-title:hover { background: rgba(168,85,247,.22); border-color: rgba(168,85,247,.65); }
+    .sent-block.is-title.s-now {
+      background: rgba(168,85,247,.28);
+      border-color: #a855f7;
+      color: #f3e8ff;
+      box-shadow: 0 0 18px rgba(168,85,247,.35);
+    }
+    .title-label {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(168,85,247,.65);
+      margin-bottom: 4px;
+    }
+
     /* ── Big touch buttons ─────────────────────────────────────────── */
     .btn-lg {
       display: flex;
@@ -116,6 +158,13 @@
       color: rgba(255,255,255,.7);
     }
     .btn-lg.new-photo:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    .btn-lg.reset {
+      background: rgba(239,68,68,.13);
+      border-color: rgba(239,68,68,.4);
+      color: rgba(252,165,165,.8);
+    }
+    .btn-lg.reset:hover { background: rgba(239,68,68,.22); border-color: rgba(239,68,68,.6); color: #fca5a5; }
 
     #playBtn {
       background: rgba(34,197,94,.2);
@@ -168,6 +217,28 @@
       cursor: pointer;
       box-shadow: 0 0 12px rgba(251,146,60,.6);
     }
+
+    /* ── Voice select ───────────────────────────────────────────────── */
+    #voiceSelect {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: rgba(255,255,255,.07);
+      border: 1.5px solid rgba(251,146,60,.35);
+      border-radius: 12px;
+      padding: 10px 38px 10px 14px;
+      color: #f1f5f9;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      outline: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23fb923c'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    #voiceSelect:focus { border-color: #fb923c; box-shadow: 0 0 0 2px rgba(251,146,60,.15); }
+    #voiceSelect option { background: #1a1a2e; color: #f1f5f9; }
 
     /* ── Section label ────────────────────────────────────────────── */
     .sec-label {
@@ -225,12 +296,15 @@
     <p style="color:rgba(255,255,255,.38);font-size:.95rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-top:6px;">Lies mit mir! ✨</p>
   </div>
 
-  <!-- ═══ CAMERA BUTTON (shown only before first photo) ═══════════════ -->
-  <div id="cameraSection" style="margin-bottom:18px;">
-    <label for="photoPicker" class="btn-lg capture"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.5"/></svg></label>
-    <input type="file" id="photoPicker"
-           accept="image/*"
-           style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+  <!-- Hidden file input (single photo picker) -->
+  <input type="file" id="photoPicker" accept="image/*"
+         style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+
+  <!-- ═══ EMPTY STATE ════════════════════════════════════════════════ -->
+  <div id="emptyState" class="glass anim-su" style="text-align:center;padding:40px 24px;margin-bottom:18px;">
+    <p style="font-size:3rem;margin-bottom:12px;">📷</p>
+    <p style="font-size:1.2rem;font-weight:900;color:#fed7aa;margin-bottom:6px;">Foto aufnehmen</p>
+    <p style="font-size:.9rem;color:rgba(255,255,255,.4);font-weight:800;">Unten auf 📷 tippen um eine Buchseite zu scannen</p>
   </div>
 
   <!-- ═══ IMAGE PREVIEW ════════════════════════════════════════════════ -->
@@ -276,6 +350,14 @@
         <span id="speedTag" style="font-size:1rem;font-weight:900;color:#fb923c;">🐢 Langsam</span>
       </div>
       <input type="range" id="speedSlider" min="0.4" max="1.0" step="0.05" value="0.65">
+      <!-- Voice selector -->
+      <div style="margin-top:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:.8rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);">Stimme</span>
+          <span id="voiceCount" style="font-size:.75rem;color:rgba(255,255,255,.2);font-weight:800;"></span>
+        </div>
+        <select id="voiceSelect"><option value="">Lade Stimmen…</option></select>
+      </div>
     </div>
 
     <!-- Sentences -->
@@ -305,10 +387,11 @@
     border-top:1px solid rgba(255,255,255,.07);
     box-shadow:0 -8px 32px rgba(0,0,0,.5);
   ">
-    <div style="max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+    <div style="max-width:520px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;">
       <button id="playBtn" class="btn-lg" style="font-size:1.8rem;">▶</button>
       <button id="stopBtn" class="btn-lg" style="font-size:1.8rem;">⏹</button>
-      <label for="photoPicker" class="btn-lg new-photo"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.5"/></svg></label>
+      <label for="photoPicker" class="btn-lg new-photo" style="min-width:68px;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 13.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/><circle cx="12" cy="12" r="2.5"/></svg></label>
+      <button id="resetBtn" class="btn-lg reset" style="min-width:68px;font-size:1.5rem;" title="Zurücksetzen">🗑️</button>
     </div>
   </div>
 
@@ -333,6 +416,9 @@
 
   // ── State ─────────────────────────────────────────────────────────────
   let sentences     = [];
+  let sentenceConfs = []; // OCR confidence % per sentence (-1 = unknown)
+  let wordConfMap   = {}; // word key → [conf, ...] from latest OCR
+  let titleIndices  = new Set(); // indices of title blocks
   let curIdx        = -1;
   let reading       = false;
   let isPaused      = false; // iOS Safari TTS.paused is unreliable — track manually
@@ -342,7 +428,6 @@
 
   // ── DOM refs ──────────────────────────────────────────────────────────
   const photoPicker = document.getElementById('photoPicker');
-  const newPhoto    = document.getElementById('newPhoto');
   const imgPreview  = document.getElementById('imgPreview');
   const imgSection  = document.getElementById('imgSection');
   const ocrWrap     = document.getElementById('ocrWrap');
@@ -361,7 +446,10 @@
   const confirmTextBtn  = document.getElementById('confirmTextBtn');
   const closeReviewBtn   = document.getElementById('closeReviewBtn');
   const editTextBtn      = document.getElementById('editTextBtn');
-  const cameraSection    = document.getElementById('cameraSection');
+  const emptyState       = document.getElementById('emptyState');
+  const resetBtn         = document.getElementById('resetBtn');
+  const voiceSelect      = document.getElementById('voiceSelect');
+  const voiceCount       = document.getElementById('voiceCount');
 
   // ── Parent edit drawer ────────────────────────────────────────────
   function openEditDrawer() {
@@ -375,6 +463,21 @@
 
   closeReviewBtn.addEventListener('click', () => {
     reviewWrap.classList.add('hidden');
+  });
+
+  resetBtn.addEventListener('click', () => {
+    halt();
+    sentences     = [];
+    sentenceConfs = [];
+    wordConfMap   = {};
+    titleIndices  = new Set();
+    try { localStorage.removeItem('xoai_sents'); } catch (_) {}
+    mainContent.classList.add('hidden');
+    imgSection.classList.add('hidden');
+    reviewWrap.classList.add('hidden');
+    ocrWrap.classList.add('hidden');
+    clearErr();
+    emptyState.classList.remove('hidden');
   });
 
   confirmTextBtn.addEventListener('click', () => {
@@ -397,7 +500,7 @@
     halt();
     mainContent.classList.add('hidden');
     reviewWrap.classList.add('hidden');
-    cameraSection.style.display = 'none'; // hide after first use
+    emptyState.classList.add('hidden');
 
     const url = URL.createObjectURL(file);
     imgPreview.src = url;
@@ -409,13 +512,55 @@
 
   photoPicker.addEventListener('change', onFile);
 
+  // ── Image preprocessing ───────────────────────────────────────────────
+  // Grayscale + S-curve contrast + scale to 1800–2400px.
+  // Dramatically improves OCR on coloured / patterned backgrounds.
+  function preprocessImage(file) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MIN_W = 1800, MAX_W = 2400;
+        let scale = 1;
+        if      (img.naturalWidth < MIN_W) scale = MIN_W / img.naturalWidth;
+        else if (img.naturalWidth > MAX_W) scale = MAX_W / img.naturalWidth;
+        const w = Math.round(img.naturalWidth  * scale);
+        const h = Math.round(img.naturalHeight * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, w, h);
+        const id = ctx.getImageData(0, 0, w, h);
+        const d  = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          // Weighted luminance
+          const g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+          // Stretch [15..240] → [0..255]
+          const c = Math.min(255, Math.max(0, ((g - 15) / 225) * 255));
+          // S-curve: pulls dark tones darker, light tones lighter → sharper text edges
+          const e = c < 128
+            ? 128 * Math.pow(c / 128, 0.78)
+            : 255 - 128 * Math.pow((255 - c) / 128, 0.78);
+          d[i] = d[i+1] = d[i+2] = Math.round(e);
+        }
+        ctx.putImageData(id, 0, 0);
+        canvas.toBlob(b => resolve(b || file), 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
   // ── OCR ───────────────────────────────────────────────────────────────
   async function doOCR(file) {
     ocrFill.style.width = '0%';
-    ocrMsg.textContent  = 'Wird geladen…';
+    ocrMsg.textContent  = 'Bild wird vorbereitet…';
     ocrWrap.classList.remove('hidden');
 
     try {
+      const imgBlob = await preprocessImage(file);
+
       // Tesseract.js v5: createWorker(lang, oem, options)
       const worker = await Tesseract.createWorker('deu', 1, {
         logger(m) {
@@ -429,10 +574,32 @@
         }
       });
 
+      // PSM 11 = SPARSE_TEXT: finds text scattered anywhere in the image
+      // — essential for picture books where the caption sits below an illustration
+      await worker.setParameters({ tessedit_pageseg_mode: '11' });
+
       // Get word-level data with confidence scores
-      const { data } = await worker.recognize(file);
+      const { data } = await worker.recognize(imgBlob);
       await worker.terminate();
       ocrWrap.classList.add('hidden');
+
+      // ── Build word confidence map for per-sentence scoring ────────────
+      wordConfMap = {};
+      const allOcrWords = [];
+      if (data.blocks && data.blocks.length) {
+        for (const b of data.blocks)
+          for (const p of (b.paragraphs || []))
+            for (const l of (p.lines || []))
+              for (const w of (l.words || [])) allOcrWords.push(w);
+      } else {
+        for (const l of (data.lines || []))
+          for (const w of (l.words || [])) allOcrWords.push(w);
+      }
+      for (const w of allOcrWords) {
+        const key = w.text.toLowerCase().replace(/[^\p{L}\d]/gu, '');
+        if (!key) continue;
+        (wordConfMap[key] = wordConfMap[key] || []).push(w.confidence);
+      }
 
       // ── Tiered confidence filtering ───────────────────────────────────
       // Children's books use decorative fonts → lower Tesseract confidence.
@@ -457,7 +624,8 @@
 
             const avgConf = blockWords.reduce((s, w) => s + w.confidence, 0) / blockWords.length;
             if (avgConf < confBlock) continue;
-            if (blockWords.length < 3 && avgConf < 65) continue;
+            // Only discard truly lone-word noise — short caption blocks must pass
+            if (blockWords.length === 1 && avgConf < 50) continue;
 
             let blockText = '';
             const blockLines = (block.paragraphs || []).flatMap(p => p.lines || []);
@@ -516,6 +684,21 @@
     }
   }
 
+  // ── Per-sentence confidence score ─────────────────────────────────────
+  function computeSentenceConf(sentence) {
+    if (!Object.keys(wordConfMap).length) return -1;
+    const words = sentence.split(/\s+/).filter(w => w.length > 0);
+    let total = 0, count = 0;
+    for (const w of words) {
+      const key = w.toLowerCase().replace(/[^\p{L}\d]/gu, '');
+      if (!key || !wordConfMap[key]) continue;
+      const arr = wordConfMap[key];
+      total += arr.reduce((a, b) => a + b, 0) / arr.length;
+      count++;
+    }
+    return count > 0 ? Math.round(total / count) : -1;
+  }
+
   // ── Text processing ───────────────────────────────────────────────────
   // ── OCR noise cleaner ─────────────────────────────────────────────────
   // German vowels (lower + upper, incl. Umlauts)
@@ -532,9 +715,13 @@
   ]);
 
   function isLikelyRealWord(token) {
-    // Strip surrounding punctuation for analysis
-    const w = token.replace(/^[^a-zA-Z\u00C0-\u024F]+|[^a-zA-Z\u00C0-\u024F]+$/g, '');
+    // Strip surrounding punctuation for analysis (keep digits)
+    const w = token.replace(/^[^a-zA-Z\u00C0-\u024F\d]+|[^a-zA-Z\u00C0-\u024F\d]+$/g, '');
     if (!w) return false;
+
+    // Allow standalone numbers: "3", "12", "3.14"
+    if (/^\d+([.,]\d+)*$/.test(w)) return true;
+
     const wl = w.toLowerCase();
 
     // Very short: allow only known words
@@ -606,8 +793,30 @@
   }
 
   function buildSentences(raw) {
+    // ── Title detection: check if first non-empty line looks like a title ──────
+    // A title is: short (1–6 words, ≤60 chars), no terminal sentence punctuation,
+    // and clearly separated from the body by a newline.
+    titleIndices = new Set();
+    const rawLines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    let bodyRaw = raw;
+    let extractedTitle = null;
+
+    if (rawLines.length >= 2) {
+      const first = rawLines[0];
+      const words = first.split(/\s+/).filter(w => w.length > 0);
+      const looksLikeTitle =
+        words.length >= 1 && words.length <= 6 &&
+        first.length <= 60 &&
+        !/[.!?]\s*$/.test(first);   // ends without sentence punctuation
+      if (looksLikeTitle) {
+        extractedTitle = first;
+        // Remove the title line from the body before further processing
+        bodyRaw = rawLines.slice(1).join('\n');
+      }
+    }
+
     // Collapse newlines and extra spaces
-    const norm = raw.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    const norm = bodyRaw.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
     // ── Protect periods that are NOT sentence endings ──────────────────
     // Use a non-printable placeholder so the splitter ignores them.
@@ -630,6 +839,12 @@
       ? parts.map(s => s.replace(/\x01/g, '.').trim()).filter(s => s.length > 2)
       : (norm.length > 2 ? [norm] : []);
 
+    // Prepend extracted title as first block
+    if (extractedTitle) {
+      sentences     = [extractedTitle, ...sentences];
+      titleIndices.add(0);
+    }
+
     if (!sentences.length) {
       showErr('Text zu kurz — bitte versuche ein besseres Foto!');
       return;
@@ -638,6 +853,7 @@
     // Persist for next session
     try { localStorage.setItem('xoai_sents', JSON.stringify(sentences)); } catch (_) {}
 
+    sentenceConfs = sentences.map((s, i) => titleIndices.has(i) ? -1 : computeSentenceConf(s));
     renderSentences();
     mainContent.classList.remove('hidden');
   }
@@ -647,8 +863,23 @@
     sentWrap.innerHTML = '';
     sentences.forEach((text, i) => {
       const el = document.createElement('div');
-      el.className = 'sent-block';
-      el.textContent = text;
+      el.className = 'sent-block' + (titleIndices.has(i) ? ' is-title' : '');
+      const textNode = document.createElement('div');
+      if (titleIndices.has(i)) {
+        const lbl = document.createElement('span');
+        lbl.className = 'title-label';
+        lbl.textContent = 'Titel';
+        el.appendChild(lbl);
+      }
+      textNode.textContent = text;
+      el.appendChild(textNode);
+      const conf = sentenceConfs[i];
+      if (conf >= 0) {
+        const badge = document.createElement('span');
+        badge.className = 'conf-badge ' + (conf >= 75 ? 'conf-high' : conf >= 50 ? 'conf-mid' : 'conf-low');
+        badge.textContent = (conf >= 75 ? '✓ ' : conf >= 50 ? '~ ' : '⚠ ') + conf + '%';
+        el.appendChild(badge);
+      }
       el.setAttribute('role', 'button');
       el.setAttribute('aria-label', 'Satz ' + (i + 1) + ' vorlesen');
       el.addEventListener('click', () => {
@@ -667,14 +898,92 @@
     return parseFloat(speedSlider.value);
   }
 
+  // ── Voice selector ────────────────────────────────────────────────────
+  const VOICE_KEY = 'xoai_voice';
+
+  function friendlyVoiceName(voice) {
+    let n = voice.name;
+
+    // Detect vendor from the original name
+    const isGoogle    = /^Google\s+/i.test(n);
+    const isMicrosoft = /^Microsoft\s+/i.test(n);
+    const isApple     = /^com\.apple\./i.test(n) || /\(Enhanced\)|\(Premium\)/i.test(n);
+    const vendor      = isGoogle ? 'Google' : isMicrosoft ? 'Microsoft' : isApple ? 'Apple' : '';
+
+    // Strip vendor prefix: "Microsoft Katja - German (Germany)" → "Katja"
+    n = n.replace(/^(Microsoft|Google|Apple)\s+/i, '');
+    // Strip " - Language (Region)" suffix
+    n = n.replace(/\s*[-–]\s*\w[\w\s()]+$/, '');
+    // Strip Apple bundle IDs: "com.apple.voice.compact.de-DE.Anna" → "Anna"
+    n = n.replace(/^com\.\w+\.\w+\.\w+\.\w+-\w+\./, '');
+    // Strip quality suffixes
+    n = n.replace(/\s*\((Enhanced|Premium|Neural|Compact|Standard)\)\s*/i, '');
+    n = n.trim();
+
+    // Check if it looks like a person's name:
+    // single capitalized word that is NOT a known language/generic descriptor
+    const GENERIC = /^(Deutsch|German|English|French|Spanish|Italian|Portuguese|Dutch|Russian|Polish|Swedish|Norwegian|Danish|Finnish|Turkish|Arabic|Hindi|Standard|Default|Voice|Stimme|Sprache)\b/i;
+    const isPersonName = /^[A-ZÄÖÜ][a-zäöüß]+$/.test(n) && !GENERIC.test(n);
+
+    // Person name → just the name; generic → prepend vendor
+    if (!isPersonName && vendor) n = vendor + ' ' + n;
+
+    // Star for offline/local voices
+    if (voice.localService) n += ' ★';
+
+    return n || voice.name;
+  }
+
+  function populateVoices() {
+    const voices = TTS.getVoices();
+    if (!voices.length) return;
+
+    const saved = localStorage.getItem(VOICE_KEY);
+    voiceSelect.innerHTML = '';
+
+    // Split into German and non-German, sort each group alphabetically by friendly name
+    const deVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('de'));
+
+    const sortByName = arr => [...arr].sort((a, b) =>
+      friendlyVoiceName(a).localeCompare(friendlyVoiceName(b)));
+
+    // Only German voices; fall back to all if none found
+    const list = deVoices.length ? sortByName(deVoices) : sortByName(voices);
+
+    list.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = friendlyVoiceName(v);
+      if (v.name === saved) opt.selected = true;
+      voiceSelect.appendChild(opt);
+    });
+
+    // Auto-select best German default if nothing was saved
+    if (!saved) {
+      const def =
+        list.find(v => v.lang === 'de-DE' && v.localService) ||
+        list.find(v => v.lang === 'de-DE') ||
+        list[0];
+      if (def) voiceSelect.value = def.name;
+    }
+
+    voiceCount.textContent = `(${list.length})`;
+  }
+
   function deVoice() {
     const voices = TTS.getVoices();
-    return (
-      voices.find(v => v.lang === 'de-DE') ||
-      voices.find(v => v.lang && v.lang.startsWith('de')) ||
-      null
-    );
+    return voices.find(v => v.name === voiceSelect.value) || null;
   }
+
+  voiceSelect.addEventListener('change', () => {
+    try { localStorage.setItem(VOICE_KEY, voiceSelect.value); } catch (_) {}
+    // Restart current sentence with new voice
+    if (reading && curIdx >= 0) {
+      epoch++;
+      TTS.cancel();
+      setTimeout(() => { if (reading) speakAt(curIdx, false); }, 120);
+    }
+  });
 
   function speakAt(idx, chain) {
     // Finished all sentences
@@ -833,16 +1142,16 @@
       sentences = saved;
       renderSentences();
       mainContent.classList.remove('hidden');
-      cameraSection.style.display = 'none';
+      emptyState.classList.add('hidden');
     }
   } catch (_) {}
 
   // ── Pre-load voices (iOS Safari requires this) ────────────────────────
-  TTS.getVoices();
+  populateVoices();
   if (typeof TTS.addEventListener === 'function') {
-    TTS.addEventListener('voiceschanged', () => TTS.getVoices());
+    TTS.addEventListener('voiceschanged', populateVoices);
   } else {
-    TTS.onvoiceschanged = () => TTS.getVoices();
+    TTS.onvoiceschanged = populateVoices;
   }
 
 })();
