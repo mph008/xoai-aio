@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Xoài Rush Hour 🚗</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cell: min(64px, calc((100vw - 56px) / 6), calc((100dvh - 140px) / 6));
+      --gap: 4px;
+      --board-size: calc(6 * var(--cell) + 7 * var(--gap));
+      --gold: #d4af37;
+      --exit-row: 2; /* 0-indexed, row 2 = 3rd row */
+    }
+
+    body {
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      height: 100dvh;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 0%, rgba(220, 50, 20, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(0, 80, 160, 0.14) 0%, transparent 60%),
+        linear-gradient(170deg, #0a050f 0%, #090810 50%, #050810 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      text-align: center;
+      padding: 10px 20px 6px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .header-emoji { font-size: 2rem; filter: drop-shadow(0 0 12px rgba(255,80,0,.5)); animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .header-title {
+      font-family: 'Bangers', Impact, sans-serif;
+      font-size: 2rem;
+      letter-spacing: 4px;
+      color: var(--gold);
+      text-shadow: 0 0 20px rgba(212,175,55,.8), 0 2px 6px rgba(0,0,0,.9);
+    }
+    .header-sub {
+      color: rgba(255,255,255,.4);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .screen.active { display: flex; flex: 1; min-height: 0; }
+
+    /* ===== LEVEL SELECT ===== */
+    #screen-levels {
+      padding: 8px 16px 16px;
+      gap: 16px;
+      max-width: 600px;
+      width: fit-content;
+      overflow-y: auto;
+      margin-left: auto;
+      margin-right: auto;
+      align-self: center;
+    }
+    .diff-section { width: 100%; padding-top: 4px; border-top: 1px solid rgba(255,255,255,.07); }
+    .diff-section:first-of-type { border-top: none; padding-top: 0; }
+    .diff-label {
+      font-weight: 900;
+      font-size: .6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      padding-left: 2px;
+    }
+    .diff-beginner { color: #4ade80; }
+    .diff-intermediate { color: #facc15; }
+    .diff-advanced { color: #fb923c; }
+    .diff-expert { color: #f87171; }
+
+    .level-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 72px));
+      gap: 7px;
+      justify-content: center;
+    }
+    .level-btn {
+      aspect-ratio: 1;
+      border-radius: 7px;
+      background: rgba(255,255,255,.07);
+      border: 1.5px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.6);
+      font-weight: 900;
+      font-size: .9rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      gap: 1px;
+      transition: all .2s;
+      position: relative;
+    }
+    .level-btn:hover { transform: scale(1.1); }
+    .level-btn.solved { border-color: #4ade80; color: #4ade80; }
+    .level-btn.solved::after { content:'✓'; position:absolute; top:2px; right:3px; font-size:7px; color:#4ade80; }
+    .level-btn.beginner:hover { border-color:#4ade80; color:#4ade80; box-shadow:0 0 8px rgba(74,222,128,.3); }
+    .level-btn.intermediate:hover { border-color:#facc15; color:#facc15; box-shadow:0 0 8px rgba(250,204,21,.3); }
+    .level-btn.advanced:hover { border-color:#fb923c; color:#fb923c; box-shadow:0 0 8px rgba(251,146,60,.3); }
+    .level-btn.expert:hover { border-color:#f87171; color:#f87171; box-shadow:0 0 8px rgba(248,113,113,.3); }
+    .level-num { font-size: 1rem; }
+    .level-stars { font-size: .48rem; letter-spacing: 0; }
+
+    /* ===== RANDOM LEVEL BTN ===== */
+    .btn-random-level {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: rgba(250,204,21,.1);
+      border: 1.5px solid rgba(250,204,21,.35);
+      color: #facc15;
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-random-level:hover {
+      background: rgba(250,204,21,.2);
+      border-color: rgba(250,204,21,.7);
+      box-shadow: 0 0 18px rgba(250,204,21,.25);
+    }
+    .btn-random-level:active { transform: scale(.97); }
+
+    /* ===== GAME SCREEN ===== */
+    #screen-game {
+      padding: 0 16px 8px;
+      gap: 10px;
+      justify-content: center;
+    }
+    .game-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: calc(var(--board-size) + 6px);
+    }
+    .meta-level {
+      font-family: 'Bangers', Impact, sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      color: var(--gold);
+    }
+    .meta-diff {
+      font-size: .7rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.08);
+    }
+    /* ===== BOARD WRAPPER ===== */
+    .board-outer {
+      position: relative;
+      padding: 3px;
+      background: rgba(255,255,255,.05);
+      border: 2px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      box-shadow: 0 0 40px rgba(220,38,38,.2), 0 20px 60px rgba(0,0,0,.6);
+    }
+    /* Cut the right border open at exit row */
+    .board-outer::after {
+      content: '';
+      position: absolute;
+      top: calc(5px + 3 * var(--gap) + 2 * var(--cell));
+      right: -4px;
+      width: 7px;          /* covers: 3px padding-right + 2px border + 2px outside */
+      height: var(--cell);
+      background: #1a0a04; /* same as board grid bg — erases the border section */
+      z-index: 5;
+      box-shadow: 4px 0 14px rgba(239,68,68,.7), 6px 0 6px rgba(239,68,68,.3);
+    }
+    /* Exit arrow slot */
+    .exit-arrow {
+      position: absolute;
+      right: -28px;
+      top: calc(5px + 3 * var(--gap) + 2 * var(--cell) + (var(--cell) - 28px) / 2);
+      width: 24px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #ef4444;
+      filter: drop-shadow(0 0 8px rgba(239,68,68,.8));
+      animation: pulseExit 1.5s ease-in-out infinite;
+    }
+    @keyframes pulseExit { 0%,100%{opacity:.7;transform:translateX(0)} 50%{opacity:1;transform:translateX(4px)} }
+
+    /* ===== BOARD GRID ===== */
+    #board {
+      display: grid;
+      grid-template-columns: repeat(6, var(--cell));
+      grid-template-rows: repeat(6, var(--cell));
+      gap: var(--gap);
+      background: #1a0a04;
+      border-radius: 10px;
+      padding: var(--gap);
+      position: relative;
+    }
+    .cell {
+      width: var(--cell);
+      height: var(--cell);
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 6px;
+      position: relative;
+    }
+    /* Exit row highlight */
+    .cell.exit-row-cell { border-color: rgba(239,68,68,.15); }
+    /* Exit opening right-side */
+    .cell.exit-cell {
+      border-right-color: transparent;
+      background: rgba(239,68,68,.06);
+    }
+
+    /* ===== VEHICLES ===== */
+    .vehicle {
+      /* Grid placement — no absolute pixel positioning needed */
+      position: relative;
+      border-radius: 10px;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 900;
+      z-index: 10;
+      transition: box-shadow .15s, filter .15s;
+      will-change: transform;
+      /* Stretch to fill grid area */
+      width: 100%;
+      height: 100%;
+    }
+    .vehicle:active { cursor: grabbing; }
+    .vehicle.dragging { z-index: 20; filter: brightness(1.3) drop-shadow(0 8px 20px rgba(0,0,0,.6)); }
+    .vehicle.horizontal { flex-direction: row; }
+    .vehicle.vertical { flex-direction: column; }
+
+    /* Player car (red) */
+    .vehicle.player {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 4px 0 #991b1b, 0 8px 20px rgba(239,68,68,.5);
+      border: 2px solid rgba(255,120,120,.4);
+      color: rgba(255,255,255,.9);
+    }
+    .vehicle.player:hover { box-shadow: 0 4px 0 #991b1b, 0 8px 28px rgba(239,68,68,.7); filter: brightness(1.1); }
+
+    /* Other car colors */
+    .vehicle.c-blue    { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 0 #1e3a8a, 0 8px 18px rgba(59,130,246,.4); border: 2px solid rgba(120,170,255,.3); }
+    .vehicle.c-green   { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 4px 0 #14532d, 0 8px 18px rgba(34,197,94,.4); border: 2px solid rgba(100,200,100,.3); }
+    .vehicle.c-yellow  { background: linear-gradient(135deg, #eab308, #a16207); box-shadow: 0 4px 0 #713f12, 0 8px 18px rgba(234,179,8,.4); border: 2px solid rgba(255,220,80,.3); }
+    .vehicle.c-orange  { background: linear-gradient(135deg, #f97316, #c2410c); box-shadow: 0 4px 0 #9a3412, 0 8px 18px rgba(249,115,22,.4); border: 2px solid rgba(255,160,90,.3); }
+    .vehicle.c-purple  { background: linear-gradient(135deg, #a855f7, #7e22ce); box-shadow: 0 4px 0 #581c87, 0 8px 18px rgba(168,85,247,.4); border: 2px solid rgba(200,130,255,.3); }
+    .vehicle.c-cyan    { background: linear-gradient(135deg, #06b6d4, #0e7490); box-shadow: 0 4px 0 #164e63, 0 8px 18px rgba(6,182,212,.4); border: 2px solid rgba(100,220,240,.3); }
+    .vehicle.c-pink    { background: linear-gradient(135deg, #ec4899, #be185d); box-shadow: 0 4px 0 #9d174d, 0 8px 18px rgba(236,72,153,.4); border: 2px solid rgba(255,150,200,.3); }
+    .vehicle.c-brown   { background: linear-gradient(135deg, #92400e, #78350f); box-shadow: 0 4px 0 #451a03, 0 8px 18px rgba(146,64,14,.4); border: 2px solid rgba(180,120,60,.3); }
+    .vehicle.c-lime    { background: linear-gradient(135deg, #84cc16, #4d7c0f); box-shadow: 0 4px 0 #3f6212, 0 8px 18px rgba(132,204,22,.4); border: 2px solid rgba(180,230,80,.3); }
+    .vehicle.c-teal    { background: linear-gradient(135deg, #14b8a6, #0f766e); box-shadow: 0 4px 0 #134e4a, 0 8px 18px rgba(20,184,166,.4); border: 2px solid rgba(80,200,180,.3); }
+    .vehicle.c-indigo     { background: linear-gradient(135deg, #6366f1, #4338ca); box-shadow: 0 4px 0 #312e81, 0 8px 18px rgba(99,102,241,.4); border: 2px solid rgba(150,160,255,.3); }
+    .vehicle.c-gray       { background: linear-gradient(135deg, #9ca3af, #6b7280); box-shadow: 0 4px 0 #374151, 0 8px 18px rgba(156,163,175,.4); border: 2px solid rgba(200,210,220,.3); }
+    .vehicle.c-gold       { background: linear-gradient(135deg, #d4af37, #b8860b); box-shadow: 0 4px 0 #7d5a00, 0 8px 18px rgba(212,175,55,.5); border: 2px solid rgba(255,220,100,.4); }
+    .vehicle.c-light-blue { background: linear-gradient(135deg, #7dd3fc, #38bdf8); box-shadow: 0 4px 0 #0369a1, 0 8px 18px rgba(125,211,252,.4); border: 2px solid rgba(180,235,255,.3); }
+    .vehicle.c-dark-green { background: linear-gradient(135deg, #166534, #14532d); box-shadow: 0 4px 0 #052e16, 0 8px 18px rgba(22,101,52,.5); border: 2px solid rgba(60,160,80,.3); }
+    .vehicle.c-bronze     { background: linear-gradient(135deg, #CD7F32, #a0632a); box-shadow: 0 4px 0 #7a4a1e, 0 8px 18px rgba(205,127,50,.4); border: 2px solid rgba(230,170,100,.3); }
+    .vehicle.c-lemon      { background: linear-gradient(135deg, #fffacd, #f0e87a); box-shadow: 0 4px 0 #b8a800, 0 8px 18px rgba(255,250,100,.4); border: 2px solid rgba(255,250,150,.5); color: #333; }
+    .vehicle.c-olive      { background: linear-gradient(135deg, #605c29, #807840); box-shadow: 0 4px 0 #3a3810, 0 8px 18px rgba(96,92,41,.5); border: 2px solid rgba(140,135,60,.3); }
+
+    /* Truck indicator */
+    .vehicle.truck::before {
+      content: '';
+      position: absolute;
+      background: rgba(0,0,0,.15);
+      border-radius: 4px;
+    }
+    .vehicle.truck.horizontal::before { width: 2px; height: 70%; top: 15%; left: 50%; transform: translateX(-50%); }
+    .vehicle.truck.vertical::before   { height: 2px; width: 70%; left: 15%; top: 50%; transform: translateY(-50%); }
+
+    /* ===== CONTROLS ===== */
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 420px;
+    }
+    .btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: all .18s;
+      border: 1.5px solid transparent;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.75);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .btn-hint {
+      background: rgba(250,204,21,.1);
+      border-color: rgba(250,204,21,.35);
+      color: #facc15;
+    }
+    .btn-hint:hover { background: rgba(250,204,21,.2); box-shadow: 0 0 14px rgba(250,204,21,.3); }
+    .btn-levels {
+      background: rgba(212,175,55,.1);
+      border-color: rgba(212,175,55,.35);
+      color: var(--gold);
+    }
+    .btn-levels:hover { background: rgba(212,175,55,.2); box-shadow: 0 0 14px rgba(212,175,55,.3); }
+
+    /* ===== HINT BACKDROP (mobile only) ===== */
+    #hint-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 149;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    /* ===== HINT PANEL — shared styles ===== */
+    #hint-panel {
+      background: #1a1208;
+      border: 1.5px solid rgba(250,204,21,.2);
+      display: flex;
+      flex-direction: column;
+    }
+    /* Mobile: fixed bottom sheet */
+    @media (max-width: 719px) {
+      #hint-backdrop.visible { opacity: 1; pointer-events: auto; }
+      #hint-panel {
+        position: fixed;
+        bottom: 0; left: 50%;
+        width: min(380px, 100vw);
+        max-height: 62vh;
+        border-bottom: none;
+        border-radius: 18px 18px 0 0;
+        z-index: 150;
+        box-shadow: 0 -12px 48px rgba(0,0,0,.85);
+        transform: translateX(-50%) translateY(105%);
+        transition: transform .32s cubic-bezier(.4,0,.2,1);
+      }
+      #hint-panel.visible { transform: translateX(-50%) translateY(0); }
+    }
+    /* Wide: inline sidebar */
+    @media (min-width: 720px) {
+      #hint-backdrop { display: none; }
+      .hint-handle { display: none; }
+      #hint-panel {
+        display: none;
+        position: relative;
+        width: 220px;
+        flex-shrink: 0;
+        align-self: center;
+        /* Taller: board height + extra room for ~15 steps */
+        height: calc(var(--board-size) + 10px + 285px);
+        max-height: 90dvh;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      #hint-panel.visible { display: flex; }
+      #hint-panel .hint-steps { flex: 1; min-height: 0; overflow-y: auto; }
+      /* Compact steps on wide to fit more */
+      #hint-panel .hint-step { min-height: 34px; padding: 6px 10px; }
+      #hint-panel .hint-steps { gap: 3px; padding: 8px 10px 4px; }
+      #hint-panel .hint-reveal-btn { margin: 4px 10px 10px; padding: 8px 10px; }
+    }
+    .hint-handle {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,.18);
+      border-radius: 2px;
+      margin: 10px auto 0;
+      flex-shrink: 0;
+    }
+    .hint-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 10px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .hint-title {
+      font-weight: 900;
+      font-size: .8rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #facc15;
+    }
+    .hint-close-btn {
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.5);
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      font-size: .82rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .hint-close-btn:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .hint-clear-btn {
+      background: rgba(255,80,80,.08);
+      border: 1px solid rgba(255,80,80,.2);
+      color: rgba(255,130,130,.7);
+      border-radius: 6px;
+      width: 26px; height: 26px;
+      font-size: .78rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .hint-clear-btn:hover { background: rgba(255,80,80,.2); color: #ff9090; }
+    .hint-showall-btn {
+      background: rgba(100,200,100,.08);
+      border: 1px solid rgba(100,200,100,.25);
+      color: rgba(150,230,150,.8);
+      border-radius: 6px;
+      width: 26px; height: 26px;
+      font-size: .78rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .hint-showall-btn:hover { background: rgba(100,200,100,.2); color: #90ff90; }
+    .hint-steps {
+      overflow-y: auto;
+      padding: 10px 14px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+      min-height: 0;
+    }
+    .hint-step {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.03);
+      min-height: 42px;
+      transition: background .2s, border-color .2s;
+    }
+    .hint-step.revealed {
+      background: rgba(250,204,21,.07);
+      border-color: rgba(250,204,21,.22);
+    }
+    .hint-step.locked { opacity: .65; }
+    .hint-step-num {
+      font-size: .75rem;
+      font-weight: 800;
+      color: rgba(255,255,255,.6);
+      min-width: 18px;
+      flex-shrink: 0;
+    }
+    .hint-step-swatch {
+      width: 20px; height: 20px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.18);
+    }
+    .hint-step-arrow {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255,255,255,.7);
+    }
+    .hint-step-count {
+      font-size: .9rem;
+      font-weight: 800;
+      color: #e5e7eb;
+    }
+    .hint-step-lock {
+      margin-left: auto;
+      font-size: .85rem;
+      color: rgba(255,255,255,.5);
+    }
+    .hint-reveal-btn {
+      flex-shrink: 0;
+      margin: 8px 14px 14px;
+      padding: 11px 14px;
+      border-radius: 11px;
+      background: rgba(250,204,21,.1);
+      border: 1px solid rgba(250,204,21,.3);
+      color: #facc15;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      font-size: .83rem;
+      cursor: pointer;
+      transition: background .18s;
+      text-align: center;
+    }
+    .hint-reveal-btn:hover { background: rgba(250,204,21,.2); }
+
+    /* ===== WIN OVERLAY ===== */
+    #win-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.85);
+      backdrop-filter: blur(10px);
+      z-index: 200;
+      display: none;
+      align-items: center; justify-content: center;
+    }
+    #win-overlay.visible { display: flex; }
+    .win-card {
+      background: linear-gradient(145deg, #1a0a04, #0d0508);
+      border: 2px solid rgba(212,175,55,.5);
+      border-radius: 24px;
+      padding: 36px 40px;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      box-shadow: 0 0 60px rgba(212,175,55,.2);
+      animation: bounceIn .5s cubic-bezier(.175,.885,.32,1.275);
+    }
+    @keyframes bounceIn { 0%{transform:scale(.5);opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+    .win-emoji { font-size: 4rem; }
+    .win-title { font-family: 'Bangers', Impact, sans-serif; font-size: 2.4rem; letter-spacing: 4px; color: var(--gold); text-shadow: 0 0 20px rgba(212,175,55,.8); }
+    .win-btns { display: flex; gap: 12px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+    .win-btn {
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: all .18s;
+      border: 1.5px solid;
+    }
+    .win-btn-next { background: rgba(212,175,55,.15); border-color: rgba(212,175,55,.5); color: var(--gold); }
+    .win-btn-next:hover { background: rgba(212,175,55,.3); box-shadow: 0 0 16px rgba(212,175,55,.3); }
+    .win-btn-again { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.8); }
+    .win-btn-again:hover { background: rgba(255,255,255,.15); }
+    .win-btn-levels { background: rgba(99,102,241,.1); border-color: rgba(99,102,241,.4); color: #818cf8; }
+    .win-btn-levels:hover { background: rgba(99,102,241,.2); }
+
+    /* confetti */
+    .confetti-piece {
+      position: fixed;
+      width: 10px; height: 10px;
+      z-index: 201;
+      animation: confettiFall linear forwards;
+      border-radius: 2px;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 520px) {
+      .vehicle { font-size: 1rem; }
+      .exit-arrow { right: -20px; font-size: 17px; }
+    }
+
+    /* ===== WIDE LAYOUT (iPad / landscape ≥ 720px) ===== */
+    .game-board-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    /* Hide header when in game screen on all screen sizes */
+    body:has(#screen-game.active) .header { display: none; }
+
+    @media (min-width: 720px) {
+      :root { --cell: min(60px, calc((100dvh - 110px) / 6)); }
+      #screen-game {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        gap: 48px;
+        padding: 8px 24px;
+      }
+      .game-board-col {
+        margin-right: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-emoji">🚗</div>
+  <div class="header-title">RUSH HOUR</div>
+  <div class="header-sub">Giải cứu xe đỏ · 40 thử thách</div>
+</div>
+
+<!-- ========== LEVEL SELECT ========== -->
+<div id="screen-levels" class="screen active">
+  <button class="btn-random-level" id="btn-random-level" onclick="startRandomLevel()">🎲 Chơi ngẫu nhiên</button>
+  <div class="diff-section">
+    <div class="diff-label diff-beginner">⭐ Beginner — Người mới</div>
+    <div class="level-grid" id="grid-beginner"></div>
+  </div>
+  <div class="diff-section">
+    <div class="diff-label diff-intermediate">⭐⭐ Intermediate — Trung bình</div>
+    <div class="level-grid" id="grid-intermediate"></div>
+  </div>
+  <div class="diff-section">
+    <div class="diff-label diff-advanced">⭐⭐⭐ Advanced — Khó</div>
+    <div class="level-grid" id="grid-advanced"></div>
+  </div>
+  <div class="diff-section">
+    <div class="diff-label diff-expert">⭐⭐⭐⭐ Expert — Siêu khó</div>
+    <div class="level-grid" id="grid-expert"></div>
+  </div>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div id="screen-game" class="screen">
+
+  <!-- Board column: always stacked vertically -->
+  <div class="game-board-col">
+    <div class="game-meta">
+      <div class="meta-level" id="meta-level">LEVEL 1</div>
+      <div class="meta-diff" id="meta-diff">Beginner</div>
+    </div>
+
+    <div style="position:relative">
+      <div class="board-outer">
+        <div id="board"></div>
+      </div>
+      <div class="exit-arrow">➤</div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="resetLevel()">↺ Chơi lại</button>
+      <button class="btn btn-hint" onclick="toggleHint()">💡 Gợi ý</button>
+      <button class="btn btn-levels" onclick="goToLevels()">☰ Levels</button>
+    </div>
+  </div>
+
+  <!-- Hint: bottom sheet on mobile, sidebar on wide -->
+  <div id="hint-panel">
+    <div class="hint-handle"></div>
+    <div class="hint-header">
+      <span class="hint-title">💡 Gợi ý</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button class="hint-clear-btn" onclick="clearHints()" title="Xóa hết gợi ý">🗑️</button>
+        <button class="hint-showall-btn" onclick="revealAllHints()" title="Hiện hết gợi ý">👁‍🗨</button>
+        <button class="hint-close-btn" onclick="toggleHint()">✕</button>
+      </div>
+    </div>
+    <div id="hint-steps" class="hint-steps"></div>
+    <button id="hint-reveal-btn" class="hint-reveal-btn" onclick="revealNextHint()">👁 Xem gợi ý đầu tiên</button>
+  </div>
+
+</div>
+
+<!-- ========== HINT BACKDROP (mobile only) ========== -->
+<div id="hint-backdrop" onclick="toggleHint()"></div>
+
+<!-- ========== WIN OVERLAY ========== -->
+<div id="win-overlay">
+  <div class="win-card">
+    <div class="win-emoji">🎉</div>
+    <div class="win-title">THOÁT RỒI!</div>
+    <div class="win-btns">
+      <button class="win-btn win-btn-again" onclick="resetLevel()">↺ Chơi lại</button>
+      <button class="win-btn win-btn-next" id="btn-next-level" onclick="nextLevel()">Level tiếp ▶</button>
+      <button class="win-btn win-btn-levels" onclick="goToLevels()">☰ Chọn level</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// COLOR MAP
+// =====================================================
+const COLOR_HEX = {
+  'player': '#ef4444',
+  'c-blue': '#3b82f6',
+  'c-green': '#22c55e',
+  'c-yellow': '#eab308',
+  'c-orange': '#f97316',
+  'c-purple': '#a855f7',
+  'c-cyan': '#06b6d4',
+  'c-pink': '#ec4899',
+  'c-brown': '#a16207',
+  'c-lime': '#84cc16',
+  'c-teal': '#14b8a6',
+  'c-indigo': '#6366f1',
+  'c-gray': '#9ca3af',
+  'c-gold': '#d4af37',
+  'c-light-blue': '#7dd3fc',
+  'c-dark-green': '#166534',
+  'c-bronze': '#CD7F32',
+  'c-lemon': '#fffacd',
+  'c-olive': '#605c29',
+};
+
+
+// =====================================================
+// PUZZLE DATA — 40 levels, fully verified.
+// Grid 6×6, 0-indexed. Player (H,size2) exits right at row2.
+// Win: player col+size-1 == 5, i.e. player col == 4.
+// =====================================================
+const LEVELS = [
+    {
+      id: 1,
+      diff: 'beginner',
+      solution: ["a←1","q↑3","p→3","o↓3","player→3","o↑3","p←1", "q↓3","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:2,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:4,dir:'H',size:2,color:'c-green'},
+        {id:'p',row:3,col:0,dir:'H',size:3,color:'c-indigo'},
+        {id:'q',row:3,col:5,dir:'V',size:3,color:'c-blue'}
+      ]
+    },
+    {
+      id: 2,
+      diff: 'beginner',
+      solution: ["a↓1","p↑1","q→3","o↓3","player←3","o↑3","q←3","a↑4","q→3","o↓3","player→3","b←1","o↑3","q←1","p↓3","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:2,dir:'V',size:3,color:'c-yellow'},
+        {id:'q',row:3,col:0,dir:'H',size:3,color:'c-blue'},
+        {id:'a',row:3,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:4,col:4,dir:'H',size:2,color:'c-orange'},
+        {id:'p',row:1,col:5,dir:'V',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 3,
+      diff: 'beginner',
+      solution: ["o↓1","g↓1","d↓2","c→1","e→1","f↑2","player→2","a↓3","b↓3","player←2","f↓2","e←3","c←3","d↑2","f↑2","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:1,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:2,dir:'H',size:2,color:'c-light-blue'},
+        {id:'e',row:1,col:2,dir:'H',size:2,color:'c-purple'},
+        {id:'d',row:0,col:4,dir:'V',size:2,color:'c-pink'},
+        {id:'f',row:2,col:2,dir:'V',size:2,color:'c-dark-green'},
+        {id:'o',row:2,col:3,dir:'V',size:3,color:'c-yellow'},
+        {id:'h',row:4,col:2,dir:'V',size:2,color:'c-bronze'},
+        {id:'g',row:3,col:4,dir:'V',size:2,color:'c-gray'},
+      ]
+    },
+    {
+      id: 4,
+      diff: 'beginner',
+      solution: ["a↑1","player→2","b↑2","o↑1","p→3","d↑4","c↑4","player←2","e↑2","g←4","f←4","e↓2","p←2","o↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:1,col:2,dir:'V',size:2,color:'c-green'},
+        {id:'o',row:1,col:4,dir:'V',size:3,color:'c-yellow'},
+        {id:'b',row:2,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'p',row:3,col:0,dir:'H',size:3,color:'c-indigo'},
+        {id:'c',row:4,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:4,col:1,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:2,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:4,col:4,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:5,col:4,dir:'H',size:2,color:'c-gray'}
+      ]
+    },
+    {
+      id: 5,
+      diff: 'beginner',
+      solution: ["player→1","p→1","a↑2","o←1","q↑1","r→3","b↑4","player←1","c↑2","e←4","d←4","c↓2","r←2","q↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'p',row:1,col:0,dir:'H',size:3,color:'c-indigo'},
+        {id:'q',row:1,col:4,dir:'V',size:3,color:'c-blue'},
+        {id:'a',row:2,col:5,dir:'V',size:2,color:'c-green'},
+        {id:'r',row:3,col:0,dir:'H',size:3,color:'c-teal'},
+        {id:'b',row:4,col:0,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:4,col:2,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:4,col:4,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:5,col:4,dir:'H',size:2,color:'c-purple'}
+      ]
+    },
+    {
+      id: 6,
+      diff: 'beginner',
+      solution: ["a↑1","o↑1","c←2","f↑4","e↑4","c→2","d→2","p↑1","q→3","o↓3","player→3","o↑1","q←1","p↓1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'o',row:1,col:2,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:1,col:5,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:3,col:0,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:3,col:3,dir:'H',size:2,color:'c-light-blue'},
+        {id:'p',row:3,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'d',row:4,col:1,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:4,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:4,col:4,dir:'V',size:2,color:'c-dark-green'},
+        {id:'q',row:5,col:0,dir:'H',size:3,color:'c-blue'}
+      ]
+    },
+    {
+      id: 7,
+      diff: 'beginner',
+      solution: ["b↑1","c↓1","p←1","a←1","q←3","player←2","d↑4","q→3","c↑2","f←4","e←4","c↓2","q←2","o↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:2,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:4,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:1,col:1,dir:'H',size:3,color:'c-indigo'},
+        {id:'b',row:1,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:3,col:2,dir:'V',size:2,color:'c-light-blue'},
+        {id:'q',row:3,col:3,dir:'H',size:3,color:'c-blue'},
+        {id:'d',row:4,col:3,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:4,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:5,col:4,dir:'H',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 8,
+      diff: 'beginner',
+      solution: ["f↓1","g↓1","o↓1","player←2","b↓2","c↓2","e→4","c↑2","b↑2","player→2","o↑2","p←2","f↓1","g↓1","player→3"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:3,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:0,col:4,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:1,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:1,col:4,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:1,col:5,dir:'V',size:2,color:'c-gray'},
+        {id:'o',row:2,col:1,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:4,col:3,dir:'H',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 9,
+      diff: 'beginner',
+      solution: ["c↓1","b→2","d↑1","player→1","e↑1","g↓1","o→1","f→1","a↓3","player←1","d↓1","b←3","c↑1","d↑1","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:1,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:0,col:3,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:2,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:1,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:0,dir:'H',size:2,color:'c-dark-green'},
+        {id:'o',row:3,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'g',row:3,col:5,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:2,dir:'V',size:2,color:'c-bronze'}
+      ]
+    },
+    {
+      id: 10,
+      diff: 'beginner',
+      solution: ["p←1","e↓1","f←2","player←1","g↑3","f→2","e↑1","p→2","d↓1","o↓1","a←2","b←2","c↑1","g↑1","player→3"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:1,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:2,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:4,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:1,col:5,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:1,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:3,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:4,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:4,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:5,dir:'V',size:2,color:'c-bronze'},
+        {id:'p',row:5,col:1,dir:'H',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 11,
+      diff: 'intermediate',
+      solution: ["c↓1","a↓1","b↓1","o→3","p↑1","d←1","e↑3","d→1","p↓1","o←3","b↑1","e↑1","a↑1","f←1","c↑1","q→3","p↓2","player→3","p↑2","q←1","c↓1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'H',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'p',row:1,col:2,dir:'V',size:3,color:'c-indigo'},
+        {id:'c',row:2,col:5,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:3,dir:'H',size:2,color:'c-pink'},
+        {id:'q',row:4,col:0,dir:'H',size:3,color:'c-blue'},
+        {id:'e',row:4,col:4,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:5,col:1,dir:'H',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 12,
+      diff: 'intermediate',
+      solution: ["p↓1","d↑1","q↑1","c↓2","player←1","b↓1","e→2","r←3","o↓3","a→3","b↑1","player→2","d↑3","player←1","o↑2","e←3","o↓2","p↓2","q↓2","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'o',row:0,col:3,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:0,col:4,dir:'V',size:3,color:'c-indigo'},
+        {id:'c',row:1,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'q',row:2,col:5,dir:'V',size:3,color:'c-blue'},
+        {id:'d',row:4,col:1,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:2,dir:'H',size:2,color:'c-purple'},
+        {id:'r',row:5,col:3,dir:'H',size:3,color:'c-teal'}
+      ]
+    },
+    {
+      id: 13,
+      diff: 'intermediate',
+      solution: ["a←1","o←1","d↑1","q↑1","r→1","h→2","e↓2","player→1","g←2","b↓1","p→1","f↑2","g←1","e↑1","r←1","q↓1","d↓1","o→1","a→1","f↑1","player←1","e↑1","h←3","e↓1","b↓1","c↓2","player→3","f↓1","a←1","o←1","d↑1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:1,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'p',row:1,col:0,dir:'H',size:3,color:'c-indigo'},
+        {id:'b',row:1,col:3,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:4,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:5,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:2,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:0,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:3,dir:'H',size:2,color:'c-gray'},
+        {id:'q',row:3,col:5,dir:'V',size:3,color:'c-blue'},
+        {id:'h',row:4,col:1,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:5,col:0,dir:'H',size:2,color:'c-lemon'},
+        {id:'r',row:5,col:2,dir:'H',size:3,color:'c-teal'}
+      ]
+    },
+    {
+      id: 14,
+      diff: 'intermediate',
+      solution: ["f↑2","p→1","e→1","c↓2","player←2","b↓1","a→3","b↑1","player→1","c↑3","e←1","player←1","b↓3","o←2","f↑2","a←1","d↑2","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'o',row:1,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'d',row:2,col:4,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'p',row:4,col:2,dir:'H',size:3,color:'c-indigo'},
+        {id:'f',row:4,col:5,dir:'V',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 15,
+      diff: 'intermediate',
+      solution: ["g←1","player←1","h↑2","r→2","f↓1","o↓1","q→1","d↓2","a↓2","p←2","b←2","c←2","e↑2","h↑2","player→3"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:1,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:0,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'p',row:1,col:3,dir:'H',size:3,color:'c-indigo'},
+        {id:'d',row:2,col:1,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:0,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:3,dir:'H',size:2,color:'c-gray'},
+        {id:'q',row:4,col:1,dir:'H',size:3,color:'c-blue'},
+        {id:'h',row:4,col:4,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:5,dir:'V',size:2,color:'c-lemon'},
+        {id:'r',row:5,col:0,dir:'H',size:3,color:'c-teal'}
+      ]
+    },
+    {
+      id: 16,
+      diff: 'intermediate',
+      solution: ["d↑2","player→1","h→1","i↑4","p←1","o←1","e↓2","h←1","player←1","d↓2","a↓2","c←3","b←3","g↑2","f↑2","a↑2","k↑2","j↑2","e↑2","o→3","p→3","d↓2","player→1","h→1","i↓4","h←1","c←1","b←1","player←1","d↑4","player→1","h→1","i↑2","o←3","e↓1","j↓1","k↓1","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:4,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:1,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:2,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:2,col:4,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:2,col:5,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:3,col:0,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:0,dir:'V',size:2,color:'c-lemon'},
+        {id:'o',row:4,col:1,dir:'H',size:3,color:'c-yellow'},
+        {id:'j',row:4,col:4,dir:'V',size:2,color:'c-brown'},
+        {id:'k',row:4,col:5,dir:'V',size:2,color:'c-olive'},
+        {id:'p',row:5,col:1,dir:'H',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 17,
+      diff: 'intermediate',
+      solution: ["h↑1","q←1","j←1","f↓2","b↓2","e→1","p↑1","g↑1","i→2","d↓2","player→1","a→1","o→1","c→1","h↑3","player←1","d↑1","i←3","d↓1","player→1","h↓1","p↓1","e←1","o←1","a←1","b↑2","f↑1","j→1","p↓1","g↓1","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'H',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:3,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:0,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:2,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:1,col:3,dir:'H',size:2,color:'c-purple'},
+        {id:'p',row:2,col:3,dir:'V',size:3,color:'c-indigo'},
+        {id:'f',row:2,col:5,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:4,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:0,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:1,dir:'H',size:2,color:'c-lemon'},
+        {id:'q',row:5,col:1,dir:'H',size:3,color:'c-blue'},
+        {id:'j',row:5,col:4,dir:'H',size:2,color:'c-brown'}
+      ]
+    },
+    {
+      id: 18,
+      diff: 'intermediate',
+      solution: ["player←1","q↑1","r←1","p↓1","b↓1","o→1","d↑1","c↑1","q↑2","e→3","q↓1","o←1","b↑1","p↑1","r→1","q↓2","player→1","f↑4","player←1","q↑1","r←1","p↓1","b↓1","o→1","q↑2","e←3","q↓1","o←1","b↑1","p↑1","r→1","g←3","q↓2","c↓2","d↓2","player→3","q↑1","r←1","p↓1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:1,dir:'V',size:2,color:'c-green'},
+        {id:'o',row:0,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:2,col:3,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:4,dir:'V',size:2,color:'c-pink'},
+        {id:'p',row:2,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'e',row:3,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'q',row:3,col:2,dir:'V',size:3,color:'c-blue'},
+        {id:'f',row:4,col:0,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:3,dir:'H',size:2,color:'c-gray'},
+        {id:'r',row:5,col:3,dir:'H',size:3,color:'c-teal'}
+      ]
+    },
+    {
+      id: 19,
+      diff: 'intermediate',
+      solution: ["e↑2","g→1","c↓1","a↓1","o←1","b↑1","p↑1","q→1","c↓1","d→3","c↑1","q←1","p↓1","b↓1","o→1","a↑1","player→2","f↑4","player←2","c↑1","g←3","c↓1","a↓1","o←1","b↑1","p↑1","q→1","c↓1","d←3","c↑1","q←1","p↓1","b↓1","o→1","a↑1","e↓2","player→3","a↓1","o←1","b↑1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:2,dir:'V',size:2,color:'c-green'},
+        {id:'o',row:0,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'b',row:1,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:2,col:2,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:0,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:3,col:4,dir:'V',size:2,color:'c-purple'},
+        {id:'p',row:3,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'f',row:4,col:1,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:2,dir:'H',size:2,color:'c-gray'},
+        {id:'q',row:5,col:2,dir:'H',size:3,color:'c-blue'}
+      ]
+    },
+    {
+      id: 20,
+      diff: 'intermediate',
+      solution: ["c↑2","player→1","g↑4","o←1","d↓1","player←1","c↓1","a↓1","b←3","a↑1","e↑2","f↑1","d↑1","h↑2","o→3","c↓2","player→1","g↓3","b←1","player←1","c↑3","player→1","g↑1","o←3","d↓1","f↓1","h↓1","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:4,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:2,col:2,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:3,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:4,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:0,dir:'V',size:2,color:'c-gray'},
+        {id:'o',row:4,col:1,dir:'H',size:3,color:'c-yellow'},
+        {id:'h',row:4,col:5,dir:'V',size:2,color:'c-bronze'}
+      ]
+    },
+    {
+      id: 21,
+      diff: 'advanced',
+      solution: ["e→1","q←2","d↑3","c↑3","r→3","p↓2","q→2","player←1","b↓3","player→1","a→1","p↑3","e←1","b↓1","q←3","o↓1","a→3","o↑1","q→3","b↑1","e→1","p↓3","player←1","b↑3","player→1","p↑3","r←3","q←3","c↓2","d↓2","o↓3","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'o',row:0,col:3,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:1,col:0,dir:'V',size:3,color:'c-indigo'},
+        {id:'q',row:3,col:3,dir:'H',size:3,color:'c-blue'},
+        {id:'r',row:4,col:0,dir:'H',size:3,color:'c-teal'},
+        {id:'c',row:4,col:4,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:4,col:5,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:5,col:0,dir:'H',size:2,color:'c-purple'}
+      ]
+    },
+    {
+      id: 22,
+      diff: 'advanced',
+      solution: ["g↓1","c↓1","b→1","e↑1","player→1","p↑1","q←1","j←1","o↓1","d↓1","b→1","f↑1","player→1","a↓3","player←1","f↓1","b←1","d↑1","o↑1","j→1","q→1","p↓1","player←1","e↓1","b←3","c↑1","f↑1","e↑1","player→3","p↑1","q←1","j←1","o↓1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:1,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:0,col:4,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:0,col:5,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:1,col:2,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:1,col:3,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:2,col:4,dir:'V',size:2,color:'c-gray'},
+        {id:'o',row:2,col:5,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:3,col:0,dir:'V',size:3,color:'c-indigo'},
+        {id:'h',row:3,col:2,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:3,col:3,dir:'V',size:2,color:'c-lemon'},
+        {id:'q',row:5,col:1,dir:'H',size:3,color:'c-blue'},
+        {id:'j',row:5,col:4,dir:'H',size:2,color:'c-brown'}
+      ]
+    },
+    {
+      id: 23,
+      diff: 'advanced',
+      solution: ["h↑2","k→1","j→1","p↓1","g→1","player←1","b↓3","o←1","c←1","e↑2","i↑2","g→1","d↓1","player→2","f↑3","player←2","d↑1","b↑1","g←3","d↓1","h↓1","i↓2","e↓2","o→1","b↑2","player→3","b↓2","o←1","e↑2","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'o',row:1,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'p',row:2,col:0,dir:'V',size:3,color:'c-indigo'},
+        {id:'d',row:2,col:3,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:1,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:2,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:4,col:4,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:5,dir:'V',size:2,color:'c-lemon'},
+        {id:'j',row:5,col:0,dir:'H',size:2,color:'c-brown'},
+        {id:'k',row:5,col:2,dir:'H',size:2,color:'c-olive'}
+      ]
+    },
+    {
+      id: 24,
+      diff: 'advanced',
+      solution: ["d→1","c→1","f→1","e→1","o↓3","player←1","a↓1","p←1","q↑3","d→1","f→1","b↓3","d←1","q↓1","p→1","a↑1","player→3","o↑3","e←1","c←1","a↓4","c→1","o↓1","p←3","q↑1","d→1","player←2","b↑4","f←1","d←1","q↓3","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:2,dir:'V',size:2,color:'c-green'},
+        {id:'p',row:0,col:3,dir:'H',size:3,color:'c-indigo'},
+        {id:'b',row:1,col:3,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:3,col:0,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:2,dir:'H',size:2,color:'c-pink'},
+        {id:'q',row:3,col:5,dir:'V',size:3,color:'c-blue'},
+        {id:'e',row:5,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:5,col:2,dir:'H',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 25,
+      diff: 'advanced',
+      solution: ["a→1","d↑2","player←1","q↑2","f→3","q↓2","player→1","p↓1","d↓3","a←1","player←1","q↑3","g→1","d↓1","e←3","q↓1","o↓1","b↓1","c↓1","a→4","o↑1","q↑1","e→3","d↑1","g←1","q↓3","player→1","d↑3","player←1","q↑3","f←3","e←3","o↓3","a←1","c↑1","b↓2","q↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:3,dir:'V',size:3,color:'c-yellow'},
+        {id:'b',row:0,col:4,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:5,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:0,dir:'V',size:2,color:'c-pink'},
+        {id:'p',row:2,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'q',row:3,col:2,dir:'V',size:3,color:'c-blue'},
+        {id:'e',row:3,col:3,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:4,col:0,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:5,col:0,dir:'H',size:2,color:'c-gray'}
+      ]
+    },
+    {
+      id: 26,
+      diff: 'advanced',
+      solution: ["o↓3","player←1","p↑3","e←2","c↓2","d←3","f↑2","c↑2","e→3","c↓2","d→2","p↓3","player→3","p↑3","o↑3","d←3","p↓3","player←2","a↓2","b←3","f↑2","a↑2","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:1,col:4,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:2,col:3,dir:'V',size:2,color:'c-light-blue'},
+        {id:'p',row:3,col:2,dir:'V',size:3,color:'c-indigo'},
+        {id:'d',row:3,col:4,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:4,col:3,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:4,col:5,dir:'V',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 27,
+      diff: 'advanced',
+      solution: ["o↓2","player←2","b↓1","c←2","p↑2","d↑2","q→2","b↓3","player→1","q←2","p↓1","c→1","a→1","o↑3","q←1","e↑3","q→1","o↓1","a←1","c←1","p↑1","q→2","b↑1","f←4","b↓1","q←2","p↓3","c→2","e↑1","d↓2","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'o',row:1,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'p',row:2,col:4,dir:'V',size:3,color:'c-indigo'},
+        {id:'q',row:3,col:1,dir:'H',size:3,color:'c-blue'},
+        {id:'d',row:3,col:5,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:5,col:4,dir:'H',size:2,color:'c-dark-green'}
+      ]
+    },
+    {
+      id: 28,
+      diff: 'advanced',
+      solution: ["d←1","player←1","g↑2","f→1","i↑1","q←1","p↓1","b↓1","o→1","a→1","c↑1","player←2","i↑1","h→3","i↓1","player→1","c↓1","a←1","o←1","b↑1","p↑1","q→1","i↓1","e→1","c↓3","e←1","player←1","i↑2","q←1","p↓1","b↓1","o→1","h←1","d←2","i↑2","f←1","g↓2","player→3","i↓1","o←1","b↑1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:3,dir:'H',size:2,color:'c-pink'},
+        {id:'p',row:2,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'e',row:3,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:3,col:2,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:4,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:0,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:2,dir:'V',size:2,color:'c-lemon'},
+        {id:'q',row:5,col:3,dir:'H',size:3,color:'c-blue'}
+      ]
+    },
+    {
+      id: 29,
+      diff: 'advanced',
+      solution: ["d↑2","e←1","o↓3","a→1","d↑2","player←3","o↑2","q↑3","e→4","o↓2","player→1","d↓4","a←1","player←1","o↑3","c←4","o↓3","q↓3","player→3","o↑3","c→1","d↑3","c←1","o↓3","a→1","d↑1","player←3","q↑2","o↑2","e←4","o↓2","q↓2","p↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:2,dir:'V',size:3,color:'c-yellow'},
+        {id:'b',row:0,col:4,dir:'V',size:2,color:'c-orange'},
+        {id:'p',row:0,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'q',row:3,col:3,dir:'V',size:3,color:'c-blue'},
+        {id:'c',row:3,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:4,col:0,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:4,col:1,dir:'H',size:2,color:'c-purple'}
+      ]
+    },
+    {
+      id: 30,
+      diff: 'advanced',
+      solution: ["g←1","b↓2","player→1","d→1","a↓2","p←1","r↑1","o←2","q↑1","c↑2","d→3","e↑1","b↑1","g→4","b↓1","e↓1","a↓2","player←1","d←4","e↑2","b↑2","g←3","f←3","e↓2","q↓3","r↓3","c↓2","o→3","p→3","b↑2","player→1","d→1","a↑4","g←1","f←4","d←1","player←1","b↓4","player→1","d→1","a↓2","p←3","o←3","c↑2","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'o',row:0,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'p',row:1,col:1,dir:'H',size:3,color:'c-indigo'},
+        {id:'q',row:1,col:4,dir:'V',size:3,color:'c-blue'},
+        {id:'r',row:1,col:5,dir:'V',size:3,color:'c-teal'},
+        {id:'b',row:2,col:2,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:2,col:3,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:0,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:4,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:4,col:4,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:5,col:1,dir:'H',size:2,color:'c-gray'}
+      ]
+    },
+    {
+      id: 31,
+      diff: 'expert',
+      solution: ["f↑1","h→2","i↑1","j→1","o↓1","player←1","i↑1","p←1","g↓1","d↓1","e↓1","c→2","f↑1","i↑2","player→2","b↓3","player←2","i↓1","f↓1","c←3","e↑1","d↑1","f↑1","g↑1","p→1","i↓2","player→3","i↑1","p←1","g↓1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:1,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:2,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:0,col:4,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:0,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'o',row:2,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'f',row:2,col:3,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:2,col:5,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:3,col:1,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:2,dir:'V',size:2,color:'c-lemon'},
+        {id:'p',row:4,col:3,dir:'H',size:3,color:'c-indigo'},
+        {id:'j',row:5,col:0,dir:'H',size:2,color:'c-brown'},
+        {id:'q',row:5,col:3,dir:'H',size:3,color:'c-blue'}
+      ]
+    },
+    {
+      id: 32,
+      diff: 'expert',
+      solution: ["player←1","a↓2","o→1","q↓1","b↑1","player←1","e↑1","g←1","p↓2","o→2","c→2","e↑2","player→1","d→1","b↓4","d←1","player←1","e↓2","c←3","a↑1","e↑1","o←2","q↑1","p↑2","d→4","f↑1","b↑1","g→2","h←2","e↓3","a↓3","player→2","d←2","p↓1","o→1","c→2","f↑3","b↑3","d←2","player←2","a↑2","e↑2","g←4","e↓1","a↓1","i←2","p↓2","q↓3","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'H',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'p',row:0,col:4,dir:'V',size:3,color:'c-indigo'},
+        {id:'q',row:0,col:5,dir:'V',size:3,color:'c-blue'},
+        {id:'b',row:1,col:0,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:1,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:3,col:0,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:3,col:2,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:4,col:1,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:3,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:5,col:2,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:5,col:4,dir:'H',size:2,color:'c-lemon'}
+      ]
+    },
+    {
+      id: 33,
+      diff: 'expert',
+      solution: ["f↓2","b↓1","o→1","a→1","i→1","d←1","c↑1","player←2","k↑3","i←1","f↑1","h↑1","j→3","p→3","h↓2","player→1","g→1","c↓4","g←1","d←1","a←1","player←1","h↑4","p←2","f↓1","i←1","j←2","e↓3","i→2","k↓2","player→3","h↓1","o←1","b↑1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'o',row:0,col:2,dir:'H',size:3,color:'c-yellow'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:2,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:1,col:4,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:2,col:5,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:0,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:3,col:2,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:3,col:3,dir:'H',size:2,color:'c-lemon'},
+        {id:'j',row:4,col:0,dir:'H',size:2,color:'c-brown'},
+        {id:'k',row:4,col:3,dir:'V',size:2,color:'c-olive'},
+        {id:'p',row:5,col:0,dir:'H',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 34,
+      diff: 'expert',
+      solution: ["h↑2","g→1","i↑1","p←1","e↓2","g→1","o↓1","c↓1","b→3","d↑1","player→1","o↑1","g←1","e↑1","p→1","i↓1","f→1","a↓4","f←1","i↑1","p←1","e↓1","g→1","o↓1","player←1","d↓1","b←4","d↑1","player→1","c↑1","h↑1","o↑1","g←1","e↑1","p→1","i↓1","f→1","a↑3","f←1","i↑1","p←3","e↓1","g→1","o↓3","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:1,dir:'H',size:2,color:'c-orange'},
+        {id:'o',row:0,col:3,dir:'V',size:3,color:'c-yellow'},
+        {id:'c',row:0,col:5,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:2,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:0,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:2,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:3,col:4,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:2,dir:'V',size:2,color:'c-lemon'},
+        {id:'p',row:5,col:3,dir:'H',size:3,color:'c-indigo'}
+      ]
+    },
+    {
+      id: 35,
+      diff: 'expert',
+      solution: ["f↓1","a→1","j→1","h↓1","d↑1","o↑2","g→2","e↓2","player←2","i↑3","g←1","o↓1","b↓1","c↓1","a→3","b↑1","i↑1","player→2","e↑2","g←1","h↑1","j←3","h↓1","g→1","e↓2","player←2","i↓1","b↓1","a←3","b↑1","o↑1","g→1","i↓2","player→2","c↑1","p↑1","j←1","i↓1","g←1","o↓3","player→3"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:3,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:0,col:5,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:0,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:1,col:1,dir:'V',size:2,color:'c-purple'},
+        {id:'o',row:2,col:4,dir:'V',size:3,color:'c-yellow'},
+        {id:'f',row:2,col:5,dir:'V',size:2,color:'c-dark-green'},
+        {id:'p',row:3,col:0,dir:'V',size:3,color:'c-indigo'},
+        {id:'g',row:3,col:1,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:3,col:3,dir:'V',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:2,dir:'V',size:2,color:'c-lemon'},
+        {id:'j',row:5,col:3,dir:'H',size:2,color:'c-brown'}
+      ]
+    },
+    {
+      id: 36,
+      diff: 'expert',
+      solution: ["o↓3","player←1","p↑2","f←2","d↓2","b↓1","a→3","b↑1","p↑1","e←3","g↑2","d↑2","f→3","d↓2","e→2","p↓3","player→3","p↑3","o↑3","e←3","p↓3","player←2","b↓2","c←3","a←3","g↑2","b↑2","player→4"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:1,dir:'H',size:2,color:'c-green'},
+        {id:'b',row:0,col:3,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:3,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:3,col:4,dir:'H',size:2,color:'c-purple'},
+        {id:'p',row:3,col:2,dir:'V',size:3,color:'c-indigo'},
+        {id:'f',row:4,col:3,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:5,dir:'V',size:2,color:'c-gray'}
+      ]
+    },
+    {
+      id: 37,
+      diff: 'expert',
+      solution: ["player←1","a↓2","o→1","c↑1","player←1","f↑1","h←2","p↓2","b↓1","o→2","d→2","f↑2","player→1","e→1","c↓4","e←1","player←1","f↓2","d←3","a↑1","f↑1","o←2","p↑2","e→4","g↑1","c↑1","h→2","i←2","f↓3","a↓3","player→2","e←2","p↓1","o→1","d→2","g↑3","c↑3","e←2","player←2","a↑2","f↑2","h←4","f↓1","a↓1","b↑1","j←2","p↓2","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:2,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'H',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:3,dir:'V',size:2,color:'c-green'},
+        {id:'p',row:0,col:4,dir:'V',size:3,color:'c-indigo'},
+        {id:'b',row:0,col:5,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:0,dir:'V',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:1,dir:'H',size:2,color:'c-pink'},
+        {id:'e',row:3,col:0,dir:'H',size:2,color:'c-purple'},
+        {id:'f',row:3,col:2,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:1,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:4,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:5,col:2,dir:'H',size:2,color:'c-lemon'},
+        {id:'j',row:5,col:4,dir:'H',size:2,color:'c-brown'}
+      ]
+    },
+    {
+      id: 38,
+      diff: 'expert',
+      solution: ["i→1","e↓1","p↑1","q→3","f↑1","h→1","o↓3","a↓3","b←2","d↑1","player←3","d↓1","c↓1","b→3","d↑1","player→2","o↑3","h←1","f↓1","a↑3","q←3","p↓1","b→1","player←1","e↑4","player→1","q→2","a↓3","player←1","e↓1","b←1","p↑1","q→1","f↑1","h→1","o↓3","player←1","d↓1","b←3","c↑1","e↑1","d↑1","player→3","o↑1","h←1","f↓1","i←1","g←1","q←1","p↓3","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:3,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:0,dir:'V',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:1,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:2,dir:'H',size:2,color:'c-orange'},
+        {id:'c',row:0,col:4,dir:'V',size:2,color:'c-light-blue'},
+        {id:'p',row:1,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'d',row:1,col:2,dir:'V',size:2,color:'c-pink'},
+        {id:'q',row:3,col:0,dir:'H',size:3,color:'c-blue'},
+        {id:'e',row:3,col:3,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:4,col:2,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:4,dir:'H',size:2,color:'c-gray'},
+        {id:'h',row:5,col:0,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:5,col:3,dir:'H',size:2,color:'c-lemon'}
+      ]
+    },
+    {
+      id: 39,
+      diff: 'expert',
+      solution: ["b↓1","d↑2","player←1","a↓2","c←2","p↑1","o←1","e↑2","i↑2","h→2","a↓1","b↓1","player→2","f↑3","player←2","b↑1","a↑1","h←3","b↓1","i↓1","e↓1","o→1","g↑1","j←1","k←1","p↓2","c→1","a↑2","player→3","a↓1","o←1","e↑1","player→2"],
+      vehicles: [
+        {id:'player',row:2,col:1,dir:'H',size:2,color:'player'},
+        {id:'o',row:0,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'a',row:0,col:2,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:1,col:3,dir:'V',size:2,color:'c-orange'},
+        {id:'c',row:1,col:4,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:2,col:0,dir:'V',size:2,color:'c-pink'},
+        {id:'p',row:2,col:4,dir:'V',size:3,color:'c-indigo'},
+        {id:'e',row:2,col:5,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:1,dir:'V',size:2,color:'c-dark-green'},
+        {id:'g',row:4,col:0,dir:'V',size:2,color:'c-gray'},
+        {id:'h',row:4,col:2,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:5,dir:'V',size:2,color:'c-lemon'},
+        {id:'j',row:5,col:1,dir:'H',size:2,color:'c-brown'},
+        {id:'k',row:5,col:3,dir:'H',size:2,color:'c-olive'}
+      ]
+    },
+    {
+      id: 40,
+      diff: 'expert',
+      solution: ["h←1","e↓1","player→1","a↓1","b←1","o←1","p↑3","g→1","c←1","i↑3","g←1","p↓1","o→1","b→1","a↑1","player←1","e↑1","h→3","q→3","e↓2","player→1","f→1","a↓4","f←1","c←1","player←1","e↑3","g←1","b←1","o←1","p↑1","q←2","h←2","d↓3","g→2","f→1","a↑1","q←1","i↓3","g←1","p↓3","o→1","e↑1","player→5"],
+      vehicles: [
+        {id:'player',row:2,col:0,dir:'H',size:2,color:'player'},
+        {id:'a',row:0,col:0,dir:'V',size:2,color:'c-green'},
+        {id:'b',row:0,col:1,dir:'H',size:2,color:'c-orange'},
+        {id:'o',row:0,col:3,dir:'H',size:3,color:'c-yellow'},
+        {id:'c',row:1,col:2,dir:'H',size:2,color:'c-light-blue'},
+        {id:'d',row:1,col:4,dir:'V',size:2,color:'c-pink'},
+        {id:'e',row:2,col:2,dir:'V',size:2,color:'c-purple'},
+        {id:'f',row:3,col:0,dir:'H',size:2,color:'c-dark-green'},
+        {id:'g',row:3,col:3,dir:'H',size:2,color:'c-gray'},
+        {id:'p',row:3,col:5,dir:'V',size:3,color:'c-indigo'},
+        {id:'h',row:4,col:1,dir:'H',size:2,color:'c-bronze'},
+        {id:'i',row:4,col:3,dir:'V',size:2,color:'c-lemon'},
+        {id:'q',row:5,col:0,dir:'H',size:3,color:'c-blue'}
+      ]
+    }
+    ]
+
+
+// =====================================================
+// STATE
+// =====================================================
+const GRID = 6;
+const CELL_SIZE_BASE = 72;
+const EXIT_ROW = 2;
+
+let currentLevel = null;
+let vehicleStates = {};
+let solvedLevels = new Set(JSON.parse(localStorage.getItem('rh_solved') || '[]'));
+let hintRevealedCount = 0;
+
+// Single shared drag state — avoids stacking window listeners
+let drag = null;
+
+// =====================================================
+// GRID HELPERS
+// =====================================================
+function buildGrid(vStates, excludeId) {
+  const grid = Array.from({length: GRID}, () => Array(GRID).fill(null));
+  for (const v of currentLevel.vehicles) {
+    if (v.id === excludeId) continue;
+    const st = vStates[v.id];
+    for (let i = 0; i < v.size; i++) {
+      const r = v.dir === 'H' ? st.row : st.row + i;
+      const c = v.dir === 'H' ? st.col + i : st.col;
+      if (r >= 0 && r < GRID && c >= 0 && c < GRID) grid[r][c] = v.id;
+    }
+  }
+  return grid;
+}
+
+// How far can vehicle v move in direction +1 or -1, given a grid without v
+function maxMove(v, grid, dir) {
+  const st = vehicleStates[v.id];
+  let steps = 0;
+  if (v.dir === 'H') {
+    let c = st.col;
+    while (true) {
+      const nc = c + dir;
+      if (dir > 0 && nc + v.size - 1 >= GRID) break;
+      if (dir < 0 && nc < 0) break;
+      const checkC = dir > 0 ? nc + v.size - 1 : nc;
+      if (grid[st.row][checkC] !== null) break;
+      c = nc;
+      steps++;
+    }
+  } else {
+    let r = st.row;
+    while (true) {
+      const nr = r + dir;
+      if (dir > 0 && nr + v.size - 1 >= GRID) break;
+      if (dir < 0 && nr < 0) break;
+      const checkR = dir > 0 ? nr + v.size - 1 : nr;
+      if (grid[checkR][st.col] !== null) break;
+      r = nr;
+      steps++;
+    }
+  }
+  return steps;
+}
+
+function getCellPx() {
+  // getComputedStyle().width gives the actual resolved value of var(--cell)
+  // after evaluating min() — this is ground truth matching the grid template
+  const cell = document.querySelector('#board .cell');
+  if (cell) {
+    const w = parseFloat(getComputedStyle(cell).width);
+    if (w > 0) return w;
+  }
+  return CELL_SIZE_BASE;
+}
+function getCellGap() {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 4;
+}
+function posToPixel(row, col) {
+  const cs = getCellPx(), g = getCellGap();
+  return { x: g + col * (cs + g), y: g + row * (cs + g) };
+}
+
+// =====================================================
+// RENDER
+// =====================================================
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  // Background cells
+  for (let r = 0; r < GRID; r++) {
+    for (let c = 0; c < GRID; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (r === EXIT_ROW) cell.classList.add('exit-row-cell');
+      if (r === EXIT_ROW && c === GRID - 1) cell.classList.add('exit-cell');
+      // Place cell explicitly so vehicles can overlap via grid-area
+      cell.style.gridColumn = c + 1;
+      cell.style.gridRow    = r + 1;
+      board.appendChild(cell);
+    }
+  }
+
+  // Vehicles — placed via CSS grid, no pixel math
+  for (const v of currentLevel.vehicles) {
+    const st = vehicleStates[v.id];
+    const el = document.createElement('div');
+    el.id = 'v-' + v.id;
+    el.className = `vehicle ${v.color} ${v.dir === 'H' ? 'horizontal' : 'vertical'} ${v.size === 3 ? 'truck' : ''}`;
+    el.dataset.vid = v.id;
+    placeVehicleOnGrid(el, st.row, st.col, v);
+    board.appendChild(el);
+  }
+}
+
+function placeVehicleOnGrid(el, row, col, v) {
+  if (v.dir === 'H') {
+    el.style.gridColumn = `${col + 1} / span ${v.size}`;
+    el.style.gridRow    = row + 1;
+  } else {
+    el.style.gridColumn = col + 1;
+    el.style.gridRow    = `${row + 1} / span ${v.size}`;
+  }
+  el.style.transform = '';
+}
+
+function updateVehiclePos(vid) {
+  const el = document.getElementById('v-' + vid);
+  if (!el) return;
+  const v = currentLevel.vehicles.find(x => x.id === vid);
+  const st = vehicleStates[vid];
+  placeVehicleOnGrid(el, st.row, st.col, v);
+}
+
+// =====================================================
+// DRAG — single window listener approach (no leaks)
+// =====================================================
+function onPointerDown(e) {
+  // Find which vehicle was clicked
+  const el = e.target.closest('[data-vid]');
+  if (!el) return;
+  e.preventDefault();
+
+  const vid = el.dataset.vid;
+  const v = currentLevel.vehicles.find(x => x.id === vid);
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  const st = vehicleStates[vid];
+  // Pre-compute grid without this vehicle
+  const grid = buildGrid(vehicleStates, vid);
+  const freeNeg = maxMove(v, grid, -1);
+  const freePos = maxMove(v, grid,  1);
+
+  drag = { el, v, grid, freeNeg, freePos,
+    startX: clientX, startY: clientY,
+    startRow: st.row, startCol: st.col };
+
+  el.classList.add('dragging');
+}
+
+function onPointerMove(e) {
+  if (!drag) return;
+  e.preventDefault();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  const { el, v, freeNeg, freePos, startX, startY } = drag;
+  const cs = getCellPx(), g = getCellGap();
+  const unit = cs + g;
+
+  if (v.dir === 'H') {
+    const rawDx = clientX - startX;
+    const clampedDx = Math.max(-freeNeg * unit, Math.min(freePos * unit, rawDx));
+    el.style.transform = `translateX(${clampedDx}px)`;
+    drag.pendingCol = drag.startCol + Math.round(clampedDx / unit);
+    drag.pendingRow = drag.startRow;
+  } else {
+    const rawDy = clientY - startY;
+    const clampedDy = Math.max(-freeNeg * unit, Math.min(freePos * unit, rawDy));
+    el.style.transform = `translateY(${clampedDy}px)`;
+    drag.pendingRow = drag.startRow + Math.round(clampedDy / unit);
+    drag.pendingCol = drag.startCol;
+  }
+}
+
+function onPointerUp(e) {
+  if (!drag) return;
+  const { el, v, startRow, startCol } = drag;
+  const newRow = drag.pendingRow !== undefined ? drag.pendingRow : startRow;
+  const newCol = drag.pendingCol !== undefined ? drag.pendingCol : startCol;
+
+  el.classList.remove('dragging');
+
+  if (newRow !== startRow || newCol !== startCol) {
+    vehicleStates[v.id] = { row: newRow, col: newCol };
+    checkWin();
+  }
+
+  // Snap to final grid pixel
+  updateVehiclePos(v.id);
+  drag = null;
+}
+
+// Attach to board once at DOMContentLoaded (board div persists, only its innerHTML changes)
+window.addEventListener('mousemove',  onPointerMove);
+window.addEventListener('touchmove',  onPointerMove, { passive: false });
+window.addEventListener('mouseup',    onPointerUp);
+window.addEventListener('touchend',   onPointerUp);
+let _boardEventsAttached = false;
+function initBoardEvents() {
+  if (_boardEventsAttached) return;
+  _boardEventsAttached = true;
+  const board = document.getElementById('board');
+  board.addEventListener('mousedown',  onPointerDown);
+  board.addEventListener('touchstart', onPointerDown, { passive: false });
+}
+
+// =====================================================
+// WIN CHECK
+// =====================================================
+function checkWin() {
+  const pst = vehicleStates['player'];
+  const player = currentLevel.vehicles.find(v => v.id === 'player');
+  if (pst.col + player.size - 1 >= GRID - 1) {
+    triggerWin();
+  }
+}
+
+function triggerWin() {
+  solvedLevels.add(currentLevel.id);
+  localStorage.setItem('rh_solved', JSON.stringify([...solvedLevels]));
+  // Show/hide next button
+  const nextLevel = LEVELS.find(l => l.id === currentLevel.id + 1);
+  document.getElementById('btn-next-level').style.display = nextLevel ? '' : 'none';
+
+  document.getElementById('win-overlay').classList.add('visible');
+  spawnConfetti();
+}
+
+// =====================================================
+// CONFETTI
+// =====================================================
+function spawnConfetti() {
+  const colors = ['#ef4444','#facc15','#4ade80','#60a5fa','#f97316','#a855f7','#ec4899'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'confetti-piece';
+      c.style.cssText = `
+        left:${Math.random()*100}vw;
+        top:-20px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        width:${6+Math.random()*8}px;
+        height:${6+Math.random()*8}px;
+        animation-duration:${1.5+Math.random()*2}s;
+        animation-delay:${Math.random()*0.5}s;
+        border-radius:${Math.random()>.5?'50%':'3px'};
+      `;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+// =====================================================
+// HINT SYSTEM
+// =====================================================
+function getVehicleColor(vid) {
+  const v = currentLevel.vehicles.find(x => x.id === vid);
+  return v ? (COLOR_HEX[v.color] || '#888') : '#888';
+}
+
+function formatHintStep(step, revealed) {
+  if (!revealed) return { arrow: '?', n: '?', color: null };
+  const match = step.match(/^([a-z]+)([\u2190\u2191\u2192\u2193])(\d+)$/u);
+  if (!match) return { arrow: '?', n: '?', color: null };
+  const [, id, arrow, n] = match;
+  return { arrow, n, color: getVehicleColor(id) };
+}
+
+function toggleHint() {
+  const isWide = window.matchMedia('(min-width: 720px)').matches;
+  const panel = document.getElementById('hint-panel');
+  const backdrop = document.getElementById('hint-backdrop');
+  if (panel.classList.contains('visible')) {
+    panel.classList.remove('visible');
+    if (!isWide) backdrop.classList.remove('visible');
+  } else {
+    buildHintPanel();
+    panel.classList.add('visible');
+    if (!isWide) backdrop.classList.add('visible');
+  }
+  if (isWide) {
+    requestAnimationFrame(() => renderBoard());
+  }
+}
+
+function buildHintPanel() {
+  const stepsEl = document.getElementById('hint-steps');
+  stepsEl.innerHTML = '';
+  currentLevel.solution.forEach((step, i) => {
+    const revealed = i < hintRevealedCount;
+    const div = document.createElement('div');
+    div.className = 'hint-step' + (revealed ? ' revealed' : ' locked');
+    div.id = `hint-step-${i}`;
+
+    const num = document.createElement('span');
+    num.className = 'hint-step-num';
+    num.textContent = `${i+1}.`;
+    div.appendChild(num);
+
+    if (revealed) {
+      const { arrow, n, color } = formatHintStep(step, true);
+      if (color) {
+        const swatch = document.createElement('span');
+        swatch.className = 'hint-step-swatch';
+        swatch.style.background = color;
+        div.appendChild(swatch);
+      }
+      const arrowEl = document.createElement('span');
+      arrowEl.className = 'hint-step-arrow';
+      arrowEl.textContent = arrow;
+      div.appendChild(arrowEl);
+      const countEl = document.createElement('span');
+      countEl.className = 'hint-step-count';
+      countEl.textContent = n;
+      div.appendChild(countEl);
+    } else {
+      const lock = document.createElement('span');
+      lock.className = 'hint-step-lock';
+      lock.textContent = '🔒';
+      div.appendChild(lock);
+    }
+    stepsEl.appendChild(div);
+  });
+  const btn = document.getElementById('hint-reveal-btn');
+  if (hintRevealedCount >= currentLevel.solution.length) {
+    btn.disabled = true;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'default';
+    btn.textContent = '✅ Đã xem hết gợi ý';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+    btn.textContent = hintRevealedCount === 0
+      ? '👁 Xem gợi ý đầu tiên'
+      : `👁 Bước ${hintRevealedCount + 1} / ${currentLevel.solution.length}`;
+  }
+}
+
+function clearHints() {
+  hintRevealedCount = 0;
+  buildHintPanel();
+}
+
+function revealNextHint() {
+  if (hintRevealedCount < currentLevel.solution.length) {
+    hintRevealedCount++;
+    buildHintPanel();
+  }
+}
+
+function revealAllHints() {
+  hintRevealedCount = currentLevel.solution.length;
+  buildHintPanel();
+}
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+function loadLevel(level) {
+  currentLevel = level;
+  vehicleStates = {};
+  level.vehicles.forEach(v => {
+    vehicleStates[v.id] = { row: v.row, col: v.col };
+  });
+  hintRevealedCount = 0;
+  document.getElementById('meta-level').textContent = `LEVEL ${level.id}`;
+  const diffLabels = { beginner:'⭐ Beginner', intermediate:'⭐⭐ Intermediate', advanced:'⭐⭐⭐ Advanced', expert:'⭐⭐⭐⭐ Expert' };
+  const diffColors = { beginner:'#4ade80', intermediate:'#facc15', advanced:'#fb923c', expert:'#f87171' };
+  const diffEl = document.getElementById('meta-diff');
+  diffEl.textContent = diffLabels[level.diff] || level.diff;
+  diffEl.style.color = diffColors[level.diff] || '#fff';
+  document.getElementById('win-overlay').classList.remove('visible');
+  document.getElementById('hint-panel').classList.remove('visible');
+  document.getElementById('hint-backdrop').classList.remove('visible');
+
+  showScreen('screen-game');
+  requestAnimationFrame(() => {
+    renderBoard();
+    initBoardEvents();
+  });
+}
+
+function resetLevel() {
+  document.getElementById('win-overlay').classList.remove('visible');
+  if (currentLevel) {
+    const savedHintCount = hintRevealedCount; // preserve revealed hints
+    loadLevel(currentLevel);
+    hintRevealedCount = savedHintCount;
+    // Rebuild hint panel immediately if it's visible with preserved state
+    requestAnimationFrame(() => {
+      if (document.getElementById('hint-panel').classList.contains('visible')) {
+        buildHintPanel();
+      }
+    });
+  }
+}
+
+function nextLevel() {
+  const next = LEVELS.find(l => l.id === currentLevel.id + 1);
+  if (next) loadLevel(next);
+}
+
+function goToLevels() {
+  document.getElementById('win-overlay').classList.remove('visible');
+  document.getElementById('hint-panel').classList.remove('visible');
+  document.getElementById('hint-backdrop').classList.remove('visible');
+  showScreen('screen-levels');
+}
+
+function startRandomLevel() {
+  const idx = Math.floor(Math.random() * LEVELS.length);
+  loadLevel(LEVELS[idx]);
+  buildLevelSelect();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// =====================================================
+// LEVEL SELECT
+// =====================================================
+function buildLevelSelect() {
+  const diffs = ['beginner', 'intermediate', 'advanced', 'expert'];
+  diffs.forEach(diff => {
+    const grid = document.getElementById('grid-' + diff);
+    grid.innerHTML = '';
+    LEVELS.filter(l => l.diff === diff).forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = `level-btn ${diff}${solvedLevels.has(l.id) ? ' solved' : ''}`;
+      const starMap = { beginner:'★', intermediate:'★★', advanced:'★★★', expert:'★★★★' };
+      btn.innerHTML = `<div class="level-num">${l.id}</div><div class="level-stars">${starMap[diff]}</div>`;
+      btn.setAttribute('aria-label', `Level ${l.id}`);
+      btn.onclick = () => loadLevel(l);
+      grid.appendChild(btn);
+    });
+  });
+}
+
+// =====================================================
+// INIT
+// =====================================================
+buildLevelSelect();
+</script>
+</body>
+</html>
