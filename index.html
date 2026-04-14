@@ -161,18 +161,18 @@
       z-index: 2;
     }
 
-    /* Card: Cá ngựa (ludo) — Red/Dark theme */
+    /* Card: Cá ngựa (ludo) — Violet theme */
     .card-ludo {
-      --card-bg: linear-gradient(145deg, rgba(100, 10, 10, 0.5), rgba(30, 5, 5, 0.7));
-      --card-border: rgba(220, 38, 38, 0.5);
-      --card-glow: rgba(220, 38, 38, 0.35);
-      --card-accent: #ef4444;
-      --card-accent-light: #fca5a5;
+      --card-bg: linear-gradient(145deg, rgba(80, 10, 120, 0.5), rgba(20, 5, 40, 0.7));
+      --card-border: rgba(168, 85, 247, 0.5);
+      --card-glow: rgba(168, 85, 247, 0.35);
+      --card-accent: #a855f7;
+      --card-accent-light: #e9d5ff;
     }
     .card-ludo:hover {
-      border-color: rgba(220, 38, 38, 0.7) !important;
-      box-shadow: 0 0 0 1.5px rgba(220, 38, 38, 0.5),
-                  0 20px 60px rgba(220, 38, 38, 0.25),
+      border-color: rgba(168, 85, 247, 0.75) !important;
+      box-shadow: 0 0 0 1.5px rgba(168, 85, 247, 0.5),
+                  0 20px 60px rgba(168, 85, 247, 0.25),
                   0 8px 25px rgba(0, 0, 0, 0.6);
     }
 
@@ -252,8 +252,8 @@
     }
 
     /* Initial border state */
-    .card-ludo   { border-color: rgba(220, 38, 38, 0.2);
-                   box-shadow: 0 4px 30px rgba(220, 38, 38, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-ludo   { border-color: rgba(168, 85, 247, 0.2);
+                   box-shadow: 0 4px 30px rgba(168, 85, 247, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-math   { border-color: rgba(236, 72, 153, 0.2);
                    box-shadow: 0 4px 30px rgba(236, 72, 153, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-memory { border-color: rgba(0, 200, 255, 0.18);
@@ -282,6 +282,24 @@
     .card-stories { border-color: rgba(251, 146, 60, 0.2);
                    box-shadow: 0 4px 30px rgba(251, 146, 60, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-stories .card-ring { border-color: rgba(251,146,60,0.35); box-shadow: 0 0 18px rgba(251,146,60,0.2) inset; }
+
+    /* Card: Rush Hour — Red car theme */
+    .card-rush {
+      --card-bg: linear-gradient(145deg, rgba(100, 15, 5, 0.55), rgba(28, 5, 2, 0.75));
+      --card-border: rgba(239, 68, 68, 0.5);
+      --card-glow: rgba(239, 68, 68, 0.4);
+      --card-accent: #f87171;
+      --card-accent-light: #fca5a5;
+    }
+    .card-rush:hover {
+      border-color: rgba(239, 68, 68, 0.75) !important;
+      box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.5),
+                  0 20px 60px rgba(239, 68, 68, 0.28),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .card-rush { border-color: rgba(239, 68, 68, 0.2);
+                 box-shadow: 0 4px 30px rgba(239, 68, 68, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-rush .card-ring { border-color: rgba(239,68,68,0.35); box-shadow: 0 0 18px rgba(239,68,68,0.2) inset; }
 
     .card-emoji {
       font-size: 3.8rem;
@@ -349,7 +367,7 @@
     .app-card:hover .card-ring {
       opacity: 1;
     }
-    .card-ludo   .card-ring { border-color: rgba(220,38,38,0.35); box-shadow: 0 0 18px rgba(220,38,38,0.2) inset; }
+    .card-ludo   .card-ring { border-color: rgba(168,85,247,0.35); box-shadow: 0 0 18px rgba(168,85,247,0.2) inset; }
     .card-math   .card-ring { border-color: rgba(236,72,153,0.35); box-shadow: 0 0 18px rgba(236,72,153,0.2) inset; }
     .card-memory .card-ring { border-color: rgba(0,200,255,0.3); box-shadow: 0 0 18px rgba(0,200,255,0.15) inset; }
     .card-time    .card-ring { border-color: rgba(212,175,55,0.3);  box-shadow: 0 0 18px rgba(212,175,55,0.15) inset; }
@@ -556,6 +574,15 @@
         <div class="card-name">Storybuch</div>
         <div class="card-desc">Chụp ảnh trang sách tiếng Đức, nhận diện chữ và đọc to chậm rãi cho bé nghe!</div>
         <div class="card-badge">📷 OCR · 🔊 Deutsch</div>
+      </div>
+
+      <!-- Rush Hour -->
+      <div class="app-card card-rush card-enter" onclick="openApp('xoai-rush-hour/index.html', '🚗 Rush Hour')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🚗</div>
+        <div class="card-name">Rush Hour</div>
+        <div class="card-desc">Giải cứu xe đỏ khỏi bãi đỗ xe kẹt! Trò chơi logic ThinkFun kinh điển. 40 thử thách!</div>
+        <div class="card-badge">1 người · 40 levels</div>
       </div>
 
     </div>
