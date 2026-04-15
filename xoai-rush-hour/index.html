@@ -1485,6 +1485,90 @@ let hintRevealedCount = 0;
 let drag = null;
 
 // =====================================================
+// SOUND ENGINE (Web Audio API — no external files)
+// =====================================================
+const _AudioCtx = window.AudioContext || window.webkitAudioContext;
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new _AudioCtx();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+// Short tick when vehicle snaps to a new cell
+function playMoveTick() {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.exponentialRampToValueAtTime(280, t + 0.045);
+    gain.gain.setValueAtTime(0.09, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.055);
+  } catch(e) {}
+}
+
+// Thud when hitting a wall or another vehicle
+function playBump() {
+  try {
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+    // Low sine for the body of the thud
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(130, t);
+    osc.frequency.exponentialRampToValueAtTime(55, t + 0.13);
+    oscGain.gain.setValueAtTime(0.4, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.15);
+    // Noise burst for texture
+    const bufLen = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.18, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    noise.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noise.start(t);
+  } catch(e) {}
+}
+
+// Victory fanfare
+function playWin() {
+  try {
+    const ctx = getAudioCtx();
+    const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.13;
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.28);
+    });
+  } catch(e) {}
+}
+
+// =====================================================
 // GRID HELPERS
 // =====================================================
 function buildGrid(vStates, excludeId) {
@@ -1638,18 +1722,37 @@ function onPointerMove(e) {
   const cs = getCellPx(), g = getCellGap();
   const unit = cs + g;
 
+  // Snapshot previous cell position to detect snaps
+  const prevPendingRow = drag.pendingRow;
+  const prevPendingCol = drag.pendingCol;
+
   if (v.dir === 'H') {
     const rawDx = clientX - startX;
     const clampedDx = Math.max(-freeNeg * unit, Math.min(freePos * unit, rawDx));
     el.style.transform = `translateX(${clampedDx}px)`;
     drag.pendingCol = drag.startCol + Math.round(clampedDx / unit);
     drag.pendingRow = drag.startRow;
+    // Bump: raw movement exceeds the clamped range
+    const atLimit = rawDx > freePos * unit + 4 || rawDx < -freeNeg * unit - 4;
+    if (atLimit && !drag.bumpFired) { playBump(); drag.bumpFired = true; }
+    else if (!atLimit) { drag.bumpFired = false; }
   } else {
     const rawDy = clientY - startY;
     const clampedDy = Math.max(-freeNeg * unit, Math.min(freePos * unit, rawDy));
     el.style.transform = `translateY(${clampedDy}px)`;
     drag.pendingRow = drag.startRow + Math.round(clampedDy / unit);
     drag.pendingCol = drag.startCol;
+    // Bump: raw movement exceeds the clamped range
+    const atLimit = rawDy > freePos * unit + 4 || rawDy < -freeNeg * unit - 4;
+    if (atLimit && !drag.bumpFired) { playBump(); drag.bumpFired = true; }
+    else if (!atLimit) { drag.bumpFired = false; }
+  }
+
+  // Move tick: vehicle crossed into a new cell
+  const cellChanged = drag.pendingCol !== prevPendingCol || drag.pendingRow !== prevPendingRow;
+  const movedFromStart = drag.pendingCol !== drag.startCol || drag.pendingRow !== drag.startRow;
+  if (cellChanged && (prevPendingRow !== undefined || prevPendingCol !== undefined) && movedFromStart) {
+    playMoveTick();
   }
 }
 
@@ -1704,6 +1807,7 @@ function triggerWin() {
   document.getElementById('btn-next-level').style.display = nextLevel ? '' : 'none';
 
   document.getElementById('win-overlay').classList.add('visible');
+  playWin();
   spawnConfetti();
 }
 
