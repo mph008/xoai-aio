@@ -301,6 +301,24 @@
                  box-shadow: 0 4px 30px rgba(239, 68, 68, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-rush .card-ring { border-color: rgba(239,68,68,0.35); box-shadow: 0 0 18px rgba(239,68,68,0.2) inset; }
 
+    /* Card: Connect 4 — Blue board theme */
+    .card-connect4 {
+      --card-bg: linear-gradient(145deg, rgba(8, 30, 92, 0.55), rgba(2, 10, 28, 0.75));
+      --card-border: rgba(59, 130, 246, 0.5);
+      --card-glow: rgba(59, 130, 246, 0.4);
+      --card-accent: #60a5fa;
+      --card-accent-light: #bfdbfe;
+    }
+    .card-connect4:hover {
+      border-color: rgba(59, 130, 246, 0.75) !important;
+      box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.5),
+                  0 20px 60px rgba(59, 130, 246, 0.28),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .card-connect4 { border-color: rgba(59, 130, 246, 0.2);
+                    box-shadow: 0 4px 30px rgba(59, 130, 246, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-connect4 .card-ring { border-color: rgba(59,130,246,0.35); box-shadow: 0 0 18px rgba(59,130,246,0.2) inset; }
+
     .card-emoji {
       font-size: 3.8rem;
       line-height: 1;
@@ -583,6 +601,20 @@
         <div class="card-name">Rush Hour</div>
         <div class="card-desc">Giải cứu xe đỏ khỏi bãi đỗ xe kẹt! Trò chơi logic ThinkFun kinh điển. 40 thử thách!</div>
         <div class="card-badge">1 người · 40 levels</div>
+      </div>
+
+      <!-- Connect 4 -->
+      <div class="app-card card-connect4 card-enter" onclick="openApp('xoai-connect-4/index.html', '🔴 Connect 4')">
+        <div class="card-ring"></div>
+        <div class="card-emoji" style="font-size:0">
+          <div style="display:inline-flex;align-items:center;gap:6px">
+            <span style="font-size:2.8rem;filter:drop-shadow(0 0 10px rgba(239,68,68,0.7))">🔴</span>
+            <span style="font-size:2.8rem;filter:drop-shadow(0 0 10px rgba(251,191,36,0.7))">🟡</span>
+          </div>
+        </div>
+        <div class="card-name">Connect 4</div>
+        <div class="card-desc">Thả đĩa, nối 4 hàng là thắng! Đấu 2 người hoặc thách thức AI 3 mức độ khó.</div>
+        <div class="card-badge">2 người · vs AI</div>
       </div>
 
     </div>
