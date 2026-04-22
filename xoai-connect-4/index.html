@@ -309,6 +309,102 @@
       user-select: none; -webkit-tap-highlight-color: transparent;
     }
     .btn-menu:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .btn-review {
+      padding: 11px 24px; border-radius: 12px;
+      border: 1.5px solid rgba(96,165,250,0.35);
+      background: rgba(96,165,250,0.07);
+      color: #60a5fa;
+      font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s; width: 100%;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-review:hover  { background: rgba(96,165,250,0.18); border-color: rgba(96,165,250,0.65); color: #93c5fd; }
+    .btn-review:active { transform: scale(0.97); }
+
+    /* =========================================
+       REVIEW OVERLAY
+    ========================================= */
+    .review-card {
+      background: linear-gradient(145deg, rgba(10,10,28,0.98), rgba(4,4,16,0.99));
+      border-radius: 26px;
+      padding: 22px 18px 26px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      border: 1.5px solid rgba(96,165,250,0.2);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.95), 0 0 40px rgba(96,165,250,0.06);
+      max-width: 520px; width: 100%;
+      max-height: 96vh; overflow-y: auto;
+      animation: bounceIn 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .review-header {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+    }
+    .review-title {
+      font-family: 'Bangers', sans-serif; font-size: 1.55rem; letter-spacing: 3px;
+      color: #60a5fa; text-shadow: 0 0 16px rgba(96,165,250,0.55);
+    }
+    .review-close {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6); font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+      font-family: 'Nunito', sans-serif;
+    }
+    .review-close:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    .review-step-info {
+      font-size: 0.85rem; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 0.5px;
+      transition: color 0.25s;
+    }
+    .review-board-wrap { width: 100%; }
+    #review-board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px; padding: 14px;
+      background: rgba(8,22,72,0.78);
+      border-radius: 22px;
+      border: 2.5px solid rgba(59,130,246,0.4);
+      box-shadow: 0 0 40px rgba(59,130,246,0.12) inset, 0 8px 50px rgba(0,0,40,0.85);
+      width: 100%;
+    }
+    #review-board .cell { cursor: default; }
+    .cell.last-move {
+      outline: 3px solid rgba(255,255,255,0.85);
+      outline-offset: -2px;
+      filter: brightness(1.25);
+    }
+    .review-controls { display: flex; gap: 8px; align-items: center; }
+    .rv-btn {
+      width: 46px; height: 46px; border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.13);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.72); font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .rv-btn:hover  { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.28); }
+    .rv-btn:active { transform: scale(0.91); }
+    .rv-btn:disabled { opacity: 0.22; cursor: default; pointer-events: none; }
+    .rv-btn.rv-play {
+      width: 58px;
+      background: rgba(96,165,250,0.13); border-color: rgba(96,165,250,0.4); color: #60a5fa; font-size: 1.2rem;
+    }
+    .rv-btn.rv-play:hover { background: rgba(96,165,250,0.26); }
+    .rv-btn.rv-play.playing { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.5); color: #fbbf24; }
+    .review-move-info {
+      min-height: 24px; font-size: 0.82rem; font-weight: 800;
+      color: rgba(255,255,255,0.45); display: flex; align-items: center; gap: 6px;
+    }
+    .review-move-info img { width: 20px; height: 20px; object-fit: contain; }
+    .review-scrubber {
+      width: 100%; accent-color: #60a5fa; cursor: pointer; height: 4px;
+    }
+    @media (max-width: 400px) {
+      .review-card { padding: 16px 10px 20px; }
+      #review-board { gap: 4px; padding: 10px; }
+      .rv-btn { width: 40px; height: 40px; font-size: 0.95rem; }
+      .rv-btn.rv-play { width: 50px; }
+    }
 
     /* Confetti */
     @keyframes cfFall { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(108vh) rotate(720deg); } }
@@ -442,7 +538,35 @@
     <div class="result-win-discs" id="result-discs"></div>
     <div class="result-sub" id="result-sub"></div>
     <button class="btn-play-again" onclick="resetBoard(); hideOverlay();">🔄 Chơi lại</button>
+    <button class="btn-review" onclick="openReplay()">📽 Xem lại trận đấu</button>
     <button class="btn-menu" onclick="goHome()">← Về menu</button>
+  </div>
+</div>
+
+<!-- ========================================================
+     REVIEW OVERLAY
+======================================================== -->
+<div class="overlay hidden" id="overlay-review">
+  <div class="review-card">
+    <div class="review-header">
+      <span class="review-title">📽 XEM LẠI</span>
+      <button class="review-close" onclick="closeReplay()">✕</button>
+    </div>
+    <div class="review-step-info" id="review-step-info">Nước 0 / 0</div>
+    <div class="review-board-wrap">
+      <div id="review-board"></div>
+    </div>
+    <input type="range" class="review-scrubber" id="review-scrubber"
+           min="0" max="0" value="0"
+           oninput="replayGo(+this.value)">
+    <div class="review-controls">
+      <button class="rv-btn" id="rv-first" onclick="replayGo(0)" title="Về đầu">⏮</button>
+      <button class="rv-btn" id="rv-prev"  onclick="replayGo(replayStep - 1)" title="Nước trước">⏪</button>
+      <button class="rv-btn rv-play" id="rv-play-btn" onclick="toggleReplayPlay()" title="Tự chạy/dừng">▶</button>
+      <button class="rv-btn" id="rv-next"  onclick="replayGo(replayStep + 1)" title="Nước tiếp">⏩</button>
+      <button class="rv-btn" id="rv-last"  onclick="replayGo(moveHistory.length)" title="Về cuối">⏭</button>
+    </div>
+    <div class="review-move-info" id="review-move-info"></div>
   </div>
 </div>
 
@@ -461,6 +585,7 @@ const PNAME = { 1: 'Iron Man', 2: 'Thanos' };
    STATE
 ============================================================ */
 let board, currentPlayer, gameOver, mode, scores, isAnimating, hoveredCol;
+let moveHistory = [], replayWinCells = null, replayStep = 0, replayInterval = null;
 
 /* ============================================================
    HOME PREVIEW BOARD
@@ -524,6 +649,8 @@ function initBoard() {
   gameOver = false;
   isAnimating = false;
   hoveredCol = -1;
+  moveHistory = [];
+  replayWinCells = null;
 }
 
 function resetBoard() {
@@ -645,10 +772,12 @@ function dropPiece(col) {
 
 function afterDrop(col, row, player) {
   board[row][col] = player;
+  moveHistory.push({ col, row, player });
   renderBoard();
 
   const win = checkWinCells(board, player);
   if (win) {
+    replayWinCells = win;
     highlightWinner(win);
     gameOver = true;
     scores[player]++;
@@ -853,6 +982,123 @@ function hideOverlay() {
 }
 
 /* ============================================================
+   REPLAY
+============================================================ */
+function openReplay() {
+  if (!moveHistory.length) return;
+  hideOverlay();
+  replayStep = moveHistory.length; /* start at final position */
+  clearReplayInterval();
+
+  /* set scrubber range */
+  const scrubber = document.getElementById('review-scrubber');
+  scrubber.max   = moveHistory.length;
+  scrubber.value = moveHistory.length;
+
+  renderReviewStep(replayStep);
+  document.getElementById('overlay-review').classList.remove('hidden');
+}
+
+function closeReplay() {
+  clearReplayInterval();
+  document.getElementById('overlay-review').classList.add('hidden');
+  /* re-show result card so user can pick play-again / menu */
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+function clearReplayInterval() {
+  if (replayInterval) { clearInterval(replayInterval); replayInterval = null; }
+  const btn = document.getElementById('rv-play-btn');
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('playing'); }
+}
+
+function toggleReplayPlay() {
+  if (replayInterval) {
+    clearReplayInterval();
+  } else {
+    if (replayStep >= moveHistory.length) replayStep = 0; /* restart from beginning */
+    const btn = document.getElementById('rv-play-btn');
+    btn.textContent = '⏸'; btn.classList.add('playing');
+    replayInterval = setInterval(() => {
+      if (replayStep < moveHistory.length) {
+        replayStep++;
+        renderReviewStep(replayStep);
+        document.getElementById('review-scrubber').value = replayStep;
+      } else {
+        clearReplayInterval();
+      }
+    }, 900);
+  }
+}
+
+function replayGo(step) {
+  clearReplayInterval();
+  replayStep = Math.max(0, Math.min(step, moveHistory.length));
+  renderReviewStep(replayStep);
+  document.getElementById('review-scrubber').value = replayStep;
+}
+
+function renderReviewStep(step) {
+  /* Rebuild board state from scratch up to 'step' moves */
+  const b = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  for (let i = 0; i < step; i++) {
+    const { col, row, player } = moveHistory[i];
+    b[row][col] = player;
+  }
+  const lastMove  = step > 0 ? moveHistory[step - 1] : null;
+  const isLast    = step === moveHistory.length;
+  const winCells  = isLast && replayWinCells ? replayWinCells : null;
+
+  /* Render review board */
+  const boardEl = document.getElementById('review-board');
+  boardEl.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const val = b[r][c];
+      if (val === 1) {
+        cell.classList.add('p1');
+        const img = document.createElement('img'); img.src = PICON[1]; img.alt = 'Iron Man'; cell.appendChild(img);
+      } else if (val === 2) {
+        cell.classList.add('p2');
+        const img = document.createElement('img'); img.src = PICON[2]; img.alt = 'Thanos'; cell.appendChild(img);
+      }
+      if (lastMove && r === lastMove.row && c === lastMove.col) cell.classList.add('last-move');
+      if (winCells && winCells.some(([wr, wc]) => wr === r && wc === c)) cell.classList.add('win');
+      boardEl.appendChild(cell);
+    }
+  }
+
+  /* Step info label */
+  const total = moveHistory.length;
+  const infoEl = document.getElementById('review-step-info');
+  if (step === 0) {
+    infoEl.textContent = `Nước 0 / ${total} — Bắt đầu`;
+    infoEl.style.color = 'rgba(255,255,255,0.5)';
+  } else {
+    const m = moveHistory[step - 1];
+    infoEl.textContent = `Nước ${step} / ${total} — ${PNAME[m.player]}`;
+    infoEl.style.color = m.player === 1 ? '#ef4444' : '#fbbf24';
+  }
+
+  /* Move description row */
+  const moveEl = document.getElementById('review-move-info');
+  if (lastMove) {
+    const color = lastMove.player === 1 ? '#ef4444' : '#fbbf24';
+    moveEl.innerHTML = `<img src="${PICON[lastMove.player]}" alt="${PNAME[lastMove.player]}"><span style="color:${color}">${PNAME[lastMove.player]}</span><span>đặt quân ở cột ${lastMove.col + 1}</span>`;
+  } else {
+    moveEl.innerHTML = '<span>Bàn cờ trống — chưa có nước đi nào</span>';
+  }
+
+  /* Nav button disabled states */
+  document.getElementById('rv-first').disabled = step === 0;
+  document.getElementById('rv-prev').disabled  = step === 0;
+  document.getElementById('rv-next').disabled  = step === total;
+  document.getElementById('rv-last').disabled  = step === total;
+}
+
+/* ============================================================
    AI – EASY
 ============================================================ */
 function doAiMove() {
@@ -878,30 +1124,54 @@ function cloneBoard(b) { return b.map(r => [...r]); }
 
 function aiEasy() {
   const v = validCols(board);
-  return v[Math.floor(Math.random() * v.length)];
-}
-
-function aiMedium() {
-  const v = validCols(board);
-  /* win? */
+  /* take immediate win */
   for (const c of v) {
     const nb = cloneBoard(board); dropOnBoard(nb, c, 2);
     if (checkWinCells(nb, 2)) return c;
   }
-  /* block player win */
+  /* block immediate loss */
   for (const c of v) {
     const nb = cloneBoard(board); dropOnBoard(nb, c, 1);
     if (checkWinCells(nb, 1)) return c;
   }
-  /* prefer center */
-  for (const c of [3, 2, 4, 1, 5, 0, 6]) {
-    if (board[0][c] === 0) return c;
-  }
-  return aiEasy();
+  /* shuffle remaining – no fixed pattern to memorize */
+  return [...v].sort(() => Math.random() - 0.5)[0];
+}
+
+function aiMedium() {
+  /* Evaluate each column independently so we can randomize near-best moves.
+     Depth 4 total (1 applied + 3 inside minimax) detects double-threats. */
+  const v = validCols(board);
+  const results = v.map(c => {
+    const nb = cloneBoard(board);
+    dropOnBoard(nb, c, 2);
+    const { score } = minimax(nb, 3, -Infinity, Infinity, false);
+    return { c, score };
+  });
+  results.sort((a, b) => b.score - a.score);
+  const best = results[0].score;
+  /* Allow slight randomness among near-equal moves (epsilon=5).
+     When outcome is forced (win/loss), epsilon collapses to 0. */
+  const eps = Math.abs(best) > 9000000 ? 0 : 5;
+  const candidates = results.filter(r => r.score >= best - eps);
+  return candidates[Math.floor(Math.random() * candidates.length)].c;
 }
 
 function aiHard() {
-  return minimax(cloneBoard(board), 6, -Infinity, Infinity, true).col;
+  /* Per-column eval at depth 7, randomize exact ties only. */
+  const v = validCols(board);
+  const results = v.map(c => {
+    const nb = cloneBoard(board);
+    dropOnBoard(nb, c, 2);
+    const { score } = minimax(nb, 6, -Infinity, Infinity, false);
+    return { c, score };
+  });
+  results.sort((a, b) => b.score - a.score);
+  const best = results[0].score;
+  /* Randomize exact ties – prevents the AI always picking the same column
+     when multiple moves are strategically identical. */
+  const tied = results.filter(r => r.score === best);
+  return tied[Math.floor(Math.random() * tied.length)].c;
 }
 
 /* ============================================================
@@ -914,17 +1184,22 @@ function evalWindow(w, p) {
   const oc  = w.filter(x => x === opp).length;
   if (pc > 0 && oc > 0) return 0;
   if (pc === 4) return 100;
-  if (pc === 3 && ec === 1) return 5;
-  if (pc === 2 && ec === 2) return 2;
-  if (oc === 3 && ec === 1) return -4;
+  if (pc === 3 && ec === 1) return 10;
+  if (pc === 2 && ec === 2) return 4;
+  /* -12 vs +10: slightly prefer blocking an opponent 3-in-a-row
+     over building our own – the old -4 was the main bug causing
+     the AI to ignore the player's 3-in-a-row threats. */
+  if (oc === 3 && ec === 1) return -12;
+  if (oc === 2 && ec === 2) return -2;
   return 0;
 }
 
 function scorePos(b, p) {
   let s = 0;
-  /* center preference */
-  const cx = Math.floor(COLS / 2);
-  s += b.map(r => r[cx]).filter(v => v === p).length * 3;
+  /* center 3-column preference: col 3 strongest, cols 2 & 4 supporting */
+  s += b.map(r => r[3]).filter(v => v === p).length * 4;
+  s += b.map(r => r[2]).filter(v => v === p).length * 2;
+  s += b.map(r => r[4]).filter(v => v === p).length * 2;
   /* horizontal */
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c <= COLS-4; c++)
@@ -947,8 +1222,9 @@ function scorePos(b, p) {
 function minimax(b, depth, alpha, beta, maximizing) {
   const v  = validCols(b);
   const w1 = checkWinCells(b, 1), w2 = checkWinCells(b, 2);
-  if (w2) return { score:  10000000, col: null };
-  if (w1) return { score: -10000000, col: null };
+  /* depth bonus: prefer faster wins and delay losses as long as possible */
+  if (w2) return { score:  10000000 + depth, col: null };
+  if (w1) return { score: -10000000 - depth, col: null };
   if (v.length === 0 || depth === 0)
     return { score: scorePos(b, 2) - scorePos(b, 1), col: null };
 
