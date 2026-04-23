@@ -406,6 +406,50 @@
       .rv-btn.rv-play { width: 50px; }
     }
 
+    /* =========================================
+       FIRST PLAYER SELECTION
+    ========================================= */
+    .first-player-card {
+      background: linear-gradient(145deg, rgba(14,14,30,0.97), rgba(5,5,18,0.99));
+      border-radius: 26px;
+      padding: 36px 28px 32px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.9);
+      max-width: 360px; width: 100%;
+      animation: bounceIn 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .fp-title {
+      font-family: 'Bangers', sans-serif;
+      font-size: 2rem; letter-spacing: 4px;
+      color: #fff; text-align: center;
+      text-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+    .fp-subtitle {
+      color: rgba(255,255,255,0.42);
+      font-size: 0.82rem; font-weight: 700;
+      text-align: center; letter-spacing: 0.5px;
+    }
+    .fp-options { display: flex; gap: 14px; width: 100%; }
+    .fp-btn {
+      flex: 1; padding: 20px 10px; border-radius: 18px;
+      border: 2px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #fff; cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      font-family: 'Nunito', sans-serif;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .fp-btn img { width: 52px; height: 52px; object-fit: contain; }
+    .fp-btn-name { font-size: 0.95rem; font-weight: 900; }
+    .fp-btn-hint { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.4); }
+    .fp-btn.fp-p1 { border-color: rgba(239,68,68,0.3); }
+    .fp-btn.fp-p1:hover { border-color: rgba(239,68,68,0.78); background: rgba(239,68,68,0.11); box-shadow: 0 0 26px rgba(239,68,68,0.3); transform: translateY(-4px) scale(1.03); }
+    .fp-btn.fp-p2 { border-color: rgba(251,191,36,0.3); }
+    .fp-btn.fp-p2:hover { border-color: rgba(251,191,36,0.78); background: rgba(251,191,36,0.11); box-shadow: 0 0 26px rgba(251,191,36,0.3); transform: translateY(-4px) scale(1.03); }
+    .fp-btn:active { transform: scale(0.96) !important; }
+
     /* Confetti */
     @keyframes cfFall { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(108vh) rotate(720deg); } }
     .cf { position: fixed; top: -20px; opacity: 0; z-index: 999; border-radius: 3px; animation: cfFall linear forwards; pointer-events: none; }
@@ -570,6 +614,30 @@
   </div>
 </div>
 
+<!-- ========================================================
+     FIRST PLAYER SELECTION OVERLAY
+======================================================== -->
+<div class="overlay hidden" id="overlay-first-player">
+  <div class="first-player-card">
+    <div class="fp-title">Ai đi trước?</div>
+    <div class="fp-subtitle" id="fp-subtitle">Chọn người thực hiện nước đi đầu tiên</div>
+    <div class="fp-options">
+      <button class="fp-btn fp-p1" onclick="confirmStart(1)">
+        <img src="https://img.icons8.com/?size=96&id=12268&format=png" alt="Iron Man"
+             style="filter:drop-shadow(0 0 14px rgba(239,68,68,0.85))">
+        <span class="fp-btn-name" id="fp-btn-p1-label">Iron Man</span>
+        <span class="fp-btn-hint" id="fp-btn-p1-hint">Người chơi 1</span>
+      </button>
+      <button class="fp-btn fp-p2" onclick="confirmStart(2)">
+        <img src="https://img.icons8.com/?size=96&id=118482&format=png" alt="Thanos"
+             style="filter:drop-shadow(0 0 14px rgba(251,191,36,0.85))">
+        <span class="fp-btn-name" id="fp-btn-p2-label">Thanos</span>
+        <span class="fp-btn-hint" id="fp-btn-p2-hint">Người chơi 2</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    CONSTANTS
@@ -586,6 +654,7 @@ const PNAME = { 1: 'Iron Man', 2: 'Thanos' };
 ============================================================ */
 let board, currentPlayer, gameOver, mode, scores, isAnimating, hoveredCol;
 let moveHistory = [], replayWinCells = null, replayStep = 0, replayInterval = null;
+let pendingMode = null, firstPlayer = 1;
 
 /* ============================================================
    HOME PREVIEW BOARD
@@ -621,8 +690,23 @@ let moveHistory = [], replayWinCells = null, replayStep = 0, replayInterval = nu
    SCREENS
 ============================================================ */
 function startGame(selectedMode) {
-  mode = selectedMode;
-  scores = { 1: 0, 2: 0 };
+  pendingMode = selectedMode;
+  const isAI = selectedMode !== 'pvp';
+  document.getElementById('fp-btn-p1-label').textContent = 'Iron Man';
+  document.getElementById('fp-btn-p1-hint').textContent  = isAI ? 'Bạn' : 'Người chơi 1';
+  document.getElementById('fp-btn-p2-label').textContent = isAI ? 'AI (Thanos)' : 'Thanos';
+  document.getElementById('fp-btn-p2-hint').textContent  = isAI ? 'Máy tính' : 'Người chơi 2';
+  document.getElementById('fp-subtitle').textContent     = isAI
+    ? 'Bạn muốn đi trước hay để AI đi trước?'
+    : 'Chọn người thực hiện nước đi đầu tiên';
+  document.getElementById('overlay-first-player').classList.remove('hidden');
+}
+
+function confirmStart(player) {
+  document.getElementById('overlay-first-player').classList.add('hidden');
+  mode        = pendingMode;
+  scores      = { 1: 0, 2: 0 };
+  firstPlayer = player;
 
   const isAI = mode !== 'pvp';
   document.getElementById('p2-label').textContent = isAI ? 'Thanos (AI)' : 'Thanos';
@@ -630,8 +714,12 @@ function startGame(selectedMode) {
   document.getElementById('screen-home').classList.remove('active');
   document.getElementById('screen-game').classList.add('active');
 
-  initBoard();
+  initBoard(player);
   renderAll();
+
+  if (mode !== 'pvp' && currentPlayer === 2) {
+    setTimeout(doAiMove, 450 + Math.random() * 300);
+  }
 }
 
 function goHome() {
@@ -643,9 +731,9 @@ function goHome() {
 /* ============================================================
    BOARD INIT / RENDER
 ============================================================ */
-function initBoard() {
+function initBoard(startingPlayer) {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-  currentPlayer = 1;
+  currentPlayer = startingPlayer !== undefined ? startingPlayer : 1;
   gameOver = false;
   isAnimating = false;
   hoveredCol = -1;
@@ -654,9 +742,13 @@ function initBoard() {
 }
 
 function resetBoard() {
-  initBoard();
+  firstPlayer = firstPlayer === 1 ? 2 : 1;
+  initBoard(firstPlayer);
   renderAll();
   hideOverlay();
+  if (mode !== 'pvp' && currentPlayer === 2) {
+    setTimeout(doAiMove, 450 + Math.random() * 300);
+  }
 }
 
 function renderAll() {
