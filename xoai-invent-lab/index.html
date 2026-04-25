@@ -483,14 +483,17 @@
     <span id="lv-badge-2" class="lv-badge lv1"></span>
   </div>
 
-  <!-- mini scene reminder -->
-  <div id="mat-mini-scene" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 16px;margin-bottom:18px;">
-    <span id="mat-prob-emoji" style="font-size:2.4rem;flex-shrink:0;"></span>
-    <div>
-      <div id="mat-prob-section-lbl" style="font-size:.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(52,211,153,.55);margin-bottom:3px;">VẤN ĐỀ CỦA BẠN</div>
-      <div id="mat-prob-short" style="font-size:.85rem;font-weight:800;color:rgba(255,255,255,.65);line-height:1.4;"></div>
+  <!-- animated scene reminder -->
+  <div id="mat-scene-wrap" style="position:relative;width:100%;height:130px;border-radius:18px;overflow:hidden;margin-bottom:14px;">
+    <div id="mat-scene-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+    <div id="mat-scene-inner" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+    <!-- speak overlay -->
+    <div onclick="speakCurrent()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;z-index:10;">🔊</div>
+    <!-- short label bottom bar -->
+    <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);padding:6px 12px;display:flex;align-items:center;gap:8px;">
+      <span id="mat-prob-emoji" style="font-size:1.4rem;flex-shrink:0;"></span>
+      <span id="mat-prob-short" style="font-size:.78rem;font-weight:800;color:rgba(255,255,255,.8);line-height:1.3;"></span>
     </div>
-    <div class="read-badge" onclick="speakCurrent()" style="flex-shrink:0;">🔊</div>
   </div>
 
   <!-- material grid -->
@@ -773,6 +776,25 @@ function mkStars(n=8){
     s+=`<div class="star-dot" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;animation-delay:${Math.random()}s;"></div>`;
   }
   return s;
+}
+
+// Generate a default animated scene for scenarios without a custom buildScene
+const _CHARS = ["\uD83E\uDDD2","\uD83D\uDC67","\uD83D\uDC66","\uD83E\uDDD1"];
+function _buildDefaultScene(s) {
+  const char = _CHARS[s.id % _CHARS.length];
+  const bg   = s.sceneBg || "bg-space";
+  const isSpace  = bg === "bg-space";
+  const stars    = isSpace ? mkStars(10) : "";
+  const c = s.constraints || [];
+  const badgeC   = c[0] ? `<div class="scene-el anim-pulse" style="right:14%;top:18%;font-size:1.6rem;">${c[0].emoji}</div>` : "";
+  const badgeC2  = c[1] ? `<div class="scene-el anim-pulse" style="right:30%;top:18%;font-size:1.4rem;animation-delay:.4s">${c[1].emoji}</div>` : "";
+  return `
+    ${stars}
+    <div class="scene-el anim-bounce" style="left:12%;bottom:15%;font-size:3rem;">${char}</div>
+    <div class="scene-el anim-float"  style="left:44%;bottom:18%;font-size:3.8rem;">${s.emoji}</div>
+    <div class="scene-el anim-pulse"  style="left:46%;top:10%;font-size:1.5rem;">\u2753</div>
+    ${badgeC}${badgeC2}
+  `;
 }
 
 /* ═══════════════════════════════════════
@@ -1809,6 +1831,11 @@ function _playGoogleChunks(chunks, lang, idx) {
   audio.play().catch(() => _speakWebSpeech(chunks.slice(idx).join(" ")));
 }
 
+// Detect Safari / iOS where Google TTS audio autoplay is blocked
+const _isIOS    = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const _isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const _preferWebSpeech = _isIOS || _isSafari;
+
 function speak(text) {
   // stop current
   if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
@@ -1818,9 +1845,15 @@ function speak(text) {
   if (!clean) return;
 
   const lang   = T().ttsLang.split("-")[0]; // "vi" or "de"
-  const chunks = _splitChunks(clean, 180);
   _setTtsIcon(true);
-  _playGoogleChunks(chunks, lang, 0);
+
+  if (_preferWebSpeech) {
+    // Safari/iOS: Web Speech API works natively, Google TTS audio is blocked
+    _speakWebSpeech(clean);
+  } else {
+    const chunks = _splitChunks(clean, 180);
+    _playGoogleChunks(chunks, lang, 0);
+  }
 }
 
 function speakCurrent() {
@@ -2063,6 +2096,16 @@ function buildMaterialsScreen(s) {
   document.getElementById("mat-prob-short").textContent = L(s.problemShort);
   document.getElementById("mat-section-header").textContent = t.matSection;
   document.getElementById("hint-section-header").textContent = t.hintSection;
+
+  // animated scene
+  const sceneBg = document.getElementById("mat-scene-bg");
+  const sceneInner = document.getElementById("mat-scene-inner");
+  sceneBg.className = "";
+  sceneBg.style.cssText = "position:absolute;top:0;left:0;right:0;bottom:0;";
+  sceneBg.classList.add(s.sceneBg || "bg-space");
+  const sceneHtml = s.buildScene ? s.buildScene() : "";
+  sceneInner.innerHTML = sceneHtml || _buildDefaultScene(s);
+
   // reset hints panel
   document.getElementById("hints-row").innerHTML = "";
   const hintBtn = document.getElementById("hint-toggle-btn");
@@ -2070,9 +2113,6 @@ function buildMaterialsScreen(s) {
   const hintLbl = document.getElementById("hint-section-header");
   if (hintLbl) hintLbl.textContent = t.hintSection;
   state.hintIndex = 0;
-  // prob section label
-  const psl = document.getElementById("mat-prob-section-lbl");
-  if (psl) psl.textContent = t.probSection;
   // btn to explain
   const bte = document.getElementById("btn-to-explain-txt");
   if (bte) bte.textContent = t.btnExplain;
