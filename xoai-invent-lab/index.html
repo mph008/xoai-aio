@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🧪 Invent Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Bangers&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      min-height: 100vh;
+      background: #0a0a14;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(16,185,129,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(99,102,241,0.08) 0%, transparent 60%);
+      color: #f1f5f9;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    .screen { display: none; flex-direction: column; min-height: 100vh; }
+    .screen.active { display: flex; animation: fadeUp 0.38s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
+
+    .ff-bang { font-family: 'Bangers', Impact, sans-serif; letter-spacing: 3px; }
+
+    /* ── SCENE STAGE ── */
+    .scene-stage {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      border-radius: 24px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    /* sky/water/desert backgrounds */
+    .bg-river { background: linear-gradient(180deg, #7dd3fc 0%, #bae6fd 45%, #86efac 45%, #4ade80 100%); }
+    .bg-tree   { background: linear-gradient(180deg, #a3e635 0%, #4ade80 40%, #166534 100%); }
+    .bg-desert { background: linear-gradient(180deg, #fde68a 0%, #fbbf24 40%, #d97706 100%); }
+    .bg-space  { background: radial-gradient(ellipse at 50% 80%, #312e81 0%, #0f0c29 100%); }
+    .bg-city   { background: linear-gradient(180deg, #93c5fd 0%, #60a5fa 30%, #6b7280 60%, #4b5563 100%); }
+
+    /* animated elements inside scene */
+    .scene-el {
+      position: absolute;
+      font-size: 3.2rem;
+      line-height: 1;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    }
+
+    /* water wave */
+    .wave {
+      position: absolute; bottom: 0; left: -20%; width: 140%; height: 55%;
+      background: rgba(59,130,246,0.45);
+      border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+      animation: waveAnim 2.2s ease-in-out infinite;
+    }
+    @keyframes waveAnim { 0%,100%{transform:translateX(0) scaleY(1);} 50%{transform:translateX(5%) scaleY(1.06);} }
+
+    /* character bounce */
+    @keyframes bounce {0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+    @keyframes shake  {0%,100%{transform:rotate(0);}25%{transform:rotate(-12deg);}75%{transform:rotate(12deg);}}
+    @keyframes float  {0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-18px) rotate(5deg);}}
+    @keyframes pulse  {0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
+    @keyframes spin   {from{transform:rotate(0);}to{transform:rotate(360deg);}}
+    @keyframes fallIn {from{transform:translateY(-80px) rotate(-20deg);opacity:0;}to{transform:translateY(0) rotate(0);opacity:1;}}
+
+    .anim-bounce { animation: bounce 1.1s ease-in-out infinite; }
+    .anim-shake  { animation: shake 0.7s ease-in-out infinite; }
+    .anim-float  { animation: float 2.4s ease-in-out infinite; }
+    .anim-pulse  { animation: pulse 1.4s ease-in-out infinite; }
+    .anim-spin   { animation: spin 3s linear infinite; }
+    .anim-fallin { animation: fallIn 0.6s ease both; }
+
+    /* stars in space scene */
+    .star-dot {
+      position: absolute; background: white; border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── SPEAK BUBBLE ── */
+    .speak-bubble {
+      position: relative;
+      background: rgba(255,255,255,0.96);
+      color: #1e293b;
+      border-radius: 20px;
+      padding: 14px 18px;
+      font-weight: 900;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+
+    .speak-bubble .play-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #10b981; color: white; font-size: 0.9rem;
+      float: right; margin-left: 10px; flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.45);
+      cursor: pointer;
+    }
+    .speak-bubble .tts-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981; margin-right: 3px;
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+    .tts-dot:nth-child(2){ animation-delay: 0.15s; }
+    .tts-dot:nth-child(3){ animation-delay: 0.3s; }
+
+    /* ── CONSTRAINT PILLS ── */
+    .no-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(239,68,68,0.12); border: 1.5px solid rgba(239,68,68,0.32);
+      border-radius: 50px; padding: 8px 14px;
+      font-size: 1.3rem; font-weight: 900; color: #fca5a5;
+    }
+    .no-cross {
+      font-size: 1.6rem; color: #ef4444; font-weight: 900; line-height: 1;
+    }
+
+    /* ── MATERIAL CHIPS ── */
+    .mat-chip {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px;
+      width: 80px; height: 80px; border-radius: 20px;
+      border: 3px solid rgba(16,185,129,0.2);
+      background: rgba(16,185,129,0.06);
+      cursor: pointer; transition: all 0.18s;
+      font-size: 2.4rem;
+      position: relative;
+    }
+    .mat-chip span.mat-label {
+      font-size: 0.62rem; font-weight: 900; color: rgba(255,255,255,0.45);
+      text-align: center; line-height: 1.2; max-width: 70px;
+    }
+    .mat-chip:active { transform: scale(0.88); }
+    .mat-chip.selected {
+      border-color: #34d399; background: rgba(52,211,153,0.2);
+      box-shadow: 0 0 18px rgba(52,211,153,0.4);
+      transform: scale(1.06);
+    }
+    @keyframes chipPop { 0%{transform:scale(1);}40%{transform:scale(1.28);}100%{transform:scale(1.06);} }
+    .mat-chip.selected { animation: chipPop 0.3s ease both; }
+    .mat-info-btn {
+      position: absolute; top: 3px; right: 3px;
+      width: 18px; height: 18px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 50%; font-size: 10px; font-weight: 900; cursor: pointer;
+      color: rgba(255,255,255,0.45); padding: 0; line-height: 1;
+      font-family: 'Nunito', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; z-index: 2;
+    }
+    .mat-info-btn:active { background: rgba(52,211,153,0.35); color: #a7f3d0; transform: scale(0.85); }
+
+    /* ── COMBO ZONE ── */
+    @keyframes comboPop{from{opacity:0;transform:scale(.65) rotate(-8deg);}to{opacity:1;transform:scale(1) rotate(0);}}
+    .combo-card {
+      background: linear-gradient(135deg, rgba(52,211,153,0.18), rgba(16,185,129,0.08));
+      border: 2px solid rgba(52,211,153,0.45);
+      border-radius: 22px; padding: 18px;
+      text-align: center;
+      animation: comboPop 0.45s cubic-bezier(.175,.885,.32,1.275) both;
+    }
+    .combo-emoji { font-size: 3.8rem; margin-bottom: 8px; }
+
+    /* ── BUTTONS ── */
+    .btn-main {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 16px 28px; border-radius: 18px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white; font-weight: 900; font-size: 1.1rem;
+      cursor: pointer; border: none; font-family: 'Nunito', sans-serif;
+      transition: all 0.2s; box-shadow: 0 4px 22px rgba(16,185,129,0.38);
+      width: 100%;
+    }
+    .btn-main:disabled { opacity: 0.32; cursor: not-allowed; box-shadow: none; transform: none; }
+    .btn-main:not(:disabled):active { transform: scale(0.96); }
+
+    .btn-ghost {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 11px 18px; border-radius: 14px;
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55);
+      font-weight: 800; font-size: 0.88rem; cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.12); font-family: 'Nunito', sans-serif;
+      transition: all 0.2s;
+    }
+    .btn-ghost:active { transform: scale(0.95); background: rgba(255,255,255,0.12); color: #fff; }
+
+    /* ── LEVEL BADGE ── */
+    .lv-badge { display:inline-flex;align-items:center;padding:3px 11px;border-radius:99px;font-size:.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase; }
+    .lv1{background:rgba(52,211,153,.14);color:#6ee7b7;border:1px solid rgba(52,211,153,.3);}
+    .lv2{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.3);}
+    .lv3{background:rgba(239,68,68,.14);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+    .lv4{background:rgba(167,139,250,.14);color:#c4b5fd;border:1px solid rgba(167,139,250,.3);}
+    .lv5{background:rgba(251,113,133,.2);color:#fda4af;border:1px solid rgba(251,113,133,.4);}
+
+    /* ── GROUP BADGE ── */
+    .group-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 50px;
+      font-size: 0.72rem; font-weight: 900; letter-spacing: 0.5px;
+    }
+
+    /* ── SCENARIO CARD ── */
+    .scenario-card {
+      background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 22px; padding: 14px 16px; cursor: pointer; transition: all 0.22s;
+    }
+    .scenario-card:active { transform: scale(0.97); }
+    .scenario-card.done { border-color: rgba(52,211,153,0.28); background: rgba(52,211,153,0.05); }
+
+    /* ── FILTER TABS (legacy, kept for potential reuse) ── */
+    .filter-tab {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 14px; border-radius: 50px; white-space: nowrap;
+      font-size: 0.78rem; font-weight: 900; cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.45); transition: all 0.18s; flex-shrink: 0;
+    }
+    .filter-tab.active {
+      background: rgba(16,185,129,0.15); border-color: rgba(52,211,153,0.4); color: #a7f3d0;
+    }
+    .filter-tab:active { transform: scale(0.94); }
+
+    /* ── GROUP SELECTOR CARDS ── */
+    .grp-card {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 10px 8px 10px;
+      border-radius: 16px; cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      transition: all 0.22s cubic-bezier(.175,.885,.32,1.275);
+      user-select: none; -webkit-tap-highlight-color: transparent;
+      min-height: 82px;
+    }
+    .grp-card.grp-all {
+      flex-direction: row; gap: 10px; justify-content: flex-start;
+      padding: 12px 16px; min-height: 52px;
+    }
+    .grp-card:active { transform: scale(0.94); }
+    .grp-card.active {
+      border-color: rgba(52,211,153,0.55);
+      background: rgba(52,211,153,0.1);
+      box-shadow: 0 0 20px rgba(52,211,153,0.18);
+    }
+    .grp-card.grp-empty {
+      opacity: 0.35; pointer-events: none;
+    }
+    .grp-card .gc-emoji {
+      font-size: 1.7rem; line-height: 1;
+    }
+    .grp-card.grp-all .gc-emoji { font-size: 1.5rem; }
+    .grp-card .gc-name {
+      font-size: 0.72rem; font-weight: 900; color: rgba(255,255,255,0.6);
+      text-align: center; line-height: 1.2;
+    }
+    .grp-card.active .gc-name { color: #a7f3d0; }
+    .grp-card.grp-all .gc-name { font-size: 0.82rem; }
+    .grp-card .gc-desc {
+      font-size: 0.58rem; font-weight: 700; color: rgba(255,255,255,0.28);
+      text-align: center; line-height: 1.3;
+    }
+    .grp-card.active .gc-desc { color: rgba(255,255,255,0.45); }
+    .grp-card.grp-all .gc-desc { text-align: left; font-size: 0.62rem; }
+    .grp-card .gc-count {
+      font-size: 0.65rem; font-weight: 900; letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.06);
+      border-radius: 99px; padding: 2px 8px;
+    }
+    .grp-card.active .gc-count { color: rgba(52,211,153,0.8); background: rgba(52,211,153,0.12); }
+    .grp-card .gc-done-ring {
+      position: absolute; top: 8px; right: 10px;
+      font-size: 0.65rem; font-weight: 900; color: #34d399;
+    }
+
+    /* ── FEEDBACK ── */
+    @keyframes starBurst{0%{transform:scale(0) rotate(-30deg);opacity:0;}60%{transform:scale(1.3) rotate(10deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:1;}}
+    .star-burst { animation: starBurst 0.5s cubic-bezier(.175,.885,.32,1.275) both; }
+
+    /* ── CONFETTI ── */
+    .conf { position:fixed;pointer-events:none;z-index:999;border-radius:50%;animation:confFall 2s ease-in forwards; }
+    @keyframes confFall{0%{opacity:1;transform:translateY(-5vh) rotate(0);}100%{opacity:0;transform:translateY(110vh) rotate(720deg);}}
+
+    /* ── AVATAR ── */
+    .avatar-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px; border-radius: 50px;
+      background: rgba(16,185,129,0.1); border: 1.5px solid rgba(16,185,129,0.25);
+      font-weight: 900; font-size: 0.85rem; color: #a7f3d0;
+    }
+
+    /* ── PROGRESS DOTS ── */
+    .pdot{width:11px;height:11px;border-radius:50%;transition:all .3s;}
+    .pdot.done{background:#10b981;}
+    .pdot.cur{background:#fbbf24;animation:pulse 1s infinite;}
+    .pdot.todo{background:rgba(255,255,255,.14);}
+
+    /* ── IDEA INPUT ── */
+    .idea-input {
+      width:100%;background:rgba(255,255,255,.06);border:2px solid rgba(16,185,129,.22);
+      border-radius:16px;padding:14px;color:#f1f5f9;font-family:'Nunito',sans-serif;
+      font-size:1rem;font-weight:700;resize:none;outline:none;transition:border-color .2s;
+    }
+    .idea-input:focus{border-color:#10b981;}
+    .idea-input::placeholder{color:rgba(255,255,255,.22);font-weight:600;}
+
+    /* ── TTS speaking animation ── */
+    @keyframes speakPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.5);}50%{box-shadow:0 0 0 12px rgba(52,211,153,0);}}
+    .speaking { animation: speakPulse 1s ease-in-out infinite; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-thumb{background:rgba(16,185,129,.28);border-radius:4px;}
+
+    @keyframes logoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+
+    /* ── READ ALOUD badge ── */
+    .read-badge {
+      display:inline-flex;align-items:center;gap:5px;
+      padding:5px 12px;border-radius:50px;
+      background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);
+      font-size:0.72rem;font-weight:900;color:#fcd34d;cursor:pointer;
+    }
+    .read-badge:active{transform:scale(0.94);}
+
+    /* ── MIC BUTTON ── */
+    @keyframes micPulse{
+      0%  { box-shadow: 0 0 0 0   rgba(239,68,68,0.7), 0 4px 20px rgba(239,68,68,0.4); }
+      70% { box-shadow: 0 0 0 22px rgba(239,68,68,0),   0 4px 20px rgba(239,68,68,0.4); }
+      100%{ box-shadow: 0 0 0 0   rgba(239,68,68,0),   0 4px 20px rgba(239,68,68,0.4); }
+    }
+    @keyframes micWave{
+      0%,100%{ transform:scaleY(1); } 50%{ transform:scaleY(1.5); }
+    }
+    .mic-btn {
+      display:flex;flex-direction:column;align-items:center;gap:10px;
+      width:100%;padding:20px 18px;border-radius:22px;
+      background:rgba(239,68,68,0.08);border:2px solid rgba(239,68,68,0.22);
+      cursor:pointer;transition:all 0.2s;user-select:none;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .mic-btn:active{ transform:scale(0.96); }
+    .mic-btn.recording {
+      background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.55);
+      animation:micPulse 1.4s ease-out infinite;
+    }
+    .mic-btn.recording .mic-icon{ filter:drop-shadow(0 0 14px rgba(239,68,68,0.9)); }
+    .mic-icon { font-size:3.2rem; transition:transform 0.2s; }
+    .mic-label { font-size:0.88rem;font-weight:900;color:rgba(255,255,255,0.55);transition:color 0.2s; }
+    .mic-btn.recording .mic-label { color:#fca5a5; }
+    .mic-waves { display:flex;align-items:center;gap:4px;height:22px; }
+    .mic-waves span {
+      display:inline-block;width:4px;border-radius:2px;
+      background:rgba(239,68,68,0.5);
+    }
+    .mic-btn.recording .mic-waves span {
+      background:#ef4444;
+      animation:micWave 0.5s ease-in-out infinite;
+    }
+    .mic-waves span:nth-child(1){ height:8px;  animation-delay:0s; }
+    .mic-waves span:nth-child(2){ height:14px; animation-delay:0.1s; }
+    .mic-waves span:nth-child(3){ height:20px; animation-delay:0.2s; }
+    .mic-waves span:nth-child(4){ height:14px; animation-delay:0.1s; }
+    .mic-waves span:nth-child(5){ height:8px;  animation-delay:0s; }
+    .mic-no-support { display:none; background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+      border-radius:14px;padding:12px 16px;font-size:.82rem;font-weight:800;
+      color:rgba(255,255,255,.38);text-align:center;line-height:1.5; }
+  </style>
+</head>
+<body>
+<!-- ── Fixed lang toggle (always on top) ── -->
+<div id="lang-toggle-wrap" style="position:fixed;top:14px;right:14px;z-index:9999;">
+  <button id="lang-btn" onclick="toggleLang()" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:50px;border:1.5px solid rgba(16,185,129,.4);background:rgba(10,10,20,.85);color:#a7f3d0;font-weight:900;font-size:.8rem;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 2px 16px rgba(0,0,0,.45);backdrop-filter:blur(8px);">🇩🇪 Deutsch</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 0 · HOME
+══════════════════════════════════════ -->
+<div id="screen-home" class="screen active" style="padding:22px 18px 48px;max-width:600px;margin:0 auto;width:100%;">
+
+  <!-- header -->
+  <div style="text-align:center;margin-bottom:18px;">
+    <div style="font-size:3.6rem;animation:logoFloat 3s ease-in-out infinite;filter:drop-shadow(0 0 22px rgba(16,185,129,.5));">🧪</div>
+    <h1 class="ff-bang" style="font-size:2.6rem;color:#34d399;text-shadow:0 0 28px rgba(52,211,153,.55);">INVENT LAB</h1>
+    <p id="home-subtitle" style="color:rgba(255,255,255,.32);font-size:.72rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">PHÒNG THÍ NGHIỆM SÁNG TẠO</p>
+  </div>
+
+  <!-- avatar -->
+  <div style="display:flex;justify-content:center;margin-bottom:18px;">
+    <div class="avatar-badge">
+      <span id="avatar-emoji">🧒</span>
+      <span id="avatar-title">Junior Inventor</span>
+      <span style="color:rgba(255,255,255,.28);">·</span>
+      <span id="avatar-score" style="color:#fbbf24;font-weight:900;">⭐ 0</span>
+    </div>
+  </div>
+
+  <!-- how-to for non-readers: emoji steps -->
+  <div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 18px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-around;align-items:center;gap:4px;">
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:2rem;margin-bottom:4px;">👀</div>
+        <div class="hw-step1" style="font-size:.62rem;font-weight:900;color:rgba(255,255,255,.35);">Xem</div>
+      </div>
+      <div style="color:rgba(255,255,255,.2);font-size:1.2rem;">›</div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:2rem;margin-bottom:4px;">🎯</div>
+        <div class="hw-step2" style="font-size:.62rem;font-weight:900;color:rgba(255,255,255,.35);">Chọn</div>
+      </div>
+      <div style="color:rgba(255,255,255,.2);font-size:1.2rem;">›</div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:2rem;margin-bottom:4px;">🗣️</div>
+        <div class="hw-step3" style="font-size:.62rem;font-weight:900;color:rgba(255,255,255,.35);">Kể</div>
+      </div>
+      <div style="color:rgba(255,255,255,.2);font-size:1.2rem;">›</div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:2rem;margin-bottom:4px;">🌟</div>
+        <div class="hw-step4" style="font-size:.62rem;font-weight:900;color:rgba(255,255,255,.35);">Điểm!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- group selector grid -->
+  <div id="filter-label" style="color:rgba(255,255,255,.3);font-size:.65rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">CHỌN LOẠI</div>
+  <div id="group-grid" style="margin-bottom:18px;"></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <span id="choose-label" style="color:rgba(255,255,255,.35);font-size:.72rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;">CHỌN THỬ THÁCH</span>
+    <span id="home-score-tag" style="color:rgba(52,211,153,.5);font-size:.72rem;font-weight:900;"></span>
+  </div>
+
+  <div id="scenario-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;"></div>
+  <p id="footer-txt" style="text-align:center;color:rgba(255,255,255,.12);font-size:.7rem;font-weight:700;">Xoài · Invent Lab · 2026</p>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 · PROBLEM (Visual-first)
+══════════════════════════════════════ -->
+<div id="screen-problem" class="screen" style="padding:18px 18px 36px;max-width:600px;margin:0 auto;width:100%;">
+  <!-- topbar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <button class="btn-ghost" onclick="showScreen('home')" style="padding:8px 14px;font-size:.82rem;">← 🏠</button>
+    <div style="display:flex;gap:6px;"><div class="pdot cur"></div><div class="pdot todo"></div><div class="pdot todo"></div></div>
+    <span id="lv-badge-1" class="lv-badge lv1"></span>
+  </div>
+
+  <!-- story card — tap to hear -->
+  <div class="speak-bubble" onclick="speakCurrent()" id="speak-bubble-prob" style="font-size:1.05rem;line-height:1.65;border-radius:18px;border:2px solid rgba(16,185,129,.25);">
+    <div class="play-icon" id="speak-icon-prob">▶</div>
+    <div id="prob-text" style="padding-right:8px;"></div>
+  </div>
+
+  <!-- NO pills (emoji constraints) -->
+  <div style="margin-bottom:18px;">
+    <div id="no-section-label" style="font-size:.65rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:rgba(252,165,165,.5);margin-bottom:10px;">🚫 KHÔNG ĐƯỢC...</div>
+    <div id="constraints-row" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+  </div>
+
+  <!-- big CTA -->
+  <button class="btn-main" onclick="showScreen('materials')" id="btn-start-invent">
+    <span style="font-size:1.4rem;">💡</span>
+    <span id="btn-start-invent-txt">Bắt đầu sáng tạo!</span>
+  </button>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 · MATERIALS (Emoji grid)
+══════════════════════════════════════ -->
+<div id="screen-materials" class="screen" style="padding:18px 18px 36px;max-width:600px;margin:0 auto;width:100%;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <button class="btn-ghost" onclick="showScreen('problem')" style="padding:8px 14px;font-size:.82rem;">← 👀</button>
+    <div style="display:flex;gap:6px;"><div class="pdot done"></div><div class="pdot cur"></div><div class="pdot todo"></div></div>
+    <span id="lv-badge-2" class="lv-badge lv1"></span>
+  </div>
+
+  <!-- mini scene reminder -->
+  <div id="mat-mini-scene" style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:12px 16px;margin-bottom:18px;">
+    <span id="mat-prob-emoji" style="font-size:2.4rem;flex-shrink:0;"></span>
+    <div>
+      <div id="mat-prob-section-lbl" style="font-size:.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(52,211,153,.55);margin-bottom:3px;">VẤN ĐỀ CỦA BẠN</div>
+      <div id="mat-prob-short" style="font-size:.85rem;font-weight:800;color:rgba(255,255,255,.65);line-height:1.4;"></div>
+    </div>
+    <div class="read-badge" onclick="speakCurrent()" style="flex-shrink:0;">🔊</div>
+  </div>
+
+  <!-- material grid -->
+  <div id="mat-section-header" style="font-size:.68rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:rgba(52,211,153,.55);margin-bottom:12px;">🎲 CHỌN VẬT LIỆU <span style="color:rgba(255,255,255,.2);">(2–4)</span></div>
+  <div id="materials-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;"></div>
+
+  <!-- hint chips (emoji only) -->
+  <div id="hint-toggle-btn" onclick="revealNextHint()" style="display:inline-flex;align-items:center;gap:7px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:50px;padding:7px 16px;cursor:pointer;margin-bottom:10px;">
+    <span style="font-size:1.1rem;">💭</span>
+    <span id="hint-section-header" style="font-size:.68rem;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:rgba(251,191,36,.6);">GỢI Ý</span>
+  </div>
+  <div id="hints-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+  <!-- combo zone -->
+  <div id="combo-zone" style="min-height:90px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;">
+    <div id="combo-empty" style="text-align:center;color:rgba(255,255,255,.18);font-size:.85rem;font-weight:700;padding:10px;">
+      <span style="font-size:2rem;display:block;margin-bottom:6px;">🔬</span><span id="combo-empty-txt">Chọn nhiều đồ để tìm combo!</span>
+    </div>
+    <div id="combo-found" style="display:none;width:100%;" class="combo-card">
+      <div id="combo-formula" style="font-size:1.6rem;margin-bottom:6px;letter-spacing:2px;"></div>
+      <div id="combo-icon" class="combo-emoji"></div>
+      <div id="combo-name" style="font-size:1.1rem;font-weight:900;color:#a7f3d0;margin-bottom:4px;"></div>
+      <div id="combo-desc" style="font-size:.8rem;color:rgba(52,211,153,.6);font-weight:700;line-height:1.45;margin-bottom:10px;"></div>
+      <button onclick="speakCombo()" style="background:rgba(52,211,153,0.15);border:1.5px solid rgba(52,211,153,0.35);border-radius:50px;padding:7px 18px;color:#a7f3d0;font-weight:900;font-size:.82rem;cursor:pointer;font-family:'Nunito',sans-serif;">🔊 Nghe giải thích</button>
+    </div>
+  </div>
+
+  <div id="sel-count" style="text-align:center;font-size:.8rem;font-weight:800;color:rgba(255,255,255,.25);margin-bottom:12px;"></div>
+  <button id="btn-to-explain" class="btn-main" onclick="goToExplain()" disabled>
+    <span style="font-size:1.3rem;">🗣️</span><span id="btn-to-explain-txt">Giải thích ý tưởng →</span>
+  </button>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 · EXPLAIN
+══════════════════════════════════════ -->
+<div id="screen-explain" class="screen" style="padding:18px 18px 36px;max-width:600px;margin:0 auto;width:100%;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <button class="btn-ghost" onclick="showScreen('materials')" style="padding:8px 14px;font-size:.82rem;">← 🎲</button>
+    <div style="display:flex;gap:6px;"><div class="pdot done"></div><div class="pdot done"></div><div class="pdot cur"></div></div>
+    <span id="lv-badge-3" class="lv-badge lv1"></span>
+  </div>
+
+  <!-- selected materials display -->
+  <div id="explain-your-invent-lbl" style="font-size:.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(52,211,153,.55);margin-bottom:10px;">💡 PHÁT MINH CỦA BẠN</div>
+  <div id="explain-mats" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+  <div id="explain-combo" style="display:none;background:rgba(52,211,153,.1);border:1.5px solid rgba(52,211,153,.28);border-radius:14px;padding:11px 14px;font-weight:900;color:#a7f3d0;font-size:.9rem;margin-bottom:14px;"></div>
+
+  <!-- question with TTS -->
+  <div style="background:rgba(251,191,36,.07);border:1.5px solid rgba(251,191,36,.22);border-radius:16px;padding:16px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <span style="font-size:1.4rem;">🧠</span>
+      <span id="explain-question-lbl" style="font-size:.68rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(251,191,36,.6);">HỎI BẠN NHÉ...</span>
+      <div id="explain-listen-btn" class="read-badge" onclick="speakQuestion()" style="margin-left:auto;">🔊 Nghe</div>
+    </div>
+    <div id="explain-question" style="font-size:1.02rem;font-weight:900;color:#fde68a;line-height:1.6;"></div>
+  </div>
+
+  <!-- VOICE RECORD BUTTON -->
+  <div id="mic-no-support" class="mic-no-support" style="margin-bottom:14px;">
+    🎤 Trình duyệt không hỗ trợ ghi âm — bố/mẹ gõ ý tưởng giúp con nhé!
+  </div>
+  <div id="mic-btn" class="mic-btn" onclick="toggleRecord()" style="margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:16px;width:100%;">
+      <span class="mic-icon">🎤</span>
+      <div style="flex:1;">
+        <div class="mic-label" id="mic-label">Nhấn để ghi âm — con nói, máy tự ghi!</div>
+        <div id="mic-hint" style="font-size:.7rem;font-weight:800;color:rgba(255,255,255,.28);margin-top:3px;">
+          Nói tiếng Việt — ví dụ: "Con sẽ dùng dây và cây để làm cầu..."
+        </div>
+      </div>
+      <div class="mic-waves">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <textarea id="idea-textarea" class="idea-input" rows="4" placeholder="Hoặc gõ ý tưởng vào đây..."></textarea>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:7px;margin-bottom:20px;">
+    <span id="word-count" style="color:rgba(255,255,255,.25);font-size:.76rem;font-weight:700;">0 từ</span>
+    <span id="word-hint" style="font-size:.76rem;font-weight:800;"></span>
+  </div>
+  <button id="btn-submit" class="btn-main" onclick="submitIdea()" disabled>
+    <span style="font-size:1.3rem;">🚀</span><span id="btn-submit-txt">Gửi ý tưởng!</span>
+  </button>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 4 · FEEDBACK
+══════════════════════════════════════ -->
+<div id="screen-feedback" class="screen" style="padding:24px 18px 52px;max-width:600px;margin:0 auto;width:100%;">
+  <!-- big emoji reaction -->
+  <div style="text-align:center;margin-bottom:22px;">
+    <div id="fb-big-emoji" style="font-size:5.5rem;margin-bottom:8px;animation:logoFloat 2s ease-in-out infinite;filter:drop-shadow(0 4px 22px rgba(0,0,0,.45));"></div>
+    <h2 id="fb-headline" class="ff-bang" style="font-size:2.1rem;color:#34d399;text-shadow:0 0 22px rgba(52,211,153,.5);margin-bottom:8px;"></h2>
+    <!-- star row -->
+    <div id="fb-stars" style="display:flex;justify-content:center;gap:6px;margin-bottom:10px;"></div>
+    <p id="fb-message" style="color:rgba(255,255,255,.6);font-size:.92rem;font-weight:700;line-height:1.6;max-width:300px;margin:0 auto;"></p>
+  </div>
+
+  <!-- score breakdown -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 8px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:4px;">🌟</div>
+    <div style="font-size:.6rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);" id="fb-sc1-label">Sáng tạo</div>
+      <div id="fb-sc1" style="font-size:1.2rem;font-weight:900;color:#a7f3d0;margin-top:4px;"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 8px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:4px;">🧠</div>
+      <div style="font-size:.6rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);">Logic</div>
+      <div id="fb-sc2" style="font-size:1.2rem;font-weight:900;color:#fcd34d;margin-top:4px;"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 8px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:4px;">🎉</div>
+    <div style="font-size:.6rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);" id="fb-sc3-label">Thú vị</div>
+      <div id="fb-sc3" style="font-size:1.2rem;font-weight:900;color:#f9a8d4;margin-top:4px;"></div>
+    </div>
+  </div>
+
+  <!-- invention recap -->
+  <div style="background:rgba(52,211,153,.06);border:1.5px solid rgba(52,211,153,.18);border-radius:18px;padding:16px;margin-bottom:18px;">
+    <div id="fb-your-invent-lbl" style="font-size:.65rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:rgba(52,211,153,.5);margin-bottom:10px;">📋 PHÁT MINH CỦA BẠN</div>
+    <div id="fb-mats" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;"></div>
+    <div id="fb-text" style="background:rgba(255,255,255,.04);border-radius:12px;padding:11px;font-size:.87rem;font-weight:700;color:rgba(255,255,255,.55);line-height:1.6;font-style:italic;"></div>
+  </div>
+
+  <!-- title unlock -->
+  <div id="title-unlock" style="display:none;margin-bottom:20px;text-align:center;">
+    <div style="background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(252,211,77,.05));border:2px solid rgba(251,191,36,.35);border-radius:20px;padding:20px;">
+      <div style="font-size:2.2rem;margin-bottom:6px;">🏆</div>
+      <div id="fb-unlock-label" style="font-size:.65rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:rgba(251,191,36,.6);margin-bottom:6px;">DANH HIỆU MỚI!</div>
+      <div id="unlock-title-text" class="ff-bang" style="font-size:1.6rem;color:#fbbf24;text-shadow:0 0 20px rgba(251,191,36,.5);"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <button id="btn-fb-next" class="btn-main" onclick="nextScenario()" style="font-size:1.05rem;">🔬 Thử thách tiếp theo!</button>
+    <div style="display:flex;gap:10px;">
+      <button id="btn-fb-retry" class="btn-ghost" onclick="retryScenario()" style="flex:1;">🔄 Thử lại</button>
+      <button id="btn-fb-home" class="btn-ghost" onclick="showScreen('home')" style="flex:1;">🏠 Về nhà</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════
+   I18N
+═══════════════════════════════════════ */
+const I18N = {
+  vi: {
+    langBtn:"🇩🇪 Deutsch",
+    subtitle:"PHÒNG THÍ NGHIỆM SÁNG TẠO",
+    hw:["Xem","Chọn","Kể","Điểm!"],
+    ftAll:"🌍 Tất cả", ft1:"🚶 Di chuyển", ft2:"🆘 Cứu giúp", ft3:"⚙️ Phát minh", ft4:"🌈 Thế giới lạ", ft5:"🎭 Nhập vai",
+    chooseLabel:"CHỌN THỬ THÁCH",
+    filterLabel:"CHỌN LOẠI",
+    grpAllDesc:"Xem tất cả thử thách",
+    footer:"Xoài · Invent Lab · 2026",
+    completedTag:(d,t)=>`${d}/${t} ✓`,
+    lvTexts:["Dễ","Vừa","Khó","Khó hơn","Thách thức"],
+    probSection:"VẤN ĐỀ CỦA BẠN",
+    noLabel:"🚫 KHÔNG ĐƯỢC...",
+    matSection:"🎲 CHỌN VẬT LIỆU",
+    hintSection:"💭 GỢI Ý",
+    comboEmpty:"Chọn nhiều đồ để tìm combo!",
+    yourInvent:"💡 PHÁT MINH CỦA BẠN",
+    questionSection:"HỎI BẠN NHÉ...",
+    micLabel:"Nhấn để ghi âm — con nói, máy tự ghi!",
+    micRecording:"🔴 Đang ghi âm — nhấn lại để dừng",
+    micHint:"Nói tiếng Việt — ví dụ: \"Con sẽ dùng dây và cây để làm cầu...\"",
+    micPlaceholder:"Hoặc gõ ý tưởng vào đây...",
+    micListening:"📝 Đang nghe...",
+    micNoSupport:"🎤 Trình duyệt không hỗ trợ ghi âm — bố/mẹ gõ ý tưởng giúp con nhé!",
+    micNoPerms:"🎤 Chưa cho phép dùng micro — kiểm tra quyền truy cập trong trình duyệt nhé!",
+    listenBtn:"🔊 Nghe",
+    btnExplain:"Giải thích ý tưởng →",
+    btnSubmit:"Gửi ý tưởng!",
+    btnStartInvent:"Bắt đầu sáng tạo!",
+    wc:(n)=>`${n} từ`,
+    wcHint:(n)=>n===0?"":(n<4?"Thêm vài từ nữa nhé! 🙏":n<15?"💪 Tốt! Kể thêm nữa đi!":"🔥 Giải thích cực chi tiết!"),
+    wcColor:(n)=>n<4?"rgba(251,191,36,.65)":n<15?"rgba(52,211,153,.7)":"#34d399",
+    yourInventFb:"📋 PHÁT MINH CỦA BẠN",
+    unlockLabel:"DANH HIỆU MỚI!",
+    btnNext:"🔬 Thử thách tiếp theo!",
+    btnRetry:"🔄 Thử lại",
+    btnHome:"🏠 Về nhà",
+    ttsLang:"vi-VN",
+    micLang:"vi-VN",
+    grpLabels:["🌍 Tất cả","🚶 Di chuyển","🆘 Cứu giúp","⚙️ Phát minh","🌈 Thế giới lạ","🎭 Nhập vai"],
+    feedbackPool:[
+      {min:10,emoji:"🎊",headline:"THIÊN TÀI PHÁT MINH!",msgs:["Đỉnh quá! Con là nhà khoa học tương lai rồi!","WOW! Ý tưởng cực kỳ thông minh và sáng tạo!","Bái phục hoàn toàn! Kỹ sư nhí đây rồi! 🙏"]},
+      {min:7, emoji:"🌟",headline:"RẤT XUẤT SẮC!",     msgs:["Hay quá! Hợp lý và sáng tạo như kỹ sư thật!","Ý tưởng cực kỳ thú vị! Con nghĩ như kỹ sư rồi!","Tuyệt! Mình cũng muốn dùng phát minh này!"]},
+      {min:5, emoji:"💡",headline:"Ý TƯỞNG TỐT!",      msgs:["Hay đó! Giải thích thêm sẽ hoàn hảo hơn!","Ổn lắm! Thêm chi tiết sẽ thuyết phục hơn nhiều!","Con đang tư duy như nhà phát minh rồi!"]},
+      {min:3, emoji:"🌱",headline:"ĐANG TIẾN BỘ!",     msgs:["Bước đầu tốt! Thử thêm vật liệu xem sao!","Tiếp tục nghĩ thêm nha! Con làm được!","Thêm combo đặc biệt vào sẽ được nhiều điểm hơn!"]},
+      {min:0, emoji:"🔬",headline:"THỬ LẠI NHÉ!",      msgs:["Chưa đúng chưa sao! Thử thêm vật liệu nhé!","Khoa học cần thử nhiều lần! Cố lên!","Thêm giải thích vào sẽ đạt điểm cao hơn!"]},
+    ],
+  },
+  de: {
+    langBtn:"🇻🇳 Tiếng Việt",
+    subtitle:"DAS ERFINDERLABOR",
+    hw:["Sehen","Wählen","Erzählen","Punkte!"],
+    ftAll:"🌍 Alle", ft1:"🚶 Bewegen", ft2:"🆘 Retten", ft3:"⚙️ Erfinden", ft4:"🌈 Seltsame Welt", ft5:"🎭 Rollenspiel",
+    chooseLabel:"WÄHLE EINE AUFGABE",
+    filterLabel:"KATEGORIE",
+    grpAllDesc:"Alle Aufgaben anzeigen",
+    footer:"Xoài · Invent Lab · 2026",
+    completedTag:(d,t)=>`${d}/${t} ✓`,
+    lvTexts:["Leicht","Mittel","Schwer","Sehr schwer","Profi"],
+    probSection:"DEIN PROBLEM",
+    noLabel:"🚫 VERBOTEN...",
+    matSection:"🎲 MATERIALIEN WÄHLEN",
+    hintSection:"💭 TIPPS",
+    comboEmpty:"Mehr auswählen für eine Kombination!",
+    yourInvent:"💡 DEINE ERFINDUNG",
+    questionSection:"ERKLÄRE MAL...",
+    micLabel:"Tippen zum Aufnehmen — sprich, der Computer schreibt!",
+    micRecording:"🔴 Aufnahme läuft — nochmal tippen zum Stoppen",
+    micHint:"Auf Deutsch sprechen — z.B. \"Ich benutze ein Seil und einen Baum...\"",
+    micPlaceholder:"Oder Idee hier eintippen...",
+    micListening:"📝 Ich höre zu...",
+    micNoSupport:"🎤 Aufnahme nicht unterstützt — Eltern helfen beim Eintippen!",
+    micNoPerms:"🎤 Kein Mikrofonzugriff — Browsereinstellungen prüfen!",
+    listenBtn:"🔊 Hören",
+    btnExplain:"Idee erklären →",
+    btnSubmit:"Idee absenden!",
+    btnStartInvent:"Jetzt erfinden!",
+    scLabel1:"Kreativ",
+    scLabel3:"Spaß",
+    wc:(n)=>`${n} Wörter`,
+    wcHint:(n)=>n===0?"":(n<4?"Noch ein paar Wörter! 🙏":n<15?"💪 Gut! Erzähl noch mehr!":"🔥 Super detailliert erklärt!"),
+    wcColor:(n)=>n<4?"rgba(251,191,36,.65)":n<15?"rgba(52,211,153,.7)":"#34d399",
+    yourInventFb:"📋 DEINE ERFINDUNG",
+    unlockLabel:"NEUER TITEL!",
+    btnNext:"🔬 Nächste Aufgabe!",
+    btnRetry:"🔄 Nochmal",
+    btnHome:"🏠 Startseite",
+    ttsLang:"de-DE",
+    micLang:"de-DE",
+    grpLabels:["🌍 Alle","🚶 Bewegen","🆘 Retten","⚙️ Erfinden","🌈 Seltsame Welt","🎭 Rollenspiel"],
+    feedbackPool:[
+      {min:10,emoji:"🎊",headline:"ERFINDUNGSGENIE!",    msgs:["Absolut genial! Du bist ein zukünftiger Wissenschaftler!","WOW! Unglaublich klug und kreativ!","Ich bin beeindruckt! Der kleine Ingenieur ist da! 🙏"]},
+      {min:7, emoji:"🌟",headline:"HERVORRAGEND!",       msgs:["Toll! Logisch und kreativ wie ein echter Ingenieur!","Sehr interessante Idee! Du denkst schon wie ein Ingenieur!","Wunderbar! Ich würde diese Erfindung auch nutzen!"]},
+      {min:5, emoji:"💡",headline:"GUTE IDEE!",          msgs:["Schön! Noch mehr erklären wäre perfekt!","Solide! Ein bisschen mehr Detail wäre überzeugender!","Du denkst schon wie ein Erfinder!"]},
+      {min:3, emoji:"🌱",headline:"AUF DEM WEG!",        msgs:["Guter Anfang! Mehr Materialien ausprobieren?","Weiter nachdenken! Du schaffst das!","Spezial-Kombination finden = mehr Punkte!"]},
+      {min:0, emoji:"🔬",headline:"NOCHMAL VERSUCHEN!",  msgs:["Nicht aufgeben! Mehr Materialien hinzufügen!","Wissenschaft braucht viele Versuche! Los!","Mehr erklären = mehr Punkte!"]},
+    ],
+  },
+};
+
+const T = () => I18N[state.lang];
+
+/* ═══════════════════════════════════════
+   GROUP DEFINITIONS
+═══════════════════════════════════════ */
+const GROUPS = [
+  {id:1, emoji:"🚶", label:{vi:"Di chuyển",   de:"Fortbewegen"}, desc:{vi:"Qua sông, leo núi, vượt sa mạc", de:"Flüsse, Berge, Wüsten"}, color:"#34d399", bg:"rgba(52,211,153,.12)", border:"rgba(52,211,153,.3)"},
+  {id:2, emoji:"🆘", label:{vi:"Cứu giúp",    de:"Retten"},       desc:{vi:"Cứu người, thoát hiểm, sơ cứu", de:"Menschen retten, Gefahren meistern"}, color:"#f87171", bg:"rgba(248,113,113,.1)", border:"rgba(248,113,113,.28)"},
+  {id:3, emoji:"⚙️", label:{vi:"Phát minh",   de:"Erfinden"},     desc:{vi:"Máy móc, robot, công cụ mới", de:"Maschinen, Roboter, Werkzeuge"}, color:"#60a5fa", bg:"rgba(96,165,250,.1)",  border:"rgba(96,165,250,.28)"},
+  {id:4, emoji:"🌈", label:{vi:"Thế giới lạ", de:"Andere Welt"},   desc:{vi:"Không gian, ma thuật, tương lai", de:"Weltraum, Magie, Zukunft"}, color:"#c084fc", bg:"rgba(192,132,252,.1)", border:"rgba(192,132,252,.28)"},
+  {id:5, emoji:"🎭", label:{vi:"Nhập vai",    de:"Rollenspiel"},   desc:{vi:"Trở thành nhân vật đặc biệt", de:"Besondere Rollen spielen"}, color:"#fb923c", bg:"rgba(251,146,60,.1)",  border:"rgba(251,146,60,.28)"},
+];
+
+/* ═══════════════════════════════════════
+   SCENE BUILDER — each scenario has a
+   buildScene() function that returns HTML
+═══════════════════════════════════════ */
+function mkEl(emoji, style) {
+  return `<div class="scene-el" style="${style}">${emoji}</div>`;
+}
+function mkStars(n=8){
+  let s="";
+  for(let i=0;i<n;i++){
+    const x=Math.random()*90, y=Math.random()*80, sz=3+Math.random()*4;
+    s+=`<div class="star-dot" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;animation-delay:${Math.random()}s;"></div>`;
+  }
+  return s;
+}
+
+/* ═══════════════════════════════════════
+   MATERIAL INFO — bilingual child-friendly descriptions
+   Key = emoji, value = {vi, de} spoken text (1–2 short sentences)
+═══════════════════════════════════════ */
+const MATERIAL_INFO = {
+  "🌲":{vi:"Cây gỗ to và chắc! Có thể dùng gỗ làm bè, cầu, hoặc cột chống.", de:"Ein großer Baum! Holz kann man zu Flößen, Brücken oder Stützen verarbeiten."},
+  "🪨":{vi:"Đá nặng và cứng! Có thể xếp đá thành bậc thang hoặc dùng đá nhọn để cắt.", de:"Steine sind schwer und hart! Man stapelt sie als Treppenstufen oder schneidet damit."},
+  "🪢":{vi:"Sợi dây dai và chắc! Dùng để buộc, kéo, leo núi, hoặc treo thứ gì đó.", de:"Ein langes, starkes Seil! Damit kann man binden, ziehen, klettern oder aufhängen."},
+  "🍃":{vi:"Lá cây xanh! Lá có thể hứng nước mưa, che mưa, và người ta hay gói thức ăn bằng lá.", de:"Grüne Blätter! Sie sammeln Regenwasser, spenden Schutz – in vielen Ländern wickelt man Essen darin ein."},
+  "🎈":{vi:"Bóng bay! Bên trong có khí nhẹ hơn không khí nên bóng tự bay lên trời.", de:"Ein Ballon! Darin ist Gas, das leichter als Luft ist – er steigt von selbst hoch."},
+  "📦":{vi:"Cái thùng rỗng! Thùng kín nổi trên nước như thuyền nhỏ, hoặc dùng để đựng đồ.", de:"Eine leere Kiste! Eine luftdichte Kiste schwimmt wie ein kleines Boot oder zum Aufbewahren."},
+  "🛶":{vi:"Chiếc bè hay thuyền! Bè nổi trên nước và chở người qua sông an toàn.", de:"Ein Floß oder kleines Boot! Es schwimmt und trägt Menschen sicher über den Fluss."},
+  "🌾":{vi:"Rơm khô hay cỏ! Rơm nhẹ, giữ ấm tốt, và có thể làm lớp cách nhiệt.", de:"Trockenes Stroh oder Gras! Es ist leicht, wärmt gut und eignet sich als Isoliermaterial."},
+  "🧤":{vi:"Đôi găng tay bảo vệ! Đeo vào tay không bị đau hay trầy xước khi leo hay cầm vật nặng.", de:"Schutzhandschuhe! Sie schützen die Hände beim Klettern oder Tragen schwerer Dinge."},
+  "⚓":{vi:"Neo tàu rất nặng! Ném neo móc vào đá rồi leo theo dây lên cao.", de:"Ein schwerer Schiffsanker! Man wirft ihn an Felsen und klettert am Seil hoch."},
+  "🪝":{vi:"Cái móc hình chữ C! Móc bắt vào dây hay vách đá để leo lên từng bước một.", de:"Ein C-förmiger Haken! Er greift in Seile oder Felsen zum sicheren Hochklettern."},
+  "🪵":{vi:"Khúc gỗ hay than củi! Gỗ nổi được trên nước, than củi lọc sạch nước uống.", de:"Ein Holzstück oder Holzkohle! Holz schwimmt, und Kohle filtert Trinkwasser."},
+  "🧗":{vi:"Kỹ năng leo trèo! Dùng tay và chân bám vào đá hay cây mà leo lên cao.", de:"Klettern mit Händen und Füßen! Fest an Felsen oder Bäumen greifen und hochsteigen."},
+  "🐪":{vi:"Con lạc đà! Lạc đà không cần uống nước nhiều ngày vì bướu tích trữ năng lượng.", de:"Das Kamel! Es braucht tagelang kein Wasser – der Höcker speichert Energie."},
+  "🪞":{vi:"Tấm gương phản chiếu ánh sáng! Nhiều gương hội tụ nắng tạo nhiệt đủ để nấu chín thức ăn.", de:"Ein Spiegel wirft Licht zurück! Viele Spiegel bündeln Sonnenwärme – heiß genug zum Kochen."},
+  "🌵":{vi:"Cây xương rồng sa mạc! Bên trong thân cây tích trữ nước, có thể cắt ra uống khi khẩn cấp.", de:"Ein Wüstenkaktus! Sein Inneres speichert Wasser – im Notfall kann man ihn aufschneiden und trinken."},
+  "🛞":{vi:"Bánh xe tròn! Bánh xe giúp mọi thứ lăn dễ dàng thay vì phải kéo lết trên đất.", de:"Ein rundes Rad! Es lässt alles leicht rollen, statt es über den Boden zu schleifen."},
+  "⛺":{vi:"Cái lều cắm trại! Lều che mưa, nắng và gió, giúp ngủ ấm ngoài trời.", de:"Ein Campingzelt! Es schützt vor Regen, Sonne und Wind für eine gemütliche Nacht draußen."},
+  "🧊":{vi:"Đá lạnh! Khi đá tan ra nó làm lạnh mọi thứ xung quanh.", de:"Eis! Wenn es schmilzt, kühlt es alles in der Nähe ab."},
+  "🛏️":{vi:"Tấm nệm hay ga giường! Nệm mềm hấp thụ lực rơi, ga giường dài có thể làm dây tụt xuống.", de:"Matratze oder Bettwäsche! Matratzen federn Stürze ab, Bettwäsche lässt sich zum Abseilen verknoten."},
+  "🐟":{vi:"Con cá tươi! Mèo rất thích mùi cá, dùng cá làm mồi nhử để mèo tự nhảy xuống.", de:"Ein frischer Fisch! Katzen lieben seinen Geruch – als Köder steigt die Katze freiwillig herunter."},
+  "🎣":{vi:"Cần câu cá dài! Đầu cần với tới chỗ xa và có thể treo mồi nhử để dụ vật.", de:"Eine lange Angelrute! Ihr Ende reicht weit und man kann Köder daran hängen."},
+  "🌂":{vi:"Cái dù! Khi mở ra dù hứng gió làm chậm tốc độ rơi, đáp xuống êm ái.", de:"Ein Fallschirm! Geöffnet fängt er Wind und bremst den Fall – sanfte Landung!"},
+  "🧲":{vi:"Nam châm hút kim loại! Dùng để bắt vật sắt từ xa hoặc bám chặt vào tường kim loại.", de:"Ein Magnet zieht Metall an! Damit greift man Metallteile aus der Ferne oder haftet an Metallflächen."},
+  "🪣":{vi:"Thùng hứng nước! Thùng chứa nước từ giếng hay từ mưa để dùng sau.", de:"Ein Wassereimer! Er sammelt Regenwasser oder Brunnenwasser für später."},
+  "🌿":{vi:"Cây xanh hay rong biển! Cây hấp thụ ánh sáng và tạo ra oxy để thở.", de:"Grüne Pflanzen oder Algen! Sie nehmen Licht auf und produzieren Sauerstoff zum Atmen."},
+  "🌬️":{vi:"Gió thổi hay quạt! Gió di chuyển không khí, làm bốc hơi nước và tạo cảm giác mát.", de:"Wind oder ein Fächer! Er bewegt Luft, lässt Wasser verdunsten und sorgt für Kühle."},
+  "🥢":{vi:"Ống hút nhỏ! Ống rỗng bên trong cho nước chảy từng giọt một như tưới nhỏ giọt tự động.", de:"Ein dünner Strohhalm! Er ist hohl und lässt Wasser tropfenweise durch – perfekt für Tropfbewässerung."},
+  "☀️":{vi:"Ánh nắng mặt trời! Nắng mang nhiệt và diệt vi khuẩn, dùng gương hội tụ nắng có thể nấu ăn.", de:"Sonnenlicht! Es bringt Wärme und tötet Bakterien – mit Spiegeln kann man damit sogar kochen."},
+  "🫙":{vi:"Cái bình hay chai nước! Úp ngược bình để nước nhỏ từng giọt xuống đất cây tự động.", de:"Eine Flasche! Umgekippt tropft Wasser automatisch – wie eine selbsttätige Pflanzenbewässerung."},
+  "🧽":{vi:"Miếng bọt biển! Bọt hút nước vào rồi từ từ nhả ra, dùng làm bấc dẫn nước đến cây.", de:"Ein Schwamm! Er saugt Wasser auf und gibt es langsam ab – dient als Docht für Pflanzen."},
+  "🧣":{vi:"Mảnh vải! Vải ướt khi bốc hơi tỏa ra hơi mát, giống đắp khăn ướt khi bị sốt.", de:"Ein Tuch! Feuchter Stoff kühlt beim Verdunsten ab – wie ein nasses Tuch bei Fieber."},
+  "🏺":{vi:"Chum đất nung! Thành chum thấm nước, khi nước bốc hơi bên trong mát lại tự nhiên.", de:"Ein Tontopf! Sein Material ist porös – wenn Wasser verdunstet, kühlt das Innere ganz natürlich ab."},
+  "🧂":{vi:"Muối ăn! Muối ướp thức ăn giữ lâu không hỏng ngay cả khi không có tủ lạnh.", de:"Speisesalz! Salz konserviert Lebensmittel – hält sie auch ohne Kühlschrank lange frisch."},
+  "💨":{vi:"Quạt giấy hay luồng gió! Quạt thổi không khí làm bốc hơi và tạo cảm giác mát lạnh.", de:"Ein Papierfächer oder Luftzug! Fächeln bewegt Luft, lässt Wasser verdunsten und kühlt ab."},
+  "🌀":{vi:"Quạt tạo gió xoáy! Gió xoáy di chuyển không khí mạnh, làm mát bằng cách bốc hơi.", de:"Ein drehender Fächer! Er erzeugt Luftbewegung und kühlt durch Verdunstung."},
+  "🫧":{vi:"Bong bóng khí kín! Vòm kín giữ không khí bên trong như căn phòng oxy trên Mặt Trăng.", de:"Eine geschlossene Luftblase! Eine luftdichte Kuppel hält Sauerstoff – wie ein Mondhabitat."},
+  "🔋":{vi:"Pin năng lượng! Pin tích trữ điện để dùng sau, pin mặt trời biến ánh nắng thành điện.", de:"Eine Batterie! Sie speichert Strom – Solarbatterien wandeln Sonnenlicht in Energie um."},
+  "🪟":{vi:"Kính cường lực dày! Kính siêu chắc chịu được áp suất nước khổng lồ dưới đáy biển.", de:"Dickes Sicherheitsglas! Extrem stabil – hält dem gewaltigen Wasserdruck in der Tiefsee stand."},
+  "🧱":{vi:"Vật liệu chắc như gạch hay đất! Dùng để xây tường bền vững chịu được bão và áp suất.", de:"Hartes Baumaterial wie Ziegel oder Erde! Damit baut man stabile Mauern gegen Stürme und Druck."},
+  "🚇":{vi:"Đường hầm! Đường hầm đào dưới đất tạo lối đi kín, bảo vệ khỏi áp suất nước.", de:"Ein Tunnel! Er wird unter der Erde gegraben und schützt vor Wasserdruck."},
+  "🐠":{vi:"Nông trại cá! Nuôi cá trong lồng dưới biển để cung cấp thức ăn cho cả thành phố.", de:"Eine Fischfarm! Fische in Unterwasserkäfigen züchten versorgt eine ganze Stadt mit Nahrung."},
+  "💡":{vi:"Bóng đèn phát sáng! Đèn biến điện thành ánh sáng, giúp cây quang hợp ở nơi không có mặt trời.", de:"Eine Lampe! Sie wandelt Strom in Licht um – hilft Pflanzen wachsen, wo keine Sonne scheint."},
+  "🤿":{vi:"Hệ thống thở dưới nước! Bình khí nén giúp người thở ở nơi không có không khí tự nhiên.", de:"Unterwasser-Atemausrüstung! Pressluftflaschen ermöglichen Atmen dort, wo es keine Luft gibt."},
+  "🪜":{vi:"Cái thang! Thang có nhiều bậc để leo lên chỗ cao an toàn mà không cần siêu năng lực.", de:"Eine Leiter! Mit vielen Sprossen steigt man sicher nach oben – ganz ohne Superkräfte."},
+  "🛹":{vi:"Ván trượt có bánh xe nhỏ! Đứng lên ván, đẩy bằng chân là lướt nhanh trên mặt phẳng.", de:"Ein Skateboard mit kleinen Rollen! Draufstehen und abstoßen – schnell auf flachen Flächen gleiten."},
+  "📣":{vi:"Loa khuếch âm giọng nói! Loa phóng to tiếng kêu để người ở xa cũng nghe thấy và đến cứu.", de:"Ein Megafon verstärkt die Stimme! Damit hört man auch aus großer Entfernung den Hilferuf."},
+  "📷":{vi:"Điện thoại có camera! Chụp ảnh và phóng to trên màn hình thay cho kính lúp của thám tử.", de:"Ein Handy mit Kamera! Fotos vergrößern ersetzt die Detektiv-Lupe perfekt."},
+  "🖊️":{vi:"Bút ghi chép! Ghi lại tất cả những gì thấy và nghe – thám tử giỏi luôn ghi chép.", de:"Ein Notizbuch! Alles Gesehene und Gehörte aufschreiben – gute Detektive notieren immer."},
+  "🕯️":{vi:"Cây nến tỏa sáng! Nến soi sáng chỗ tối để tìm dấu vết hoặc sưởi ấm khu vực nhỏ.", de:"Eine Kerze! Sie beleuchtet dunkle Ecken zum Spurensuchen oder wärmt einen kleinen Bereich."},
+  "🍫":{vi:"Bột cacao mịn! Bột mịn bám vào dấu vân tay vô hình và làm chúng hiện rõ ra.", de:"Feines Kakaopulver! Es haftet an unsichtbaren Fingerabdrücken und macht sie sichtbar."},
+  "🎤":{vi:"Hỏi chuyện nhân chứng! Nói chuyện với người có mặt và lắng nghe kỹ – ai đó biết sự thật.", de:"Zeugen befragen! Mit Anwesenden reden und genau zuhören – jemand kennt die Wahrheit."},
+  "🔦":{vi:"Đèn pin chiếu sáng! Soi đèn pin nghiêng lên bột sẽ làm dấu vân tay hiện ra rõ ràng.", de:"Eine Taschenlampe! Schräg auf Pulver leuchten macht Fingerabdrücke deutlich sichtbar."},
+  "🛟":{vi:"Phao tròn cứu sinh! Có không khí bên trong nên nổi trên nước, ném cho người sắp chìm.", de:"Ein Rettungsring! Er schwimmt dank Luftfüllung – wird zu Menschen geworfen, die zu ertrinken drohen."},
+  "🛋️":{vi:"Tấm nệm mềm dày! Nệm hấp thụ lực va chạm mạnh khi rơi xuống nên đáp không đau.", de:"Eine dicke weiche Matte! Sie federt starke Aufprallkräfte – perfekt für sichere Landungen."},
+  "🎒":{vi:"Ba lô đeo lưng! Tay còn rảnh khi đeo ba lô, có thể biến thành ghế đeo để cõng người.", de:"Ein Rucksack! Hände bleiben frei – lässt sich zum Tragesitz für verletzte Personen umbauen."},
+  "🧥":{vi:"Áo khoác dày! Luồn hai cành cây qua tay áo là thành cáng khiêng người bị thương.", de:"Eine dicke Jacke! Zwei Äste durch die Ärmel – fertig ist eine Notfalltrage für Verletzte."},
+  "🩹":{vi:"Băng y tế! Băng vết thương giúp cầm máu và ngăn vi khuẩn xâm nhập vào.", de:"Ein Verband! Er stillt Blutungen und hält Bakterien fern – unverzichtbar für Erste Hilfe."},
+  "🏜️":{vi:"Cát mịn lọc nước! Hạt cát nhỏ li ti giữ lại bụi bẩn khi nước chảy qua, làm sạch nước.", de:"Feiner Filtersand! Winzige Sandkörner halten Schmutz zurück wenn Wasser hindurchfließt."},
+  "🧵":{vi:"Vải lọc! Vải có lỗ nhỏ giữ lại bùn đất và vi khuẩn khi nước chảy qua.", de:"Filtertuch! Stoff mit winzigen Löchern hält Schmutz und Bakterien im Wasser zurück."},
+  "🕸️":{vi:"Tấm lưới! Lưới giữ lại rác trong khi nước chảy qua, ngư dân cũng dùng lưới vớt cá.", de:"Ein Fangnetz! Es hält Müll zurück, während Wasser hindurchfließt – Fischer fangen damit Fische."},
+  "🔄":{vi:"Bánh guồng nước quay! Khi nước chảy đẩy cánh guồng, bánh quay tạo ra năng lượng tự nhiên.", de:"Ein Wasserrad! Fließendes Wasser dreht die Schaufeln und erzeugt Energie ganz natürlich."},
+  "🫐":{vi:"Quả mọng dại trong rừng! Quả dại cho năng lượng nhưng chỉ ăn loại biết chắc không độc.", de:"Wildbeeren! Sie liefern Energie – nur essen, was man sicher als ungiftig kennt."},
+  "🔥":{vi:"Ngọn lửa! Lửa cho ánh sáng và ấm, nấu chín thức ăn, và xua đuổi thú dữ ban đêm.", de:"Feuer! Es gibt Licht, Wärme, kocht Essen und hält wilde Tiere in der Nacht fern."},
+  "💎":{vi:"Viên pha lê trong suốt! Pha lê hội tụ ánh sáng như kính lúp, đủ để nhóm lửa.", de:"Ein Kristall! Er bündelt Licht wie eine Lupe – stark genug, um Feuer zu entfachen."},
+  "🥗":{vi:"Rau sống tươi! Rau không cần nấu vẫn ăn được và đầy vitamin, ướp chanh muối là đủ.", de:"Frisches rohes Gemüse! Ohne Kochen essbar und voller Vitamine – einfach mit Zitrone und Salz marinieren."},
+  "🍋":{vi:"Quả chanh chua! Axit trong chanh làm chín cá hay thịt mà không cần lửa, gọi là ceviche!", de:"Eine Zitrone! Ihre Säure gart Fisch ohne Feuer – das nennt man Ceviche!"},
+  "🔧":{vi:"Cờ lê kim loại nặng! Ném về phía sau, lực phản đẩy người đi về phía trước. Đây là vật lý Newton!", de:"Ein schwerer Schraubenschlüssel! Nach hinten werfen – Gegenkraft schiebt einen vorwärts. Newtons Physik!"},
+  "🧯":{vi:"Bình khí nén áp suất cao! Xịt khí ra phía sau thì lực phản đẩy người bay về phía trước như tên lửa.", de:"Druckluftflasche! Gas nach hinten ausstoßen – Gegenkraft schiebt einen vorwärts wie eine Rakete."},
+  "🔩":{vi:"Bulong kim loại nhỏ! Ném bulong mạnh về một phía, theo định luật Newton người sẽ bị đẩy ngược lại.", de:"Metallschrauben! Kräftig wegwerfen – Newtons Gesetz drückt einen in die entgegengesetzte Richtung."},
+  "📡":{vi:"Ăng ten liên lạc! Ăng ten gửi và nhận sóng vô tuyến để nói chuyện với người cách hàng nghìn km.", de:"Eine Antenne! Sie sendet und empfängt Funksignale für Gespräche über tausende Kilometer."},
+  "🌊":{vi:"Dòng nước hay sóng biển! Sức nước chảy có thể quay bánh guồng tạo ra năng lượng tự nhiên.", de:"Wasserströmung oder Welle! Fließendes Wasser dreht Räder und erzeugt natürliche Energie."},
+};
+
+/* ═══════════════════════════════════════
+   SCENARIOS DATA
+═══════════════════════════════════════ */
+const SCENARIOS = [
+  /* ─── GROUP 1: DI CHUYỂN ─── */
+  {
+    id:0, group:1, level:1,
+    emoji:"🏞️",
+    name:{vi:"Qua sông không thuyền", de:"Über den Fluss!"},
+    problem:{vi:"🧒 muốn qua sông 🏞️ nhưng không có thuyền 🚤 và không biết bơi 🏊", de:"🧒 will über den Fluss 🏞️ — kein Boot 🚤 und kein Schwimmen 🏊"},
+    problemShort:{vi:"Qua sông không có thuyền!", de:"Über den Fluss ohne Boot!"},
+    ttsText:{vi:"Một bạn nhỏ muốn qua sông để lấy thức ăn. Nhưng không có thuyền, và bạn không biết bơi. Con nghĩ sao?", de:"Ein Kind möchte den Fluss überqueren um Essen zu holen. Kein Boot, kein Schwimmen erlaubt. Was machst du?"},
+    questionText:{vi:"Phát minh của con hoạt động thế nào? Bạn nhỏ qua sông bằng cách nào?", de:"Wie funktioniert deine Erfindung? Wie kommt das Kind über den Fluss?"},
+    questionTTS:{vi:"Phát minh của con hoạt động thế nào? Bạn nhỏ qua sông bằng cách nào?", de:"Wie funktioniert deine Erfindung? Wie kommt das Kind über den Fluss?"},
+    constraints:[
+      {emoji:"🚤", label:{vi:"Không thuyền", de:"Kein Boot"}},
+      {emoji:"🏊", label:{vi:"Không bơi", de:"Nicht schwimmen"}},
+    ],
+    materials:[
+      {emoji:"🌲", label:{vi:"Cây", de:"Baum"}},
+      {emoji:"🪨", label:{vi:"Đá", de:"Stein"}},
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"🍃", label:{vi:"Lá", de:"Blätter"}},
+      {emoji:"🎈", label:{vi:"Bóng", de:"Ballon"}},
+      {emoji:"📦", label:{vi:"Thùng", de:"Kiste"}},
+      {emoji:"🪵", label:{vi:"Bè", de:"Floß"}},
+      {emoji:"🌾", label:{vi:"Cỏ", de:"Gras"}},
+    ],
+    vagueHints:[
+      {emoji:"🌊", text:{vi:"Thứ gì nổi được?", de:"Was schwimmt oben?"}},
+      {emoji:"🌉", text:{vi:"Bắc ngang được không?", de:"Kann man etwas rüber spannen?"}},
+    ],
+    combos:{
+      "🌲+🪢":{name:{vi:"Cầu treo 🌉",de:"Hängebrücke 🌉"}, emoji:"🌉", desc:{vi:"Buộc dây vào hai cây hai bờ — thành cầu treo!",de:"Seil an zwei Bäumen befestigen — fertig ist die Hängebrücke!"}},
+      "📦+🎈":{name:{vi:"Bè bay nổi 🛶",de:"Schwimm-Floß 🛶"}, emoji:"🛶", desc:{vi:"Bóng bay giúp thùng nổi trên nước!",de:"Ballons heben die Kiste auf das Wasser!"}},
+      "🌲+🪨":{name:{vi:"Cầu đá 🏔️",de:"Steinbrücke 🏔️"}, emoji:"🏔️", desc:{vi:"Xếp đá làm bậc bước qua!",de:"Steine als Trittbretter im Fluss aufstellen!"}},
+      "🌲+🪵":{name:{vi:"Bè gỗ ⛵",de:"Holzfloß ⛵"}, emoji:"⛵", desc:{vi:"Ghép cây thành bè lớn!",de:"Bäume zusammenbinden — großes Floß!"}}
+    },
+    titleUnlock:"Bridge Builder 🌉",
+    buildScene: () => `
+      <div class="wave"></div>
+      ${mkEl("🌲","left:4%;bottom:42%;font-size:3.5rem;")}
+      ${mkEl("🌲","right:5%;bottom:42%;font-size:3.5rem;")}
+      ${mkEl("🧒","left:14%;bottom:44%;font-size:2.8rem;","")} 
+      <div class="scene-el anim-bounce" style="left:14%;bottom:44%;font-size:2.8rem;">🧒</div>
+      ${mkEl("🍕","right:16%;bottom:44%;font-size:2rem;")}
+      ${mkEl("❓","left:42%;bottom:55%;font-size:2.2rem;color:white;font-weight:900;")}
+    `,
+    sceneBg:"bg-river",
+  },
+  {
+    id:1, group:1, level:1,
+    emoji:"🏔️",
+    name:{vi:"Leo núi cao", de:"Berg hochklettern!"},
+    problem:{vi:"🧒 cần leo lên đỉnh núi 🏔️ để cứu bạn bị kẹt. Không có thang 🪜 và không có máy móc 🤖", de:"🧒 muss den Berg 🏔️ hoch — ein Freund steckt fest! Keine Leiter 🪜 kein Gerät 🤖"},
+    problemShort:{vi:"Leo núi không có thang!", de:"Den Berg hoch ohne Leiter!"},
+    ttsText:{vi:"Một bạn bị kẹt trên đỉnh núi cao. Con cần leo lên cứu bạn đó. Nhưng không có thang và không có máy móc. Con dùng gì để leo lên?", de:"Ein Freund steckt auf dem Berggipfel fest. Du musst rauf, um ihn zu retten. Keine Leiter, kein Gerät. Was benutzt du zum Klettern?"},
+    questionText:{vi:"Con leo núi bằng cách nào? Làm sao không bị ngã?", de:"Wie kletterst du den Berg hoch? Wie fällst du nicht runter?"},
+    questionTTS:{vi:"Con leo núi bằng cách nào? Làm sao không bị ngã?", de:"Wie kletterst du den Berg hoch? Wie fällst du nicht runter?"},
+    constraints:[
+      {emoji:"🪜", label:{vi:"Không thang", de:"Keine Leiter"}},
+      {emoji:"🤖", label:{vi:"Không máy", de:"Kein Gerät"}},
+    ],
+    materials:[
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"🪨", label:{vi:"Đá", de:"Stein"}},
+      {emoji:"🌲", label:{vi:"Cây", de:"Baum"}},
+      {emoji:"🧤", label:{vi:"Găng", de:"Handschuhe"}},
+      {emoji:"⚓", label:{vi:"Neo", de:"Anker"}},
+      {emoji:"🪝", label:{vi:"Móc", de:"Haken"}},
+      {emoji:"🪵", label:{vi:"Ván gỗ", de:"Holzbrett"}},
+      {emoji:"🧗", label:{vi:"Tay leo", de:"Klettern"}},
+    ],
+    vagueHints:[
+      {emoji:"⚓", text:{vi:"Neo vào đâu đó rồi kéo lên?", de:"Irgendwo einhaken und hochziehen?"}},
+      {emoji:"🪢", text:{vi:"Dây có thể bắt được không?", de:"Kann man ein Seil befestigen?"}},
+    ],
+    combos:{
+      "🪢+⚓":{name:{vi:"Dây neo leo 🧗",de:"Seil-Anker 🧗"}, emoji:"🧗", desc:{vi:"Ném neo móc vào đá, leo dây lên!",de:"Anker in den Fels werfen, am Seil hochklettern!"}},
+      "🪝+🪢":{name:{vi:"Móc leo dây 🪝",de:"Haken-Seil 🪝"}, emoji:"🪝", desc:{vi:"Móc vào vách đá, kéo người lên từng bước!",de:"Haken in den Fels, Person Schritt für Schritt hochziehen!"}},
+      "🌲+🪢":{name:{vi:"Thang dây 🌴",de:"Seitleiter 🌴"}, emoji:"🌴", desc:{vi:"Buộc dây vào cây thành từng bậc thang dây!",de:"Seil an Bäumen als Stufen befestigen — Seilleiter!"}},
+    },
+    titleUnlock:"Mountain Climber 🏔️",
+    buildScene: () => `
+      <div style="position:absolute;bottom:0;width:100%;height:65%;background:linear-gradient(180deg,#94a3b8 0%,#64748b 50%,#475569 100%);clip-path:polygon(0 100%,50% 0%,100% 100%);"></div>
+      <div style="position:absolute;bottom:0;width:100%;height:40%;background:linear-gradient(180deg,#7dd3fc 0%,#38bdf8 100%);clip-path:polygon(0 100%,20% 20%,40% 60%,60% 10%,80% 50%,100% 100%);opacity:.3;"></div>
+      <div class="scene-el anim-bounce" style="left:50%;transform:translateX(-50%);top:8%;font-size:2.2rem;">🙋</div>
+      <div class="scene-el" style="left:50%;transform:translateX(-50%);bottom:24%;font-size:2.5rem;">🧒</div>
+      ${mkEl("❓","left:42%;bottom:50%;font-size:2rem;")}
+    `,
+    sceneBg:"bg-space",
+  },
+  {
+    id:2, group:1, level:2,
+    emoji:"🏜️",
+    name:{vi:"Qua sa mạc nóng", de:"Durch die heiße Wüste!"},
+    problem:{vi:"🧒 cần đưa thức ăn 🍱 qua sa mạc 🏜️ 100km! Không có xe 🚗, không có nước 💧, nóng 50°C ☀️", de:"🧒 muss Essen 🍱 durch 100km Wüste 🏜️! Kein Auto 🚗, kein Wasser 💧, 50°C heiß ☀️"},
+    problemShort:{vi:"Qua sa mạc nóng bỏng!", de:"Durch die Wüste ohne Auto!"},
+    ttsText:{vi:"Con cần đưa thức ăn đến một ngôi làng cách đây một trăm cây số qua sa mạc nóng bỏng. Không có xe, không có nước trên đường. Nóng năm mươi độ! Con làm thế nào?", de:"Du musst Essen hundert Kilometer durch die heiße Wüste bringen. Kein Auto, kein Wasser unterwegs. Fünfzig Grad heiß! Wie machst du das?"},
+    questionText:{vi:"Phát minh của con đi qua sa mạc thế nào? Làm sao đồ ăn không hỏng?", de:"Wie kommt deine Erfindung durch die Wüste? Wie bleibt das Essen frisch?"},
+    questionTTS:{vi:"Phát minh của con đi qua sa mạc thế nào? Làm sao đồ ăn không hỏng?", de:"Wie kommt deine Erfindung durch die Wüste? Wie bleibt das Essen frisch?"},
+    constraints:[
+      {emoji:"🚗", label:{vi:"Không xe", de:"Kein Auto"}},
+      {emoji:"💧", label:{vi:"Không nước", de:"Kein Wasser"}},
+      {emoji:"🌡️", label:{vi:"50°C nóng", de:"50°C heiß"}},
+    ],
+    materials:[
+      {emoji:"🐪", label:{vi:"Lạc đà", de:"Kamel"}},
+      {emoji:"📦", label:{vi:"Thùng", de:"Kiste"}},
+      {emoji:"🪞", label:{vi:"Tấm gương", de:"Spiegel"}},
+      {emoji:"🌵", label:{vi:"Xương rồng", de:"Kaktus"}},
+      {emoji:"🛞", label:{vi:"Bánh xe", de:"Rad"}},
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"⛺", label:{vi:"Lều", de:"Zelt"}},
+      {emoji:"🧊", label:{vi:"Đá lạnh", de:"Eis"}},
+    ],
+    vagueHints:[
+      {emoji:"🐪", text:{vi:"Con vật sa mạc không cần nước?", de:"Welches Tier braucht kein Wasser?"}},
+      {emoji:"🌵", text:{vi:"Trong xương rồng có gì?", de:"Was steckt im Kaktus drin?"}},
+    ],
+    combos:{
+      "🐪+📦":{name:{vi:"Đoàn lạc đà 🏺",de:"Kamelkarawane 🏺"}, emoji:"🏺", desc:{vi:"Lạc đà chở thùng hàng — không cần nước!",de:"Kamel trägt die Kiste — braucht kein Wasser!"}},
+      "🛞+🪞":{name:{vi:"Xe buồm gió ⛵",de:"Windsegelwagen ⛵"}, emoji:"⛵", desc:{vi:"Bánh xe + tấm gương làm buồm, gió thổi đi!",de:"Rad plus Spiegel als Segel — Wind treibt es an!"}},
+      "🌵+📦":{name:{vi:"Kho nước 💧",de:"Wasserspeicher 💧"}, emoji:"💧", desc:{vi:"Lấy nước từ xương rồng trữ vào thùng!",de:"Kaktus aufschneiden, Wasser in Kiste sammeln!"}},
+      "🐪+⛺":{name:{vi:"Đoàn caravan 🏕️",de:"Kamelkarawane 🏕️"}, emoji:"🏕️", desc:{vi:"Lạc đà chở lều, nghỉ ban đêm đi ban ngày!",de:"Kamel trägt Zelt, nachts rasten, tagsüber reisen!"}},
+    },
+    titleUnlock:"Desert Explorer 🏜️",
+    buildScene: () => `
+      <div style="position:absolute;bottom:0;width:100%;height:40%;background:linear-gradient(180deg,#d97706,#b45309);border-radius:50% 50% 0 0 / 30% 30% 0 0;transform:scaleX(1.1);"></div>
+      <div style="position:absolute;bottom:0;right:0;width:30%;height:35%;background:linear-gradient(180deg,#d97706,#b45309);clip-path:polygon(0 100%,50% 0%,100% 100%);"></div>
+      ${mkEl("☀️","right:10%;top:8%;font-size:3rem;animation:spin 8s linear infinite;")}
+      <div class="scene-el anim-bounce" style="left:12%;bottom:38%;font-size:2.5rem;">🧒</div>
+      ${mkEl("🍱","right:12%;bottom:38%;font-size:1.8rem;")}
+      ${mkEl("🏘️","right:8%;bottom:36%;font-size:1.6rem;")}
+      ${mkEl("❓","left:40%;bottom:50%;font-size:2rem;")}
+    `,
+    sceneBg:"bg-desert",
+  },
+  /* ─── GROUP 2: CỨU GIÚP ─── */
+  {
+    id:3, group:2, level:1,
+    emoji:"🐱",
+    name:{vi:"Cứu mèo trên cây", de:"Katze vom Baum retten!"},
+    problem:{vi:"🐱 bị kẹt trên cây cao! Không leo cây được 🌲. Cần cứu mèo xuống an toàn 🆘", de:"🐱 hängt im hohen Baum! Klettern verboten 🌲. Katze sicher herunterholen 🆘"},
+    problemShort:{vi:"Mèo kẹt trên cây cao!", de:"Katze steckt im Baum!"},
+    ttsText:{vi:"Con mèo đang kêu meo meo trên cành cây cao. Nó không dám nhảy xuống! Con không leo cây được. Làm sao cứu mèo xuống?", de:"Die Katze miaut laut oben im Baum. Sie traut sich nicht runterzuspringen! Du darfst nicht klettern. Wie rettest du die Katze?"},
+    questionText:{vi:"Con cứu mèo xuống bằng cách nào? Mèo có an toàn không?", de:"Wie holst du die Katze runter? Landet sie sicher?"},
+    questionTTS:{vi:"Con cứu mèo xuống bằng cách nào? Mèo có an toàn không?", de:"Wie holst du die Katze runter? Landet sie sicher?"},
+    constraints:[
+      {emoji:"🌲", label:{vi:"Không leo", de:"Nicht klettern"}},
+      {emoji:"🪜", label:{vi:"Không thang", de:"Keine Leiter"}},
+    ],
+    materials:[
+      {emoji:"🎈", label:{vi:"Bóng bay", de:"Ballon"}},
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"🛏️", label:{vi:"Nệm mềm", de:"Matte"}},
+      {emoji:"📦", label:{vi:"Thùng", de:"Kiste"}},
+      {emoji:"🐟", label:{vi:"Cá (dụ)", de:"Fisch (Lockmittel)"}},
+      {emoji:"🎣", label:{vi:"Cần câu", de:"Angel"}},
+      {emoji:"🌂", label:{vi:"Dù", de:"Regenschirm"}},
+      {emoji:"🧲", label:{vi:"Nam châm", de:"Magnet"}},
+    ],
+    vagueHints:[
+      {emoji:"🛬", text:{vi:"Mèo cần đáp xuống êm?", de:"Katze braucht weiches Landen?"}},
+      {emoji:"🐟", text:{vi:"Thứ gì dụ mèo tự xuống?", de:"Was lockt die Katze selbst herunter?"}},
+    ],
+    combos:{
+      "📦+🛏️":{name:{vi:"Đệm hạ cánh 🛬",de:"Landekissen 🛬"}, emoji:"🛬", desc:{vi:"Nệm mềm trong thùng — mèo nhảy xuống an toàn!",de:"Weiche Matte in Kiste — Katze springt sicher rein!"}},
+      "🎈+🪢":{name:{vi:"Dù cứu hộ 🪂",de:"Rettungsballon 🪂"}, emoji:"🪂", desc:{vi:"Bóng bay buộc dây thả lên — mèo bám xuống từ từ!",de:"Ballon ans Seil binden, hochwerfen — Katze hält sich fest!"}},
+      "🐟+🎣":{name:{vi:"Câu cá dụ mèo 🎣",de:"Fisch-Angel 🎣"}, emoji:"🎣", desc:{vi:"Dùng cần câu treo cá — mèo ngửi thấy tự xuống!",de:"Fisch an der Angel runterhängen — Katze riecht ihn!"}},
+      "🌂+🪢":{name:{vi:"Dù thả xuống 🪂",de:"Regenschirm-Fallschirm 🪂"}, emoji:"🪂", desc:{vi:"Dù gắn vào dây, thả lên cho mèo nắm!",de:"Regenschirm ans Seil, hochwerfen — Katze hält sich fest!"}},
+    },
+    titleUnlock:"Animal Rescuer 🐾",
+    buildScene: () => `
+      <div style="position:absolute;bottom:0;width:100%;height:45%;background:linear-gradient(180deg,#4ade80,#166534);"></div>
+      ${mkEl("🌲","left:22%;bottom:40%;font-size:5rem;")}
+      <div class="scene-el anim-shake" style="left:30%;top:10%;font-size:2.2rem;">🐱</div>
+      <div class="scene-el anim-bounce" style="left:55%;bottom:43%;font-size:2.5rem;">🧒</div>
+      ${mkEl("😰","left:54%;bottom:64%;font-size:1.5rem;")}
+    `,
+    sceneBg:"bg-tree",
+  },
+  {
+    id:4, group:2, level:2,
+    emoji:"🐠",
+    name:{vi:"Cứu cá thiếu oxy", de:"Fisch braucht Sauerstoff!"},
+    problem:{vi:"🐠 trong bể đang thiếu oxy 💨! Cần giúp cá thở ngay. Không được đập vỡ bể 🔨", de:"🐠 im Aquarium bekommt keine Luft 💨! Hilf dem Fisch. Aquarium nicht zerstören 🔨"},
+    problemShort:{vi:"Cá thiếu oxy, không được đập bể!", de:"Fisch braucht Luft, Aquarium bleibt ganz!"},
+    ttsText:{vi:"Con cá trong bể đang bơi chậm lại vì thiếu không khí! Cần làm cho nước có nhiều oxy hơn. Nhưng không được đập vỡ bể. Con làm gì?", de:"Der Fisch im Aquarium schwimmt immer langsamer — er bekommt keine Luft! Das Wasser braucht mehr Sauerstoff. Das Aquarium darf nicht kaputt gehen. Was machst du?"},
+    questionText:{vi:"Con giúp cá có thêm oxy bằng cách nào? Tại sao cách đó hoạt động?", de:"Wie hilfst du dem Fisch mehr Sauerstoff zu bekommen? Warum funktioniert das?"},
+    questionTTS:{vi:"Con giúp cá có thêm oxy bằng cách nào? Tại sao cách đó hoạt động?", de:"Wie hilfst du dem Fisch mehr Sauerstoff zu bekommen? Warum funktioniert das?"},
+    constraints:[
+      {emoji:"🔨", label:{vi:"Không đập bể", de:"Aquarium bleibt ganz"}},
+      {emoji:"⚡", label:{vi:"Không dùng điện", de:"Kein Strom"}},
+    ],
+    materials:[
+      {emoji:"🪣", label:{vi:"Gáo múc", de:"Eimer"}},
+      {emoji:"🌿", label:{vi:"Cây thủy sinh", de:"Wasserpflanze"}},
+      {emoji:"🎈", label:{vi:"Bóng thổi", de:"Luftballon"}},
+      {emoji:"🍃", label:{vi:"Lá xanh", de:"Blatt"}},
+      {emoji:"🌬️", label:{vi:"Quạt tay", de:"Fächer"}},
+      {emoji:"🪨", label:{vi:"Đá cuội", de:"Kiesel"}},
+      {emoji:"🥢", label:{vi:"Ống hút", de:"Strohhalm"}},
+      {emoji:"☀️", label:{vi:"Ánh nắng", de:"Sonnenlicht"}},
+    ],
+    vagueHints:[
+      {emoji:"🌊", text:{vi:"Khuấy nước thêm không khí?", de:"Wasser bewegen = mehr Luft?"}},
+      {emoji:"🌿", text:{vi:"Cây xanh tạo ra gì?", de:"Was produzieren grüne Pflanzen?"}},
+    ],
+    combos:{
+      "🪣+🌬️":{name:{vi:"Gáo thổi oxy 💨",de:"Eimer-Luftfächer 💨"}, emoji:"💨", desc:{vi:"Múc nước lên cao rồi đổ xuống — không khí theo vào!",de:"Wasser hochschöpfen und runtergießen — Luft kommt mit!"}},
+      "🌿+☀️":{name:{vi:"Cây quang hợp 🌱",de:"Photosynthese 🌱"}, emoji:"🌱", desc:{vi:"Cho cây vào bể + ánh nắng → cây tạo oxy!",de:"Pflanze ins Wasser + Sonnenlicht → Sauerstoff!"}},
+      "🎈+🥢":{name:{vi:"Ống thổi bong bóng 🫧",de:"Strohhalm-Blasen 🫧"}, emoji:"🫧", desc:{vi:"Thổi không khí qua ống vào đáy bể — bong bóng oxy!",de:"Luft durch Strohhalm ins Wasser blasen — Sauerstoffblasen!"}},
+    },
+    titleUnlock:"Marine Biologist 🐠",
+    buildScene: () => `
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#e0f2fe 0%,#7dd3fc 30%,#0369a1 100%);"></div>
+      ${mkEl("🐠","left:20%;top:35%;font-size:2.5rem;animation:float 2s ease-in-out infinite;")}
+      ${mkEl("🐠","left:55%;top:50%;font-size:1.8rem;animation:float 2.4s ease-in-out infinite;animation-delay:.5s;")}
+      ${mkEl("🌿","left:8%;bottom:5%;font-size:2rem;")}
+      ${mkEl("🌿","right:10%;bottom:5%;font-size:2.5rem;")}
+      ${mkEl("🪨","left:35%;bottom:2%;font-size:1.5rem;")}
+      <div class="scene-el anim-pulse" style="left:45%;top:20%;font-size:2rem;color:red;">⚠️</div>
+      ${mkEl("💨","left:38%;top:8%;font-size:1.6rem;")}
+    `,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 3: PHÁT MINH ─── */
+  {
+    id:5, group:3, level:1,
+    emoji:"🌱",
+    name:{vi:"Cây sắp chết khô", de:"Pflanze fast verdurstet!"},
+    problemShort:{vi:"Cây chết khô khi cả nhà đi vắng!", de:"Pflanze stirbt ohne Wasser!"},
+    ttsText:{vi:"Cả nhà đi du lịch hai tuần. Cái cây yêu quý trong nhà sẽ chết khô vì không ai tưới! Không có điện để dùng máy bơm. Hàng xóm cũng đi vắng hết. Con làm gì để cây sống sót?", de:"Die ganze Familie fährt zwei Wochen in Urlaub. Die Lieblingspflanze zu Hause verdurstet, weil niemand gießt! Kein Strom für eine Pumpe. Die Nachbarn sind auch weg. Was machst du, damit die Pflanze überlebt?"},
+    questionText:{vi:"Phát minh của con tưới cây như thế nào? Tại sao cây không bị chết?", de:"Wie bewässert deine Erfindung die Pflanze? Warum stirbt sie nicht?"},
+    questionTTS:{vi:"Phát minh của con tưới cây như thế nào? Tại sao cây không bị chết?", de:"Wie bewässert deine Erfindung die Pflanze? Warum stirbt sie nicht?"},
+    constraints:[
+      {emoji:"⚡", label:{vi:"Không điện", de:"Kein Strom"}},
+      {emoji:"👨", label:{vi:"Không người giúp", de:"Keine Hilfe"}},
+    ],
+    materials:[
+      {emoji:"🍶", label:{vi:"Chai nước", de:"Wasserflasche"}},
+      {emoji:"🥢", label:{vi:"Ống hút", de:"Strohhalm"}},
+      {emoji:"🧽", label:{vi:"Miếng bọt biển", de:"Schwamm"}},
+      {emoji:"📦", label:{vi:"Thùng chứa", de:"Behälter"}},
+      {emoji:"🪢", label:{vi:"Dây len", de:"Wollschnur"}},
+      {emoji:"🧣", label:{vi:"Vải ẩm", de:"Feuchtes Tuch"}},
+      {emoji:"🪨", label:{vi:"Sỏi", de:"Kiesel"}},
+      {emoji:"☀️", label:{vi:"Ánh nắng", de:"Sonnenlicht"}},
+    ],
+    vagueHints:[
+      {emoji:"💧", text:{vi:"Nước chảy từ từ xuống được không?", de:"Kann Wasser langsam tropfen?"}},
+      {emoji:"🧽", text:{vi:"Thứ gì giữ ẩm lâu?", de:"Was hält Feuchtigkeit lange?"}},
+    ],
+    combos:{
+      "🍶+🥢":{name:{vi:"Tưới nhỏ giọt tự động 💧",de:"Tropfbewässerung 💧"}, emoji:"💧", desc:{vi:"Chai lộn ngược, ống hút điều tiết — nước nhỏ từng giọt!",de:"Flasche umgekippt, Strohhalm regelt Tropfen — automatisch!"}},
+      "🧽+🪢":{name:{vi:"Dây mao dẫn 🌿",de:"Dochtsystem 🌿"}, emoji:"🌿", desc:{vi:"Sợi dây thấm nước từ thùng dẫn vào đất cây!",de:"Wollschnur zieht Wasser aus Behälter direkt in die Erde!"}},
+      "📦+🥢":{name:{vi:"Bình tưới hẹn giờ 🕐",de:"Zeit-Gießer 🕐"}, emoji:"🕐", desc:{vi:"Thùng lớn chứa nước, ống nhỏ nhỏ từ từ mỗi ngày!",de:"Großer Behälter, kleines Röhrchen — jeden Tag ein bisschen!"}},
+    },
+    titleUnlock:"Green Inventor 🌱",
+    buildScene: () => ``,
+    sceneBg:"bg-river",
+  },
+  {
+    id:6, group:3, level:2,
+    emoji:"🌡️",
+    name:{vi:"Tủ lạnh hỏng, thức ăn sắp hỏng", de:"Kühlschrank kaputt!"},
+    problemShort:{vi:"Giữ thức ăn mát mà không có tủ lạnh!", de:"Essen kühlen ohne Kühlschrank!"},
+    ttsText:{vi:"Tủ lạnh bị hỏng! Bên ngoài đang nóng ba mươi lăm độ. Thức ăn sẽ bị hỏng chỉ trong vài giờ. Không có điện và không có đá. Con làm gì để giữ thức ăn tươi lâu hơn?", de:"Der Kühlschrank ist kaputt! Draußen sind es fünfunddreißig Grad. Das Essen verdirbt in wenigen Stunden. Kein Strom, kein Eis. Was machst du, damit das Essen länger frisch bleibt?"},
+    questionText:{vi:"Con giữ thức ăn mát bằng cách nào? Phương pháp của con có hiệu quả không?", de:"Wie kühlst du das Essen? Funktioniert deine Methode wirklich?"},
+    questionTTS:{vi:"Con giữ thức ăn mát bằng cách nào? Phương pháp của con có hiệu quả không?", de:"Wie kühlst du das Essen? Funktioniert deine Methode wirklich?"},
+    constraints:[
+      {emoji:"⚡", label:{vi:"Không điện", de:"Kein Strom"}},
+      {emoji:"🧊", label:{vi:"Không có đá", de:"Kein Eis"}},
+    ],
+    materials:[
+      {emoji:"🪣", label:{vi:"Chậu nước", de:"Wassereimer"}},
+      {emoji:"🏺", label:{vi:"Chum đất nung", de:"Tontopf"}},
+      {emoji:"🧂", label:{vi:"Muối", de:"Salz"}},
+      {emoji:"📦", label:{vi:"Thùng xốp", de:"Styroporbox"}},
+      {emoji:"🍃", label:{vi:"Lá chuối", de:"Bananenblatt"}},
+      {emoji:"💨", label:{vi:"Quạt giấy", de:"Papierfächer"}},
+      {emoji:"🌬️", label:{vi:"Gió lùa", de:"Luftzug"}},
+      {emoji:"🌾", label:{vi:"Rơm khô", de:"Stroh"}},
+    ],
+    vagueHints:[
+      {emoji:"💧", text:{vi:"Bay hơi nước làm mát được không?", de:"Kühlt Verdunsten Wasser ab?"}},
+      {emoji:"🏺", text:{vi:"Đất nung thấm nước có đặc tính gì?", de:"Was passiert wenn Ton nass wird?"}},
+    ],
+    combos:{
+      "🏺+🪣":{name:{vi:"Tủ lạnh đất nung 🏺",de:"Tontopf-Kühlschrank 🏺"}, emoji:"🏺", desc:{vi:"Hai chậu đất nung lồng nhau, khe giữa nhét cát ẩm — mát tự nhiên!",de:"Zwei Tontöpfe ineinander, feuchter Sand dazwischen — natürliche Kühlung!"}},
+      "📦+🍃":{name:{vi:"Hộp cách nhiệt 📦",de:"Isolierbox 📦"}, emoji:"📦", desc:{vi:"Thùng xốp bọc lá chuối giữ nhiệt độ bên trong ổn định!",de:"Styroporbox mit Bananenblättern — Temperatur bleibt stabil!"}},
+      "🪣+💨":{name:{vi:"Quạt làm mát bốc hơi 💨",de:"Verdunstungskühler 💨"}, emoji:"💨", desc:{vi:"Vải ướt bọc thức ăn, quạt thổi — bốc hơi làm mát!",de:"Nasses Tuch ums Essen, Fächer drauf — Verdunstung kühlt!"}},
+    },
+    titleUnlock:"Cool Inventor 🌡️",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 4: THẾ GIỚI LẠ ─── */
+  {
+    id:7, group:4, level:2,
+    emoji:"🌙",
+    name:{vi:"Xây nhà trên Mặt Trăng", de:"Haus auf dem Mond bauen!"},
+    problemShort:{vi:"Sống trên Mặt Trăng không có không khí!", de:"Leben auf dem Mond ohne Luft!"},
+    ttsText:{vi:"Con là phi hành gia đầu tiên ở lại Mặt Trăng! Không có không khí để thở, không có nước, ban ngày nóng một trăm hai mươi độ, ban đêm lạnh âm một trăm sáu mươi độ. Con cần xây nơi ở để sống sót. Con dùng gì?", de:"Du bist der erste Astronaut, der auf dem Mond bleibt! Keine Luft zum Atmen, kein Wasser. Tagsüber hundertzwanzig Grad heiß, nachts minus hundertundsechzig Grad kalt. Du brauchst eine Unterkunft zum Überleben. Was benutzt du?"},
+    questionText:{vi:"Nhà trên Mặt Trăng của con trông như thế nào? Làm sao con thở được?", de:"Wie sieht dein Mondhaus aus? Wie kannst du dort atmen?"},
+    questionTTS:{vi:"Nhà trên Mặt Trăng của con trông như thế nào? Làm sao con thở được?", de:"Wie sieht dein Mondhaus aus? Wie kannst du dort atmen?"},
+    constraints:[
+      {emoji:"💨", label:{vi:"Không có không khí", de:"Keine Luft"}},
+      {emoji:"💧", label:{vi:"Không có nước", de:"Kein Wasser"}},
+      {emoji:"🔥", label:{vi:"Nhiệt cực đoan", de:"Extreme Temperaturen"}},
+    ],
+    materials:[
+      {emoji:"🪨", label:{vi:"Đá Mặt Trăng", de:"Mondgestein"}},
+      {emoji:"🫧", label:{vi:"Bong bóng khí", de:"Luftblase"}},
+      {emoji:"⛺", label:{vi:"Lều cứng", de:"Hartschale"}},
+      {emoji:"🔋", label:{vi:"Pin năng lượng", de:"Solarbatterie"}},
+      {emoji:"🌿", label:{vi:"Cây tạo oxy", de:"Sauerstoffpflanze"}},
+      {emoji:"🪟", label:{vi:"Kính dày", de:"Dickes Glas"}},
+      {emoji:"🧱", label:{vi:"Đất đắp", de:"Monderde"}},
+      {emoji:"☀️", label:{vi:"Năng lượng mặt trời", de:"Sonnenenergie"}},
+    ],
+    vagueHints:[
+      {emoji:"🫧", text:{vi:"Bong bóng kín giữ không khí được không?", de:"Kann eine geschlossene Hülle Luft halten?"}},
+      {emoji:"🪨", text:{vi:"Đào vào đất Mặt Trăng có ấm hơn không?", de:"Ist es tiefer im Mondboden wärmer?"}},
+    ],
+    combos:{
+      "⛺+🪨":{name:{vi:"Căn cứ ngầm 🌙",de:"Mondbase 🌙"}, emoji:"🌙", desc:{vi:"Đào vào đất Mặt Trăng, phủ đá lên — tránh nhiệt và tia vũ trụ!",de:"In den Mondboden graben, Gestein drauf — schützt vor Hitze und Strahlung!"}},
+      "🫧+🌿":{name:{vi:"Vòm bong bóng xanh 🌿",de:"Bio-Kuppel 🌿"}, emoji:"🌿", desc:{vi:"Lều kín như bong bóng, cây bên trong tạo oxy để thở!",de:"Luftdichte Kuppel mit Pflanzen drin — sie produzieren Sauerstoff!"}},
+      "☀️+🔋":{name:{vi:"Trạm năng lượng mặt trời 🔋",de:"Solarstation 🔋"}, emoji:"🔋", desc:{vi:"Pin mặt trời hứng ánh sáng — cấp điện cho mọi thứ!",de:"Solarzellen sammeln Mondlicht — Strom für alles!"}},
+    },
+    titleUnlock:"Moon Architect 🌙",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+  {
+    id:8, group:4, level:3,
+    emoji:"🌊",
+    name:{vi:"Thành phố dưới đáy biển", de:"Stadt unter dem Meer!"},
+    problemShort:{vi:"Thiết kế thành phố dưới nước sâu!", de:"Unterwasserstadt für Menschen!"},
+    ttsText:{vi:"Trái Đất quá đông người! Con được giao nhiệm vụ thiết kế một thành phố dưới đáy biển cho một nghìn người sinh sống. Dưới đó không có ánh nắng, áp suất nước rất lớn, và không có không khí. Con thiết kế thành phố đó như thế nào?", de:"Die Erde ist überfüllt! Du sollst eine Unterwasserstadt für tausend Menschen entwerfen. Dort unten gibt es kein Sonnenlicht, der Wasserdruck ist riesig, und es gibt keine Luft. Wie entwirfst du diese Stadt?"},
+    questionText:{vi:"Thành phố dưới biển của con trông như thế nào? Người ta thở và ăn bằng gì?", de:"Wie sieht deine Unterwasserstadt aus? Wie atmen und essen die Menschen dort?"},
+    questionTTS:{vi:"Thành phố dưới biển của con trông như thế nào? Người ta thở và ăn bằng gì?", de:"Wie sieht deine Unterwasserstadt aus? Wie atmen und essen die Menschen dort?"},
+    constraints:[
+      {emoji:"☀️", label:{vi:"Không ánh nắng", de:"Kein Sonnenlicht"}},
+      {emoji:"💨", label:{vi:"Không khí tự nhiên", de:"Keine natürliche Luft"}},
+      {emoji:"🌊", label:{vi:"Áp suất nước lớn", de:"Hoher Wasserdruck"}},
+    ],
+    materials:[
+      {emoji:"🪟", label:{vi:"Kính cường lực", de:"Sicherheitsglas"}},
+      {emoji:"🌿", label:{vi:"Rong biển", de:"Meeresalgen"}},
+      {emoji:"🔋", label:{vi:"Máy phát điện", de:"Generator"}},
+      {emoji:"🐠", label:{vi:"Nông trại cá", de:"Fischfarm"}},
+      {emoji:"💡", label:{vi:"Đèn nhân tạo", de:"Kunstlicht"}},
+      {emoji:"🤿", label:{vi:"Hệ thống khí", de:"Luftsystem"}},
+      {emoji:"🧱", label:{vi:"Vật liệu chắc", de:"Hartes Material"}},
+      {emoji:"🚇", label:{vi:"Đường hầm", de:"Tunnel"}},
+    ],
+    vagueHints:[
+      {emoji:"🌿", text:{vi:"Rong biển tạo ra gì khi có ánh sáng?", de:"Was produzieren Algen mit Licht?"}},
+      {emoji:"🪟", text:{vi:"Kính siêu dày chịu được áp suất không?", de:"Hält extra dickes Glas den Druck stand?"}},
+    ],
+    combos:{
+      "🪟+🧱":{name:{vi:"Vòm kính chịu lực 🏛️",de:"Druckfeste Glaskuppel 🏛️"}, emoji:"🏛️", desc:{vi:"Vòm kính dày siêu chắc chịu áp suất — thành phố bên trong!",de:"Dicke Glaskuppel hält dem Druck stand — Stadt darin lebt sicher!"}},
+      "🌿+💡":{name:{vi:"Rừng rong biển nhân tạo 🌿",de:"Algen-Sauerstoffanlage 🌿"}, emoji:"🌿", desc:{vi:"Đèn mạnh chiếu vào rong biển — tạo oxy không ngừng!",de:"Starkes Kunstlicht für Algen — sie produzieren Sauerstoff rund um die Uhr!"}},
+      "🚇+🤿":{name:{vi:"Mạng lưới đường hầm kín 🚇",de:"Druckdichtes Tunnelnetz 🚇"}, emoji:"🚇", desc:{vi:"Đường hầm nối các khu — người đi lại trong bong bóng khí!",de:"Druckdichte Tunnel verbinden alle Bereiche — Menschen bewegen sich sicher!"}},
+    },
+    titleUnlock:"Ocean Architect 🌊",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 5: NHẬP VAI ─── */
+  {
+    id:9, group:5, level:1,
+    emoji:"🦸",
+    name:{vi:"Siêu anh hùng mất sức mạnh", de:"Superheld ohne Kräfte!"},
+    problemShort:{vi:"Siêu năng lực biến mất, phải cứu người!", de:"Superkräfte weg – trotzdem retten!"},
+    ttsText:{vi:"Con là siêu anh hùng! Nhưng hôm nay siêu năng lực biến mất rồi! Có một bạn nhỏ đang kẹt trên mái nhà cao. Con không bay được, không có sức mạnh siêu nhiên. Chỉ có những đồ vật bình thường. Con cứu bạn bằng cách nào?", de:"Du bist ein Superheld! Aber heute sind deine Superkräfte verschwunden! Ein Kind steckt auf einem hohen Hausdach fest. Du kannst nicht fliegen, hast keine Superkräfte mehr. Nur normale Gegenstände. Wie rettest du das Kind?"},
+    questionText:{vi:"Con dùng gì để cứu bạn? Siêu anh hùng không có siêu năng lực vẫn có thể làm gì?", de:"Was benutzt du zur Rettung? Was kann ein Superheld ohne Kräfte trotzdem tun?"},
+    questionTTS:{vi:"Con dùng gì để cứu bạn? Siêu anh hùng không có siêu năng lực vẫn có thể làm gì?", de:"Was benutzt du zur Rettung? Was kann ein Superheld ohne Kräfte trotzdem tun?"},
+    constraints:[
+      {emoji:"✈️", label:{vi:"Không bay được", de:"Nicht fliegen"}},
+      {emoji:"💪", label:{vi:"Không siêu sức mạnh", de:"Keine Superkraft"}},
+    ],
+    materials:[
+      {emoji:"🪢", label:{vi:"Dây dài", de:"Langes Seil"}},
+      {emoji:"🎈", label:{vi:"Bóng bay lớn", de:"Große Ballons"}},
+      {emoji:"🪜", label:{vi:"Thang", de:"Leiter"}},
+      {emoji:"📦", label:{vi:"Thùng xếp", de:"Kisten stapeln"}},
+      {emoji:"🛹", label:{vi:"Ván trượt", de:"Skateboard"}},
+      {emoji:"🌂", label:{vi:"Dù", de:"Fallschirm"}},
+      {emoji:"🧲", label:{vi:"Nam châm", de:"Magnet"}},
+      {emoji:"📣", label:{vi:"Loa kêu gọi", de:"Megafon"}},
+    ],
+    vagueHints:[
+      {emoji:"🪢", text:{vi:"Cần gì để người tụt xuống an toàn?", de:"Was braucht man zum sicheren Runterkommen?"}},
+      {emoji:"📣", text:{vi:"Kêu gọi giúp đỡ cũng là anh hùng!", de:"Um Hilfe rufen ist auch heldenhaft!"}},
+    ],
+    combos:{
+      "🪜+📦":{name:{vi:"Tháp giải cứu 🏗️",de:"Rettungsturm 🏗️"}, emoji:"🏗️", desc:{vi:"Chồng thùng lên rồi đặt thang — leo lên cứu bạn!",de:"Kisten stapeln, Leiter drauf — hochklettern und retten!"}},
+      "🎈+🌂":{name:{vi:"Dù bóng bay hạ cánh 🪂",de:"Ballon-Fallschirm 🪂"}, emoji:"🪂", desc:{vi:"Bóng bay buộc vào dù — nhảy xuống từ từ an toàn!",de:"Ballons am Fallschirm — sanft und sicher runterkommen!"}},
+      "🪢+🧲":{name:{vi:"Dây nam châm cứu hộ 🧲",de:"Magnet-Rettungsleine 🧲"}, emoji:"🧲", desc:{vi:"Nam châm bắt vào mái sắt, dây kéo người xuống từng bước!",de:"Magnet ans Metalldach, Seil lässt Person Schritt für Schritt runter!"}},
+    },
+    titleUnlock:"Everyday Hero 🦸",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+  {
+    id:10, group:5, level:2,
+    emoji:"🔍",
+    name:{vi:"Thám tử tí hon mất dụng cụ", de:"Mini-Detektiv ohne Ausrüstung!"},
+    problemShort:{vi:"Thám tử tí hon không có dụng cụ!", de:"Mini-Detektiv ohne Ausrüstung!"},
+    ttsText:{vi:"Con là thám tử nhí giỏi nhất thành phố! Có người lấy trộm chiếc bánh sinh nhật. Con cần tìm ra thủ phạm trong vòng một tiếng. Nhưng kính lúp và hộp đựng dụng cụ đã bị ai đó giấu mất! Con chỉ có những thứ bình thường trong phòng. Con điều tra như thế nào?", de:"Du bist der beste Kinderdetektiv der Stadt! Jemand hat den Geburtstagskuchen gestohlen. Du musst den Täter in einer Stunde finden. Aber deine Lupe und Ausrüstung wurden versteckt! Du hast nur normale Dinge im Zimmer. Wie ermittelst du?"},
+    questionText:{vi:"Con tìm ra manh mối bằng cách nào? Con dùng gì thay cho dụng cụ thám tử?", de:"Wie findest du Hinweise? Was benutzt du statt deiner Detektivausrüstung?"},
+    questionTTS:{vi:"Con tìm ra manh mối bằng cách nào? Con dùng gì thay cho dụng cụ thám tử?", de:"Wie findest du Hinweise? Was benutzt du statt deiner Detektivausrüstung?"},
+    constraints:[
+      {emoji:"🔍", label:{vi:"Không kính lúp", de:"Keine Lupe"}},
+      {emoji:"🤖", label:{vi:"Không máy móc", de:"Keine Geräte"}},
+    ],
+    materials:[
+      {emoji:"📷", label:{vi:"Điện thoại chụp ảnh", de:"Foto-Handy"}},
+      {emoji:"🖊️", label:{vi:"Bút ghi chép", de:"Notizbuch"}},
+      {emoji:"🕯️", label:{vi:"Nến soi tối", de:"Kerze"}},
+      {emoji:"🍫", label:{vi:"Bột cacao (dấu vân tay)", de:"Kakao (Fingerabdrücke)"}},
+      {emoji:"🪞", label:{vi:"Gương phản chiếu", de:"Spiegel"}},
+      {emoji:"🎤", label:{vi:"Hỏi nhân chứng", de:"Zeugen befragen"}},
+      {emoji:"🧲", label:{vi:"Nam châm", de:"Magnet"}},
+      {emoji:"🔦", label:{vi:"Đèn pin", de:"Taschenlampe"}},
+    ],
+    vagueHints:[
+      {emoji:"🍫", text:{vi:"Bột mịn có thể hiện dấu vân tay không?", de:"Kann Pulver Fingerabdrücke sichtbar machen?"}},
+      {emoji:"📷", text:{vi:"Ảnh phóng to thay kính lúp được không?", de:"Kann ein vergrößertes Foto die Lupe ersetzen?"}},
+    ],
+    combos:{
+      "🍫+🔦":{name:{vi:"Bộ kit dấu vân tay 🕵️",de:"Fingerabdruck-Kit 🕵️"}, emoji:"🕵️", desc:{vi:"Rắc bột cacao lên mặt phẳng, soi đèn pin — dấu vân tay hiện rõ!",de:"Kakaopulver auf Fläche streuen, Taschenlampe drauf — Fingerabdrücke sichtbar!"}},
+      "📷+🖊️":{name:{vi:"Hồ sơ điều tra 📋",de:"Ermittlungsakte 📋"}, emoji:"📋", desc:{vi:"Chụp ảnh mọi manh mối, ghi chép tỉ mỉ — tìm ra ai khớp nhất!",de:"Alle Hinweise fotografieren und aufschreiben — wer passt am besten?"}},
+      "🎤+🪞":{name:{vi:"Phỏng vấn và đối chiếu 🎯",de:"Interview & Spiegel-Test 🎯"}, emoji:"🎯", desc:{vi:"Hỏi từng người, dùng gương quan sát phản ứng — ai nói dối sẽ lộ!",de:"Jeden befragen, Spiegel beobachtet Reaktionen — Lügner verraten sich!"}},
+    },
+    titleUnlock:"Super Detective 🔍",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 1: DI CHUYỂN – thêm 1 ─── */
+  {
+    id:11, group:1, level:3,
+    emoji:"🌪️",
+    name:{vi:"Vượt qua bão tố", de:"Durch den Sturm!"},
+    problemShort:{vi:"Giữa bão, phải đưa thuốc đến bệnh viện!", de:"Mitten im Sturm Medizin liefern!"},
+    ttsText:{vi:"Đang có bão lớn! Một người cần thuốc gấp ở bệnh viện cách đây năm cây số. Không có xe, đường ngập nước, gió thổi rất mạnh. Con phải đưa hộp thuốc đến kịp giờ. Con làm thế nào?", de:"Ein heftiger Sturm tobt! Jemand braucht dringend Medizin im Krankenhaus fünf Kilometer entfernt. Kein Auto, überflutete Straßen, Sturm pfeift. Du musst die Medizin rechtzeitig liefern. Wie machst du das?"},
+    questionText:{vi:"Con đưa thuốc đến bệnh viện trong bão bằng cách nào? Hộp thuốc có bị ướt không?", de:"Wie lieferst du die Medizin durch den Sturm? Bleibt sie trocken?"},
+    questionTTS:{vi:"Con đưa thuốc đến bệnh viện trong bão bằng cách nào? Hộp thuốc có bị ướt không?", de:"Wie lieferst du die Medizin durch den Sturm? Bleibt sie trocken?"},
+    constraints:[
+      {emoji:"🚗", label:{vi:"Không xe", de:"Kein Auto"}},
+      {emoji:"🌊", label:{vi:"Đường ngập nước", de:"Überflutete Straßen"}},
+    ],
+    materials:[
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"📦", label:{vi:"Thùng kín nước", de:"Wasserdichte Kiste"}},
+      {emoji:"🎈", label:{vi:"Bóng bay", de:"Ballon"}},
+      {emoji:"🪵", label:{vi:"Bè nổi", de:"Floß"}},
+      {emoji:"🌂", label:{vi:"Dù chắn gió", de:"Windschutz"}},
+      {emoji:"🛟", label:{vi:"Phao bơi", de:"Schwimmreifen"}},
+      {emoji:"🧲", label:{vi:"Nam châm", de:"Magnet"}},
+      {emoji:"🪝", label:{vi:"Móc treo", de:"Haken"}},
+    ],
+    vagueHints:[
+      {emoji:"🌊", text:{vi:"Thứ gì nổi được trên nước ngập?", de:"Was schwimmt auf dem Hochwasser?"}},
+      {emoji:"🎈", text:{vi:"Bay phía trên bão thì sao?", de:"Wie wäre es, über dem Sturm zu fliegen?"}},
+    ],
+    combos:{
+      "🪵+🪢":{name:{vi:"Bè dây kéo cứu thương 🚑",de:"Seil-Floß-Express 🚑"}, emoji:"🚑", desc:{vi:"Bè nổi buộc dây, kéo trượt qua đường ngập đến bệnh viện!",de:"Floß am Seil, durch die Überflutung zum Krankenhaus ziehen!"}},
+      "🎈+📦":{name:{vi:"Drone bóng bay 🎈",de:"Ballon-Drohne 🎈"}, emoji:"🎈", desc:{vi:"Nhiều bóng nâng thùng thuốc bay qua bão — giao hàng trên không!",de:"Viele Ballons heben Medizinkiste hoch — Lieferung durch die Luft!"}},
+      "🪢+🪝":{name:{vi:"Đường dây trên cao 🔗",de:"Hochseil-Liefersystem 🔗"}, emoji:"🔗", desc:{vi:"Căng dây cao giữa hai nhà, thùng thuốc trượt qua phía trên nước!",de:"Seil hoch zwischen Gebäuden spannen, Kiste gleitet drüber!"}},
+    },
+    titleUnlock:"Storm Rider 🌪️",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 2: CỨU GIÚP – thêm 2 ─── */
+  {
+    id:12, group:2, level:1,
+    emoji:"🔥",
+    name:{vi:"Lửa chặn đường thoát", de:"Feuer versperrt den Weg!"},
+    problemShort:{vi:"Lửa chặn cửa, phải thoát khỏi tầng 2!", de:"Feuer blockiert Ausgang – 2. Stock!"},
+    ttsText:{vi:"Có đám cháy nhỏ chặn cầu thang! Con đang ở tầng hai và không xuống được. Không có thang chữa cháy đến kịp. Cửa sổ mở được nhưng xuống đất cao hai mét rưỡi. Con thoát ra bằng cách nào an toàn?", de:"Ein kleines Feuer blockiert die Treppe! Du steckst im zweiten Stock und kommst nicht runter. Die Feuerwehrleiter kommt nicht rechtzeitig. Das Fenster geht auf, aber der Boden ist zweieinhalb Meter tief. Wie kommst du sicher raus?"},
+    questionText:{vi:"Con thoát ra khỏi tầng hai an toàn như thế nào? Có ai bị thương không?", de:"Wie kommst du sicher aus dem zweiten Stock? Verletzt sich jemand?"},
+    questionTTS:{vi:"Con thoát ra khỏi tầng hai an toàn như thế nào? Có ai bị thương không?", de:"Wie kommst du sicher aus dem zweiten Stock? Verletzt sich jemand?"},
+    constraints:[
+      {emoji:"🔥", label:{vi:"Không qua lửa", de:"Nicht durchs Feuer"}},
+      {emoji:"🪜", label:{vi:"Không có thang", de:"Keine Leiter"}},
+    ],
+    materials:[
+      {emoji:"🛏️", label:{vi:"Ga trải giường", de:"Bettlaken"}},
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"📦", label:{vi:"Thùng đỡ", de:"Kiste als Landeplatz"}},
+      {emoji:"🛋️", label:{vi:"Nệm mềm", de:"Weiche Matte"}},
+      {emoji:"🎈", label:{vi:"Bóng bay", de:"Ballon"}},
+      {emoji:"🌂", label:{vi:"Dù", de:"Fallschirm"}},
+      {emoji:"🪝", label:{vi:"Móc cửa sổ", de:"Fensterhaken"}},
+      {emoji:"🧤", label:{vi:"Găng tay", de:"Handschuhe"}},
+    ],
+    vagueHints:[
+      {emoji:"🛏️", text:{vi:"Thứ dài có thể làm thang dây không?", de:"Kann man daraus eine Seilleiter machen?"}},
+      {emoji:"🛋️", text:{vi:"Đáp xuống êm thì cần gì?", de:"Was braucht man für eine weiche Landung?"}},
+    ],
+    combos:{
+      "🛏️+🪢":{name:{vi:"Thang ga giường 🪜",de:"Bettlaken-Leiter 🪜"}, emoji:"🪜", desc:{vi:"Buộc ga giường thành dây dài, buộc vào cửa sổ — tụt xuống từ từ!",de:"Bettlaken zusammenbinden, ans Fenster knoten — Schritt für Schritt runter!"}},
+      "🎈+🌂":{name:{vi:"Dù hạ cánh an toàn 🪂",de:"Ballon-Fallschirm 🪂"}, emoji:"🪂", desc:{vi:"Bóng giúp dù mở chậm — nhảy xuống nhẹ nhàng!",de:"Ballons öffnen den Fallschirm langsam — sanfte Landung!"}},
+      "🛋️+📦":{name:{vi:"Vùng đáp êm 🛬",de:"Weiche Landezone 🛬"}, emoji:"🛬", desc:{vi:"Ném nệm mềm xuống trước, nhảy vào — không bị thương!",de:"Zuerst weiche Matte werfen, dann springen — keine Verletzung!"}},
+    },
+    titleUnlock:"Fire Escaper 🔥",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+  {
+    id:13, group:2, level:3,
+    emoji:"🏔️",
+    name:{vi:"Bạn bị thương trên núi", de:"Verletzter Freund auf dem Berg!"},
+    problemShort:{vi:"Bạn gãy chân, không xuống núi được!", de:"Freund hat gebrochenes Bein am Berg!"},
+    ttsText:{vi:"Đang leo núi thì bạn của con bị trượt ngã gãy chân! Bạn không đi được nữa. Cách đường chính hai cây số, không có điện thoại sóng, trời đang tối dần. Con phải đưa bạn xuống núi an toàn trước khi trời tối. Con làm gì?", de:"Beim Wandern stürzt dein Freund und bricht sich das Bein! Er kann nicht mehr laufen. Zwei Kilometer vom nächsten Weg entfernt, kein Handynetz, es wird dunkel. Du musst ihn vor Einbruch der Dunkelheit sicher vom Berg bringen. Was machst du?"},
+    questionText:{vi:"Con đưa bạn bị thương xuống núi bằng cách nào? Làm sao bạn không đau thêm?", de:"Wie bringst du deinen verletzten Freund vom Berg? Wie vermeidest du weitere Schmerzen?"},
+    questionTTS:{vi:"Con đưa bạn bị thương xuống núi bằng cách nào? Làm sao bạn không đau thêm?", de:"Wie bringst du deinen verletzten Freund vom Berg? Wie vermeidest du weitere Schmerzen?"},
+    constraints:[
+      {emoji:"📱", label:{vi:"Không sóng điện thoại", de:"Kein Handynetz"}},
+      {emoji:"🚁", label:{vi:"Không trực thăng", de:"Kein Hubschrauber"}},
+    ],
+    materials:[
+      {emoji:"🌲", label:{vi:"Cành cây dài", de:"Langer Ast"}},
+      {emoji:"🪢", label:{vi:"Dây", de:"Seil"}},
+      {emoji:"🎒", label:{vi:"Ba lô", de:"Rucksack"}},
+      {emoji:"🧥", label:{vi:"Áo khoác", de:"Jacke"}},
+      {emoji:"🪨", label:{vi:"Đá phẳng", de:"Flacher Stein"}},
+      {emoji:"🔦", label:{vi:"Đèn pin", de:"Taschenlampe"}},
+      {emoji:"🩹", label:{vi:"Băng vết thương", de:"Verband"}},
+      {emoji:"🌿", label:{vi:"Lá cây tươi", de:"Frische Blätter"}},
+    ],
+    vagueHints:[
+      {emoji:"🌲", text:{vi:"Hai cành cây + vải = cáng cứu thương?", de:"Zwei Äste + Stoff = Krankentrage?"}},
+      {emoji:"🔦", text:{vi:"Làm sao để người khác nhìn thấy con?", de:"Wie können andere dich sehen?"}},
+    ],
+    combos:{
+      "🌲+🧥":{name:{vi:"Cáng cứu thương tự chế 🏥",de:"Selbstgemachte Trage 🏥"}, emoji:"🏥", desc:{vi:"Hai cành cây luồn qua tay áo — thành cáng khiêng người!",de:"Zwei Äste durch Ärmel stecken — fertige Krankentrage!"}},
+      "🪢+🎒":{name:{vi:"Ghế cõng lưng 🎒",de:"Rucksack-Tragesitz 🎒"}, emoji:"🎒", desc:{vi:"Buộc dây vào ba lô tạo chỗ ngồi — cõng bạn xuống núi từng bước!",de:"Seil am Rucksack als Sitz — Freund huckepack den Berg runter!"}},
+      "🔦+🪢":{name:{vi:"Tín hiệu cứu hộ + dây dắt 🆘",de:"Notsignal + Führungsseil 🆘"}, emoji:"🆘", desc:{vi:"Đèn pin phát tín hiệu SOS, dây dắt người bị thương đi từng bước!",de:"Taschenlampe sendet SOS-Signal, Seil führt Verletzten Schritt für Schritt!"}},
+    },
+    titleUnlock:"Mountain Medic 🏔️",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 3: PHÁT MINH – thêm 2 ─── */
+  {
+    id:14, group:3, level:2,
+    emoji:"🌧️",
+    name:{vi:"Thu nước mưa để uống", de:"Regenwasser zum Trinken!"},
+    problemShort:{vi:"Không có nước sạch, chỉ có mưa rào!", de:"Kein sauberes Wasser, nur Regen!"},
+    ttsText:{vi:"Con đang ở một ngôi làng vùng sâu không có nước máy. Trời hay có mưa rào nhưng nước mưa chưa uống được vì có bụi bẩn. Không có điện. Con cần phát minh ra cách lọc và trữ nước mưa để cả nhà uống được. Con làm gì?", de:"Du bist in einem Dorf ohne Wasserleitung. Es regnet oft, aber das Regenwasser ist schmutzig und nicht trinkbar. Kein Strom. Du brauchst eine Erfindung, um Regenwasser zu sammeln und zu filtern, damit alle trinken können. Was machst du?"},
+    questionText:{vi:"Con lọc nước mưa như thế nào? Làm sao biết nước đã sạch để uống được?", de:"Wie filterst du das Regenwasser? Wie weißt du, dass es sauber zum Trinken ist?"},
+    questionTTS:{vi:"Con lọc nước mưa như thế nào? Làm sao biết nước đã sạch để uống được?", de:"Wie filterst du das Regenwasser? Wie weißt du, dass es sauber zum Trinken ist?"},
+    constraints:[
+      {emoji:"⚡", label:{vi:"Không điện", de:"Kein Strom"}},
+      {emoji:"🏪", label:{vi:"Không cửa hàng", de:"Kein Geschäft"}},
+    ],
+    materials:[
+      {emoji:"🪣", label:{vi:"Thùng hứng", de:"Auffangeimer"}},
+      {emoji:"🏜️", label:{vi:"Cát mịn", de:"Feiner Sand"}},
+      {emoji:"🪨", label:{vi:"Sỏi cuội", de:"Kieselsteine"}},
+      {emoji:"🪵", label:{vi:"Than củi", de:"Holzkohle"}},
+      {emoji:"🧵", label:{vi:"Vải lọc", de:"Filtertuch"}},
+      {emoji:"☀️", label:{vi:"Ánh nắng", de:"Sonnenlicht"}},
+      {emoji:"📦", label:{vi:"Thùng kín", de:"Dichter Behälter"}},
+      {emoji:"🍃", label:{vi:"Lá hứng nước", de:"Wassersammelndes Blatt"}},
+    ],
+    vagueHints:[
+      {emoji:"🏜️", text:{vi:"Cát lọc được bụi không?", de:"Kann Sand Schmutz herausfiltern?"}},
+      {emoji:"☀️", text:{vi:"Nắng có thể diệt vi khuẩn không?", de:"Kann Sonnenlicht Bakterien abtöten?"}},
+    ],
+    combos:{
+      "🏜️+🪨":{name:{vi:"Bộ lọc cát sỏi 💧",de:"Sand-Kiesel-Filter 💧"}, emoji:"💧", desc:{vi:"Xếp sỏi rồi cát trong thùng — nước chảy qua, bụi bẩn bị giữ lại!",de:"Kiesel und Sand im Eimer schichten — Wasser fließt durch, Schmutz bleibt zurück!"}},
+      "🪵+🧵":{name:{vi:"Lọc than + vải 🌑",de:"Holzkohle-Tuch-Filter 🌑"}, emoji:"🌑", desc:{vi:"Than củi hấp thụ hóa chất, vải lọc cặn — nước sạch hơn nhiều!",de:"Holzkohle absorbiert Chemikalien, Tuch filtert Rest — viel saubereres Wasser!"}},
+      "☀️+📦":{name:{vi:"Hệ thống lọc năng lượng mặt trời ☀️",de:"Solar-Wassersterilisation ☀️"}, emoji:"☀️", desc:{vi:"Để nước trong chai thủy tinh dưới nắng sáu giờ — tia UV diệt vi khuẩn!",de:"Wasser in Glasflasche sechs Stunden in die Sonne — UV tötet Bakterien!"}},
+    },
+    titleUnlock:"Water Engineer 🌧️",
+    buildScene: () => ``,
+    sceneBg:"bg-river",
+  },
+  {
+    id:15, group:3, level:3,
+    emoji:"🤖",
+    name:{vi:"Robot thu dọn rác biển", de:"Müll-Roboter fürs Meer!"},
+    problemShort:{vi:"Thiết kế robot dọn rác dưới nước!", de:"Unterwasser-Müllroboter bauen!"},
+    ttsText:{vi:"Biển đang ngập rác! Mỗi ngày hàng tấn rác nhựa trôi vào. Cá và rùa biển đang chết vì nuốt phải rác. Con được giao nhiệm vụ thiết kế một robot không cần điện và không người điều khiển để tự thu gom rác dưới biển. Con thiết kế robot đó như thế nào?", de:"Das Meer ist voller Müll! Täglich treiben Tonnen Plastikmüll herein. Fische und Meeresschildkröten sterben, weil sie Müll fressen. Du sollst einen Roboter bauen, der ohne Strom und ohne Fernsteuerung selbst Müll im Meer sammelt. Wie entwirfst du ihn?"},
+    questionText:{vi:"Robot của con hoạt động như thế nào? Làm sao nó biết đâu là rác?", de:"Wie funktioniert dein Roboter? Wie erkennt er den Müll?"},
+    questionTTS:{vi:"Robot của con hoạt động như thế nào? Làm sao nó biết đâu là rác?", de:"Wie funktioniert dein Roboter? Wie erkennt er den Müll?"},
+    constraints:[
+      {emoji:"⚡", label:{vi:"Không điện pin", de:"Kein Batteriestrom"}},
+      {emoji:"🕹️", label:{vi:"Không điều khiển từ xa", de:"Keine Fernsteuerung"}},
+    ],
+    materials:[
+      {emoji:"🌊", label:{vi:"Sức nước biển", de:"Meeresströmung"}},
+      {emoji:"🧲", label:{vi:"Nam châm", de:"Magnet"}},
+      {emoji:"🕸️", label:{vi:"Lưới vớt", de:"Fangnetz"}},
+      {emoji:"🎈", label:{vi:"Phao nổi", de:"Schwimmkörper"}},
+      {emoji:"☀️", label:{vi:"Năng lượng mặt trời", de:"Sonnenenergie"}},
+      {emoji:"🔄", label:{vi:"Bánh guồng nước", de:"Wasserrad"}},
+      {emoji:"📦", label:{vi:"Thùng chứa rác", de:"Müllbehälter"}},
+      {emoji:"🪝", label:{vi:"Móc kéo", de:"Sammelgreifer"}},
+    ],
+    vagueHints:[
+      {emoji:"🌊", text:{vi:"Dòng nước có thể làm robot di chuyển không?", de:"Kann die Strömung den Roboter antreiben?"}},
+      {emoji:"🕸️", text:{vi:"Lưới lớn trôi theo dòng thì sao?", de:"Was wenn ein großes Netz mit der Strömung treibt?"}},
+    ],
+    combos:{
+      "🕸️+🎈":{name:{vi:"Bẫy rác nổi 🌊",de:"Treibnetz-Falle 🌊"}, emoji:"🌊", desc:{vi:"Lưới lớn giữ bởi phao — trôi theo dòng, gom rác tự nhiên!",de:"Großes Netz von Schwimmern gehalten — treibt mit Strömung, sammelt Müll!"}},
+      "🔄+📦":{name:{vi:"Guồng nước + thùng rác 🔄",de:"Wasserrad-Müllsammler 🔄"}, emoji:"🔄", desc:{vi:"Guồng nước quay bơm rác vào thùng — dùng sức nước thay điện!",de:"Wasserrad dreht sich, pumpt Müll in Behälter — Wasser statt Strom!"}},
+      "☀️+🧲":{name:{vi:"Robot mặt trời hút rác kim loại ☀️",de:"Solar-Magnet-Roboter ☀️"}, emoji:"☀️", desc:{vi:"Pin mặt trời chạy nam châm mạnh hút rác kim loại lên khỏi nước!",de:"Solarpanel betreibt Magneten — Metallmüll wird aus dem Wasser gezogen!"}},
+    },
+    titleUnlock:"Ocean Cleaner 🤖",
+    buildScene: () => ``,
+    sceneBg:"bg-river",
+  },
+
+  /* ─── GROUP 4: THẾ GIỚI LẠ – thêm 2 ─── */
+  {
+    id:16, group:4, level:1,
+    emoji:"🦕",
+    name:{vi:"Mắc kẹt ở kỷ nguyên khủng long", de:"In der Dinosaurierzeit gestrandet!"},
+    problemShort:{vi:"Con bị kẹt ở thời khủng long, phải sống sót!", de:"Gestrandet in der Urzeit – überleben!"},
+    ttsText:{vi:"Máy thời gian bị hỏng! Con bị kẹt ở kỷ nguyên khủng long bảy mươi triệu năm trước. Xung quanh toàn rừng rậm và khủng long nguy hiểm. Không có điện, không có thức ăn chế biến sẵn. Con cần tìm nơi trú ẩn, kiếm thức ăn và tránh khủng long. Con làm gì để sống sót?", de:"Die Zeitmaschine ist kaputt! Du steckst vor siebzig Millionen Jahren in der Dinosaurierzeit fest. Überall Dschungel und gefährliche Dinosaurier. Kein Strom, kein fertiges Essen. Du brauchst Unterschlupf, Nahrung und musst Dinosauriern ausweichen. Was machst du zum Überleben?"},
+    questionText:{vi:"Con làm gì để sống sót ở thời khủng long? Con tránh khủng long bằng cách nào?", de:"Was machst du, um in der Dinosaurierzeit zu überleben? Wie weichst du Dinosauriern aus?"},
+    questionTTS:{vi:"Con làm gì để sống sót ở thời khủng long? Con tránh khủng long bằng cách nào?", de:"Was machst du, um in der Dinosaurierzeit zu überleben? Wie weichst du Dinosauriern aus?"},
+    constraints:[
+      {emoji:"⚡", label:{vi:"Không điện", de:"Kein Strom"}},
+      {emoji:"🏪", label:{vi:"Không cửa hàng", de:"Kein Geschäft"}},
+    ],
+    materials:[
+      {emoji:"🌲", label:{vi:"Cây lớn", de:"Großer Baum"}},
+      {emoji:"🪨", label:{vi:"Đá nhọn", de:"Spitzer Stein"}},
+      {emoji:"🍃", label:{vi:"Lá cây", de:"Blätter"}},
+      {emoji:"🪵", label:{vi:"Gỗ khô", de:"Trockenes Holz"}},
+      {emoji:"🌾", label:{vi:"Cỏ dày", de:"Dichtes Gras"}},
+      {emoji:"🫐", label:{vi:"Quả dại", de:"Wildfrüchte"}},
+      {emoji:"🌊", label:{vi:"Sông nước", de:"Fluss"}},
+      {emoji:"🔥", label:{vi:"Lửa", de:"Feuer"}},
+    ],
+    vagueHints:[
+      {emoji:"🌲", text:{vi:"Ở trên cao khủng long không với được?", de:"Können Dinosaurier hoch oben nicht erreichen?"}},
+      {emoji:"🔥", text:{vi:"Lửa xua đuổi được thú dữ không?", de:"Hält Feuer wilde Tiere fern?"}},
+    ],
+    combos:{
+      "🌲+🪵":{name:{vi:"Nhà trên cây 🌳",de:"Baumhaus 🌳"}, emoji:"🌳", desc:{vi:"Xây nhà trên cành cây cao — khủng long không leo được!",de:"Haus hoch oben im Baum bauen — Dinosaurier kommen nicht rauf!"}},
+      "🪨+🔥":{name:{vi:"Bẫy lửa đá 🔥",de:"Feuer-Stein-Falle 🔥"}, emoji:"🔥", desc:{vi:"Đá nhọn tạo rào cản, lửa phía ngoài xua đuổi khủng long!",de:"Spitze Steine als Zaun, Feuer außen hält Dinosaurier fern!"}},
+      "🌾+🍃":{name:{vi:"Ngụy trang thiên nhiên 🌿",de:"Natur-Tarnung 🌿"}, emoji:"🌿", desc:{vi:"Phủ cỏ và lá lên người — khủng long không nhìn thấy, thoát an toàn!",de:"Mit Gras und Blättern tarnen — Dinosaurier sehen dich nicht!"}},
+    },
+    titleUnlock:"Dino Survivor 🦕",
+    buildScene: () => ``,
+    sceneBg:"bg-river",
+  },
+  {
+    id:17, group:4, level:2,
+    emoji:"🧙",
+    name:{vi:"Thế giới phép thuật mất điện", de:"Magisches Reich ohne Energie!"},
+    problemShort:{vi:"Phép thuật biến mất, thành phố tối đen!", de:"Magie weg – ganze Stadt im Dunkeln!"},
+    ttsText:{vi:"Con đang sống ở một thế giới phép thuật. Nhưng hôm nay năng lượng phép thuật cạn kiệt! Toàn bộ thành phố tối đen, không có ánh sáng, không có phép thuật. Con cần tìm cách thắp sáng thành phố và giúp mọi người sống bình thường mà không dùng phép thuật. Con làm gì?", de:"Du lebst in einer Zauberwelt. Aber heute ist die Magie-Energie aufgebraucht! Die ganze Stadt ist dunkel, kein Licht, keine Magie. Du musst die Stadt beleuchten und den Menschen helfen, normal zu leben — ohne Magie. Was machst du?"},
+    questionText:{vi:"Con thắp sáng thành phố không phép thuật như thế nào? Năng lượng đến từ đâu?", de:"Wie beleuchtest du die Stadt ohne Magie? Woher kommt die Energie?"},
+    questionTTS:{vi:"Con thắp sáng thành phố không phép thuật như thế nào? Năng lượng đến từ đâu?", de:"Wie beleuchtest du die Stadt ohne Magie? Woher kommt die Energie?"},
+    constraints:[
+      {emoji:"✨", label:{vi:"Không phép thuật", de:"Keine Magie"}},
+      {emoji:"🔋", label:{vi:"Không pin sẵn", de:"Keine fertigen Batterien"}},
+    ],
+    materials:[
+      {emoji:"🌊", label:{vi:"Dòng sông chảy mạnh", de:"Fließender Fluss"}},
+      {emoji:"💨", label:{vi:"Gió mạnh", de:"Starker Wind"}},
+      {emoji:"☀️", label:{vi:"Ánh mặt trời", de:"Sonnenlicht"}},
+      {emoji:"🪞", label:{vi:"Gương phản chiếu", de:"Spiegel"}},
+      {emoji:"🕯️", label:{vi:"Nến sáp", de:"Wachskerze"}},
+      {emoji:"🔄", label:{vi:"Bánh xe guồng", de:"Wasserrad"}},
+      {emoji:"🌲", label:{vi:"Gỗ đốt", de:"Brennholz"}},
+      {emoji:"💎", label:{vi:"Pha lê hội tụ ánh sáng", de:"Kristall als Linse"}},
+    ],
+    vagueHints:[
+      {emoji:"🌊", text:{vi:"Nước chảy mạnh có thể làm quay máy không?", de:"Kann fließendes Wasser eine Maschine antreiben?"}},
+      {emoji:"🪞", text:{vi:"Nhiều gương có thể phản chiếu ánh sáng đi xa không?", de:"Können viele Spiegel Licht weit reflektieren?"}},
+    ],
+    combos:{
+      "🔄+🌊":{name:{vi:"Nhà máy nước guồng 💡",de:"Wasserrad-Kraftwerk 💡"}, emoji:"💡", desc:{vi:"Bánh guồng quay theo dòng sông — tạo điện thắp sáng thành phố!",de:"Wasserrad dreht sich im Fluss — erzeugt Strom für die ganze Stadt!"}},
+      "🪞+☀️":{name:{vi:"Mạng lưới gương mặt trời ☀️",de:"Spiegel-Solarnetz ☀️"}, emoji:"☀️", desc:{vi:"Đặt hàng trăm gương hướng vào mặt trời — ánh sáng phản chiếu khắp thành phố!",de:"Hunderte Spiegel auf die Sonne richten — Licht in die ganze Stadt reflektieren!"}},
+      "💨+🔄":{name:{vi:"Cối xay gió thần kỳ 🌬️",de:"Windmühlen-Generator 🌬️"}, emoji:"🌬️", desc:{vi:"Bánh xe gió quay tạo năng lượng — gió thay phép thuật thắp đèn!",de:"Windrad dreht sich, erzeugt Energie — Wind ersetzt Magie als Lichtquelle!"}},
+    },
+    titleUnlock:"Magic Engineer 🧙",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+
+  /* ─── GROUP 5: NHẬP VAI – thêm 2 ─── */
+  {
+    id:18, group:5, level:1,
+    emoji:"👨‍🍳",
+    name:{vi:"Đầu bếp không có bếp lửa", de:"Koch ohne Herd!"},
+    problemShort:{vi:"Nấu bữa tiệc lớn mà không có lửa!", de:"Großes Fest kochen ohne Feuer!"},
+    ttsText:{vi:"Con là đầu bếp nổi tiếng! Hôm nay có bữa tiệc lớn cho một trăm người. Nhưng bếp gas hỏng và không có điện! Khách sắp đến trong một tiếng. Con cần nấu thức ăn ngon cho tất cả mà không có lửa hay điện. Con làm gì?", de:"Du bist ein berühmter Koch! Heute ist ein großes Fest für hundert Gäste. Aber der Gasherd ist kaputt und es gibt keinen Strom! Die Gäste kommen in einer Stunde. Du musst leckeres Essen für alle kochen, ohne Feuer oder Strom. Was machst du?"},
+    questionText:{vi:"Con nấu ăn cho một trăm người mà không có lửa như thế nào? Món ăn có ngon không?", de:"Wie kochst du für hundert Menschen ohne Feuer? Wird das Essen lecker?"},
+    questionTTS:{vi:"Con nấu ăn cho một trăm người mà không có lửa như thế nào? Món ăn có ngon không?", de:"Wie kochst du für hundert Menschen ohne Feuer? Wird das Essen lecker?"},
+    constraints:[
+      {emoji:"🔥", label:{vi:"Không lửa", de:"Kein Feuer"}},
+      {emoji:"⚡", label:{vi:"Không điện", de:"Kein Strom"}},
+    ],
+    materials:[
+      {emoji:"☀️", label:{vi:"Ánh nắng mạnh", de:"Starke Sonne"}},
+      {emoji:"🪞", label:{vi:"Gương hội tụ", de:"Brennspiegel"}},
+      {emoji:"🥗", label:{vi:"Rau sống", de:"Rohes Gemüse"}},
+      {emoji:"🧂", label:{vi:"Muối ướp", de:"Salz zum Marinieren"}},
+      {emoji:"🍋", label:{vi:"Chanh ướp chín", de:"Zitrone zum Garen"}},
+      {emoji:"📦", label:{vi:"Hộp cách nhiệt", de:"Isolierbox"}},
+      {emoji:"🪨", label:{vi:"Đá nóng", de:"Heißer Stein"}},
+      {emoji:"🌿", label:{vi:"Lá hương liệu", de:"Würzkräuter"}},
+    ],
+    vagueHints:[
+      {emoji:"☀️", text:{vi:"Gương hội tụ ánh nắng có thể nấu chín không?", de:"Kann fokussiertes Sonnenlicht Essen garen?"}},
+      {emoji:"🍋", text:{vi:"Chanh có thể làm cá chín mà không cần nhiệt không?", de:"Kann Zitrone Fisch ohne Hitze garen?"}},
+    ],
+    combos:{
+      "🪞+☀️":{name:{vi:"Lò mặt trời bếp hội tụ ☀️",de:"Solar-Kochofen ☀️"}, emoji:"☀️", desc:{vi:"Nhiều gương hội tụ ánh nắng vào một điểm — nóng như lò nướng!",de:"Viele Spiegel bündeln Sonnenlicht auf einen Punkt — heiß wie ein Backofen!"}},
+      "🪨+📦":{name:{vi:"Bếp đá cách nhiệt 🪨",de:"Heißstein-Isolierofen 🪨"}, emoji:"🪨", desc:{vi:"Nung đá ngoài nắng, đặt vào hộp cách nhiệt — nhiệt giữ chín thức ăn!",de:"Steine in der Sonne aufheizen, in Isolierbox — Wärme gart das Essen!"}},
+      "🍋+🧂":{name:{vi:"Bếp lạnh chanh muối 🍋",de:"Kalt-Koch-Methode 🍋"}, emoji:"🍋", desc:{vi:"Chanh và muối ướp rau cá — chín tự nhiên mà không cần nhiệt!",de:"Zitrone und Salz marinieren Gemüse und Fisch — garen ganz ohne Hitze!"}},
+    },
+    titleUnlock:"Solar Chef 👨‍🍳",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+  {
+    id:19, group:5, level:3,
+    emoji:"🚀",
+    name:{vi:"Phi hành gia bị trôi dạt trong vũ trụ", de:"Astronaut treibt im Weltall!"},
+    problemShort:{vi:"Trôi dạt trong vũ trụ, phải quay về tàu!", de:"Im Weltraum treiben – zurück zum Schiff!"},
+    ttsText:{vi:"Con là phi hành gia đang sửa chữa bên ngoài tàu vũ trụ. Đột nhiên dây nối đứt! Con đang trôi dạt trong vũ trụ, cách tàu hai mươi mét. Bình oxy còn ba mươi phút. Không có ai trên tàu có thể ra cứu kịp. Con phải tự tìm cách quay lại tàu. Con làm gì?", de:"Du bist Astronaut und reparierst die Außenseite des Raumschiffs. Plötzlich reißt das Sicherheitsseil! Du treibst zwanzig Meter vom Schiff entfernt. Noch dreißig Minuten Sauerstoff. Niemand an Bord kann schnell genug raus. Du musst selbst zurück zum Schiff. Was machst du?"},
+    questionText:{vi:"Con quay lại tàu vũ trụ như thế nào? Con dùng gì để di chuyển trong vũ trụ không trọng lực?", de:"Wie kommst du zum Raumschiff zurück? Was benutzt du, um dich im schwerelosen Weltall zu bewegen?"},
+    questionTTS:{vi:"Con quay lại tàu vũ trụ như thế nào? Con dùng gì để di chuyển trong vũ trụ không trọng lực?", de:"Wie kommst du zum Raumschiff zurück? Was benutzt du, um dich im schwerelosen Weltall zu bewegen?"},
+    constraints:[
+      {emoji:"🚶", label:{vi:"Không đi được", de:"Nicht gehen möglich"}},
+      {emoji:"🆘", label:{vi:"Không ai cứu kịp", de:"Keine Hilfe rechtzeitig"}},
+    ],
+    materials:[
+      {emoji:"🔧", label:{vi:"Cờ lê công cụ", de:"Schraubenschlüssel"}},
+      {emoji:"🧯", label:{vi:"Bình xịt khí nén", de:"Druckluftflasche"}},
+      {emoji:"🪢", label:{vi:"Đoạn dây còn lại", de:"Seilrest"}},
+      {emoji:"🔩", label:{vi:"Bulong ném đi", de:"Schrauben werfen"}},
+      {emoji:"📡", label:{vi:"Ăng ten liên lạc", de:"Kommunikationsantenne"}},
+      {emoji:"🧤", label:{vi:"Găng từ tính", de:"Magnethandschuhe"}},
+      {emoji:"💡", label:{vi:"Đèn tín hiệu", de:"Signallampe"}},
+      {emoji:"🎒", label:{vi:"Ba lô đẩy phản lực", de:"Rucksack-Jetpack"}},
+    ],
+    vagueHints:[
+      {emoji:"🧯", text:{vi:"Xịt khí một hướng thì người bay hướng nào?", de:"In welche Richtung fliegt man, wenn man Gas ausstößt?"}},
+      {emoji:"🔩", text:{vi:"Ném vật về phía sau thì người di chuyển thế nào?", de:"Was passiert, wenn man etwas nach hinten wirft?"}},
+    ],
+    combos:{
+      "🧯+🎒":{name:{vi:"Jetpack bình xịt 🚀",de:"Druckluft-Jetpack 🚀"}, emoji:"🚀", desc:{vi:"Gắn bình xịt khí vào lưng, xịt về phía sau — đẩy người về phía trước về tàu!",de:"Druckluftflasche auf Rücken, Gas nach hinten ausstoßen — Rückstoß trägt zurück zum Schiff!"}},
+      "🔩+🪢":{name:{vi:"Phản lực ném đồ vật 🔄",de:"Rückstoß durch Werfen 🔄"}, emoji:"🔄", desc:{vi:"Ném bulong mạnh về phía xa tàu — lực phản đẩy người về phía tàu!",de:"Schrauben kräftig vom Schiff wegwerfen — Gegenkraft treibt dich zum Schiff!"}},
+      "🧤+📡":{name:{vi:"Từ tính bám tàu + tín hiệu 🧲",de:"Magnet-Andocken + Signal 🧲"}, emoji:"🧲", desc:{vi:"Tay từ tính bám vào thân tàu kim loại khi đủ gần, đèn tín hiệu kêu gọi giúp đỡ!",de:"Magnethandschuhe greifen Metallschiff wenn nah genug, Signallampe ruft Hilfe!"}},
+    },
+    titleUnlock:"Space Survivor 🚀",
+    buildScene: () => ``,
+    sceneBg:"bg-space",
+  },
+];
+
+/* ═══════════════════════════════════════
+   RANK TITLES
+═══════════════════════════════════════ */
+const RANKS = [
+  {min:0,  emoji:"🧒", title:"Junior Inventor"},
+  {min:6,  emoji:"🔬", title:"Lab Explorer"},
+  {min:15, emoji:"⚙️", title:"Gear Maker"},
+  {min:28, emoji:"🧪", title:"Science Kid"},
+  {min:45, emoji:"🚀", title:"Crazy Scientist"},
+  {min:70, emoji:"🏆", title:"Master Inventor"},
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+const state = {
+  lang: "vi",
+  scenario: null,
+  selectedMats: [],
+  combo: null,
+  explanation: "",
+  totalScore: 0,
+  completedIds: new Set(),
+  unlockedSpecials: new Set(),
+  prevRank: RANKS[0],
+  activeFilter: "all",
+  hintIndex: 0,
+};
+
+/* ═══════════════════════════════════════
+   LANG HELPERS — resolve bilingual fields
+═══════════════════════════════════════ */
+const L = (v) => (v && typeof v === "object") ? (v[state.lang] ?? v["vi"]) : v;
+
+/* ═══════════════════════════════════════
+   SPEECH RECOGNITION (MIC)
+═══════════════════════════════════════ */
+let recognition = null;
+let isRecording = false;
+
+(function setupMic() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('mic-btn');
+  const noSupport = document.getElementById('mic-no-support');
+  if (!SpeechRec) {
+    micBtn.style.display = 'none';
+    noSupport.style.display = 'block';
+    return;
+  }
+  recognition = new SpeechRec();
+  recognition.lang = T().micLang;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+  recognition.continuous = true;
+
+  recognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t + ' ';
+      else interim += t;
+    }
+    const ta = document.getElementById('idea-textarea');
+    // Append confirmed final text; show interim as preview in placeholder style
+    if (final) {
+      ta.value += final;
+      state.explanation = ta.value;
+      onTextareaInput.call(ta);
+    }
+    if (interim) {
+      ta.placeholder = '📝 ' + interim + '...';
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      micBtn.style.display = 'none';
+      noSupport.style.display = 'block';
+      noSupport.textContent = T().micNoPerms;
+    }
+    stopRecord();
+  };
+
+  recognition.onend = () => {
+    if (isRecording) {
+      // keep restarting while user holds record mode
+      try { recognition.start(); } catch(_) { stopRecord(); }
+    }
+  };
+})();
+
+function toggleRecord() {
+  if (isRecording) stopRecord();
+  else startRecord();
+}
+
+function startRecord() {
+  if (!recognition) return;
+  recognition.lang = T().micLang;
+  // stop TTS first
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  isRecording = true;
+  const btn = document.getElementById('mic-btn');
+  btn.classList.add('recording');
+  document.getElementById('mic-label').textContent = T().micRecording;
+  // clear placeholder
+  document.getElementById('idea-textarea').placeholder = T().micListening;
+  try { recognition.start(); } catch(_) {}
+}
+
+function stopRecord() {
+  isRecording = false;
+  if (recognition) try { recognition.stop(); } catch(_) {}
+  const btn = document.getElementById('mic-btn');
+  if (btn) {
+    btn.classList.remove('recording');
+    document.getElementById('mic-label').textContent = T().micLabel;
+  }
+  const ta = document.getElementById('idea-textarea');
+  if (ta) ta.placeholder = T().micPlaceholder;
+  // re-run word count
+  if (ta) onTextareaInput.call(ta);
+}
+
+/* ═══════════════════════════════════════
+   TTS
+═══════════════════════════════════════ */
+let ttsUtter  = null;
+let _ttsAudio = null;
+let _cachedVoices = [];
+
+function _stripEmoji(text) {
+  return text
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}]/gu, "")
+    .replace(/\s{2,}/g, " ").trim();
+}
+
+function _splitChunks(text, max) {
+  const out = [];
+  let rest = text;
+  while (rest.length) {
+    if (rest.length <= max) { out.push(rest); break; }
+    let cut = rest.lastIndexOf(" ", max);
+    if (cut < 1) cut = max;
+    out.push(rest.slice(0, cut));
+    rest = rest.slice(cut + 1);
+  }
+  return out;
+}
+
+function _setTtsIcon(playing) {
+  const icon = document.getElementById("speak-icon-prob");
+  if (!icon) return;
+  icon.innerHTML = playing
+    ? `<span class="tts-dot"></span><span class="tts-dot"></span><span class="tts-dot"></span>`
+    : "▶";
+}
+
+function _speakWebSpeech(text) {
+  if (!window.speechSynthesis) { _setTtsIcon(false); return; }
+  const ttsLang = T().ttsLang;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang  = ttsLang;
+  utter.rate  = ttsLang.startsWith("vi") ? 0.82 : 0.88;
+  utter.pitch = 1.05;
+  const voice = _cachedVoices.find(v => v.lang === ttsLang)
+             || _cachedVoices.find(v => v.lang.startsWith(ttsLang.split("-")[0]));
+  if (voice) utter.voice = voice;
+  utter.onend = () => _setTtsIcon(false);
+  ttsUtter = utter;
+  window.speechSynthesis.speak(utter);
+}
+
+function _playGoogleChunks(chunks, lang, idx) {
+  if (idx >= chunks.length) { _setTtsIcon(false); return; }
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunks[idx])}&tl=${lang}&client=tw-ob`;
+  const audio = new Audio(url);
+  _ttsAudio = audio;
+  audio.onended = () => _playGoogleChunks(chunks, lang, idx + 1);
+  audio.onerror = () => _speakWebSpeech(chunks.slice(idx).join(" "));
+  audio.play().catch(() => _speakWebSpeech(chunks.slice(idx).join(" ")));
+}
+
+function speak(text) {
+  // stop current
+  if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+  const clean = _stripEmoji(text);
+  if (!clean) return;
+
+  const lang   = T().ttsLang.split("-")[0]; // "vi" or "de"
+  const chunks = _splitChunks(clean, 180);
+  _setTtsIcon(true);
+  _playGoogleChunks(chunks, lang, 0);
+}
+
+function speakCurrent() {
+  if (state.scenario) speak(L(state.scenario.ttsText));
+}
+function speakQuestion() {
+  if (state.scenario) speak(L(state.scenario.questionTTS));
+}
+
+/* ═══════════════════════════════════════
+   LANGUAGE TOGGLE
+═══════════════════════════════════════ */
+function toggleLang() {
+  try {
+    state.lang = state.lang === "vi" ? "de" : "vi";
+    applyI18N();
+    renderScenarioList();
+    if (recognition) { try { recognition.stop(); } catch(_) {} recognition.lang = T().micLang; isRecording = false; }
+    stopRecord();
+    if (state.scenario) {
+      buildProblemScreen(state.scenario);
+      buildMaterialsScreen(state.scenario);
+      buildExplainBase(state.scenario);
+      const ta = document.getElementById("idea-textarea");
+      ta.value = state.explanation;
+      onTextareaInput.call(ta);
+    }
+  } catch(e) {
+    console.error("[toggleLang ERROR]", e);
+    alert("Lỗi chuyển ngôn ngữ: " + e.message);
+  }
+}
+
+function applyI18N() {
+  const t = T();
+  const set = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined && v!==null) el.textContent=v; };
+  const setp = (id, v) => { const el=document.getElementById(id); if(el) el.placeholder=v; };
+  document.getElementById("lang-btn").textContent = t.langBtn;
+  set("home-subtitle", t.subtitle);
+  document.querySelectorAll(".hw-step1").forEach(e=>e.textContent=t.hw[0]);
+  document.querySelectorAll(".hw-step2").forEach(e=>e.textContent=t.hw[1]);
+  document.querySelectorAll(".hw-step3").forEach(e=>e.textContent=t.hw[2]);
+  document.querySelectorAll(".hw-step4").forEach(e=>e.textContent=t.hw[3]);
+  set("choose-label", t.chooseLabel);
+  set("filter-label", t.filterLabel);
+  set("footer-txt", t.footer);
+  set("btn-start-invent-txt", t.btnStartInvent);
+  set("btn-to-explain-txt", t.btnExplain);
+  set("btn-submit-txt", t.btnSubmit);
+  set("fb-sc1-label", t.scLabel1);
+  set("fb-sc3-label", t.scLabel3);
+  set("mic-label", t.micLabel);
+  set("mic-hint", t.micHint);
+  set("mic-no-support", t.micNoSupport);
+  setp("idea-textarea", t.micPlaceholder);
+  set("combo-empty-txt", t.comboEmpty);
+  renderGroupGrid();
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+function showScreen(name) {
+  if (name === "explain") buildExplainPreview();
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + name).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+/* ═══════════════════════════════════════
+   HOME
+═══════════════════════════════════════ */
+function setFilter(f) {
+  state.activeFilter = f;
+  renderGroupGrid();
+  renderScenarioList();
+}
+
+function renderGroupGrid() {
+  const t      = T();
+  const grid   = document.getElementById("group-grid");
+  const active = state.activeFilter;
+  if (!grid) return;
+
+  // Count scenarios & done per group
+  const totalCount = SCENARIOS.length;
+  const totalDone  = SCENARIOS.filter(s => state.completedIds.has(s.id)).length;
+
+  const groupCounts = {};
+  const groupDone   = {};
+  SCENARIOS.forEach(s => {
+    groupCounts[s.group] = (groupCounts[s.group] || 0) + 1;
+    if (state.completedIds.has(s.id)) groupDone[s.group] = (groupDone[s.group] || 0) + 1;
+  });
+
+  // Determine which groups have scenarios
+  const activeGroups = GROUPS.filter(g => groupCounts[g.id] > 0);
+
+  let html = "";
+
+  // "All" card — full width
+  const allActive = active === "all";
+  html += `
+    <div class="grp-card grp-all${allActive ? " active" : ""}" onclick="setFilter('all')" style="display:flex;flex-direction:row;align-items:center;gap:10px;margin-bottom:10px;">
+      <span class="gc-emoji">🌍</span>
+      <div style="flex:1;">
+        <div class="gc-name" style="text-align:left;font-size:.82rem;">${t.ftAll.replace(/^🌍\s*/,"")}</div>
+        <div class="gc-desc">${t.grpAllDesc || ""}</div>
+      </div>
+      <span class="gc-count">${totalCount} 🔬${totalDone > 0 ? " · " + totalDone + " ✓" : ""}</span>
+    </div>
+  `;
+
+  // Group cards — 2-column grid
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">`;
+  GROUPS.forEach(g => {
+    const cnt  = groupCounts[g.id] || 0;
+    const done = groupDone[g.id]   || 0;
+    const isActive = String(active) === String(g.id);
+    const isEmpty  = cnt === 0;
+    html += `
+      <div class="grp-card${isActive ? " active" : ""}${isEmpty ? " grp-empty" : ""}" onclick="setFilter(${g.id})" style="border-color:${isActive ? g.border : "rgba(255,255,255,0.08)"};${isActive ? "background:"+g.bg+";box-shadow:0 0 20px "+g.bg+";" : ""}">
+        ${done > 0 && done === cnt ? `<div class="gc-done-ring">✓</div>` : ""}
+        <div class="gc-emoji">${g.emoji}</div>
+        <div class="gc-name" style="${isActive ? "color:"+g.color : ""}">${L(g.label)}</div>
+        <div class="gc-desc">${L(g.desc)}</div>
+        <div class="gc-count" style="${isActive ? "color:"+g.color+";background:rgba(255,255,255,0.08)" : ""}">${cnt} 🔬${done > 0 ? " · " + done + " ✓" : ""}</div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  grid.innerHTML = html;
+}
+
+function renderScenarioList() {
+  const list = document.getElementById("scenario-list");
+  list.innerHTML = "";
+  const shown = (state.activeFilter === "all"
+    ? SCENARIOS
+    : SCENARIOS.filter(s => s.group === state.activeFilter))
+    .slice().sort((a, b) => a.level - b.level);
+  const t = T();
+
+  shown.forEach(s => {
+    const done = state.completedIds.has(s.id);
+    const grp  = GROUPS.find(g => g.id === s.group);
+    const lvCls= ["","lv1","lv2","lv3","lv4","lv5"][s.level] || "lv1";
+    const lvTxt= t.lvTexts[s.level-1] || "";
+    const el   = document.createElement("div");
+    el.className = `scenario-card${done?" done":""}`;
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:13px;">
+        <span style="font-size:2.6rem;flex-shrink:0;">${s.emoji}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px;">
+            <span style="font-weight:900;font-size:.95rem;color:#f1f5f9;">${L(s.name)}</span>
+            <span class="lv-badge ${lvCls}">LV${s.level} · ${lvTxt}</span>
+            ${done?`<span style="color:#34d399;font-size:.75rem;font-weight:900;">✓</span>`:""}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span class="group-badge" style="background:${grp.bg};border:1px solid ${grp.border};color:${grp.color};">${L(grp.label)}</span>
+            <span style="font-size:.75rem;color:rgba(255,255,255,.35);font-weight:700;">${s.constraints.map(c=>c.emoji).join("  ")}</span>
+          </div>
+        </div>
+        <span style="color:rgba(255,255,255,.2);font-size:1.4rem;flex-shrink:0;">›</span>
+      </div>`;
+    el.onclick = () => startScenario(s.id);
+    list.appendChild(el);
+  });
+
+  const done2 = state.completedIds.size;
+  document.getElementById("home-score-tag").textContent = done2 > 0 ? t.completedTag(done2, SCENARIOS.length) : "";
+}
+
+function refreshAvatar() {
+  const rank = getCurrentRank();
+  document.getElementById("avatar-emoji").textContent  = rank.emoji;
+  document.getElementById("avatar-title").textContent  = rank.title;
+  document.getElementById("avatar-score").textContent  = `⭐ ${state.totalScore}`;
+}
+
+function getCurrentRank() {
+  let r = RANKS[0];
+  for (const x of RANKS) { if (state.totalScore >= x.min) r = x; }
+  return r;
+}
+
+/* ═══════════════════════════════════════
+   START SCENARIO
+═══════════════════════════════════════ */
+function startScenario(id) {
+  const s = SCENARIOS.find(x => x.id === id);
+  state.scenario     = s;
+  state.selectedMats = [];
+  state.combo        = null;
+  state.explanation  = "";
+  buildProblemScreen(s);
+  buildMaterialsScreen(s);
+  buildExplainBase(s);
+  showScreen("problem");
+  // auto-speak after short delay
+  setTimeout(() => speak(L(s.ttsText)), 600);
+}
+
+/* ═══════════════════════════════════════
+   PROBLEM SCREEN
+═══════════════════════════════════════ */
+function buildProblemScreen(s) {
+  // scenario description text (full prose sentences)
+  document.getElementById("prob-text").innerHTML = L(s.ttsText);
+  setLvBadge("lv-badge-1", s.level);
+
+  // no-label
+  const noLbl = document.getElementById("no-section-label");
+  if (noLbl) noLbl.textContent = T().noLabel;
+
+  // btn start
+  const btnStart = document.getElementById("btn-start-invent-txt");
+  if (btnStart) btnStart.textContent = T().btnStartInvent;
+
+  // constraints
+  const row = document.getElementById("constraints-row");
+  row.innerHTML = "";
+  s.constraints.forEach(c => {
+    const pill = document.createElement("div");
+    pill.className = "no-pill";
+    pill.innerHTML = `<span class="no-cross">✕</span><span style="font-size:1.5rem;">${c.emoji}</span><span style="font-size:.75rem;font-weight:900;color:rgba(252,165,165,.7);">${L(c.label)}</span>`;
+    row.appendChild(pill);
+  });
+}
+
+/* ═══════════════════════════════════════
+   MATERIALS SCREEN
+═══════════════════════════════════════ */
+function buildMaterialsScreen(s) {
+  const t = T();
+  setLvBadge("lv-badge-2", s.level);
+  document.getElementById("mat-prob-emoji").textContent = s.emoji;
+  document.getElementById("mat-prob-short").textContent = L(s.problemShort);
+  document.getElementById("mat-section-header").textContent = t.matSection;
+  document.getElementById("hint-section-header").textContent = t.hintSection;
+  // reset hints panel
+  document.getElementById("hints-row").innerHTML = "";
+  const hintBtn = document.getElementById("hint-toggle-btn");
+  if (hintBtn) hintBtn.style.display = "inline-flex";
+  const hintLbl = document.getElementById("hint-section-header");
+  if (hintLbl) hintLbl.textContent = t.hintSection;
+  state.hintIndex = 0;
+  // prob section label
+  const psl = document.getElementById("mat-prob-section-lbl");
+  if (psl) psl.textContent = t.probSection;
+  // btn to explain
+  const bte = document.getElementById("btn-to-explain-txt");
+  if (bte) bte.textContent = t.btnExplain;
+
+  // material grid
+  const grid = document.getElementById("materials-grid");
+  grid.innerHTML = "";
+  s.materials.forEach(mat => {
+    const chip = document.createElement("div");
+    chip.className = "mat-chip";
+    const labelText = L(mat.label);
+    chip.innerHTML = `<button class="mat-info-btn" title="${labelText}">?</button><span>${mat.emoji}</span>`;
+    chip.querySelector('.mat-info-btn').addEventListener('click', e => { e.stopPropagation(); speakMatInfo(mat.emoji, labelText); });
+    chip.onclick = () => toggleMat(mat.emoji, chip);
+    if (state.selectedMats.includes(mat.emoji)) chip.classList.add("selected");
+    grid.appendChild(chip);
+  });
+
+  // hints — render all as hidden chips, reveal one-by-one
+  const hints = document.getElementById("hints-row");
+  hints.innerHTML = "";
+  s.vagueHints.forEach(h => {
+    const el = document.createElement("div");
+    el.style.cssText = "background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:50px;padding:8px 14px;display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:800;color:rgba(255,255,255,.5);cursor:pointer;opacity:0;max-height:0;overflow:hidden;pointer-events:none;transition:opacity .35s,max-height .35s;";
+    el.innerHTML = `<span style="font-size:1.3rem;">${h.emoji}</span>${L(h.text)}`;
+    el.onclick = () => speak(L(h.text));
+    hints.appendChild(el);
+  });
+
+  resetComboZone();
+  updateSelCount();
+  document.getElementById("btn-to-explain").disabled = state.selectedMats.length < 2;
+}
+
+function speakMatInfo(emoji, labelFallback) {
+  const info = MATERIAL_INFO[emoji];
+  speak(info ? (info[state.lang] ?? info.vi) : labelFallback);
+}
+
+function toggleMat(emoji, chip) {
+  const idx = state.selectedMats.indexOf(emoji);
+  if (idx >= 0) {
+    state.selectedMats.splice(idx, 1);
+    chip.classList.remove("selected");
+  } else {
+    if (state.selectedMats.length >= 4) {
+      const removed = state.selectedMats.shift();
+      document.querySelectorAll("#materials-grid .mat-chip").forEach(c => {
+        if (c.querySelector("span")?.textContent === removed) c.classList.remove("selected");
+      });
+    }
+    state.selectedMats.push(emoji);
+    chip.classList.add("selected");
+    chip.style.animation = "none"; void chip.offsetWidth;
+    chip.style.animation = "";
+  }
+  detectCombo();
+  updateSelCount();
+  document.getElementById("btn-to-explain").disabled = state.selectedMats.length < 2;
+}
+
+function detectCombo() {
+  const s = state.scenario;
+  state.combo = null;
+  for (const [key, combo] of Object.entries(s.combos)) {
+    const parts = key.split("+");
+    if (parts.every(p => state.selectedMats.includes(p))) {
+      state.combo = { ...combo, key }; break;
+    }
+  }
+  const empty = document.getElementById("combo-empty");
+  const found = document.getElementById("combo-found");
+  if (state.combo) {
+    empty.style.display = "none"; found.style.display = "block";
+    // formula: part1 + part2 + ... = comboEmoji
+    const parts = state.combo.key.split("+");
+    document.getElementById("combo-formula").textContent = parts.join(" + ") + " = " + state.combo.emoji;
+    document.getElementById("combo-icon").textContent = state.combo.emoji;
+    document.getElementById("combo-name").textContent = L(state.combo.name);
+    document.getElementById("combo-desc").textContent = L(state.combo.desc);
+    // re-trigger animation
+    found.style.animation = "none"; void found.offsetWidth; found.style.animation = "";
+    found.classList.remove("combo-pop"); void found.offsetWidth; found.classList.add("combo-pop");
+  } else {
+    resetComboZone();
+  }
+}
+
+function speakCombo() {
+  if (state.combo) speak(L(state.combo.name) + "! " + L(state.combo.desc));
+}
+
+function revealNextHint() {
+  const s = state.scenario;
+  if (!s) return;
+  const chips = document.querySelectorAll("#hints-row div");
+  const total = chips.length;
+  if (state.hintIndex >= total) return;
+  const chip = chips[state.hintIndex];
+  chip.style.maxHeight = "60px";
+  chip.style.opacity = "1";
+  chip.style.pointerEvents = "auto";
+  state.hintIndex++;
+  // update button
+  const btn = document.getElementById("hint-toggle-btn");
+  const lbl = document.getElementById("hint-section-header");
+  if (state.hintIndex >= total) {
+    if (btn) btn.style.display = "none";
+  } else {
+    if (lbl) lbl.textContent = state.lang === "de" ? "Nächster Tipp" : "Gợi ý tiếp";
+  }
+}
+
+function resetComboZone() {
+  document.getElementById("combo-empty").style.display = "";
+  document.getElementById("combo-found").style.display = "none";
+}
+
+const SEL_HINTS = {
+  vi: (n) => n===0?"":(n===1?"Chọn thêm 1 cái nữa nhé!":(n===2?`✓ Chọn ${n} vật liệu — tiếp tục hoặc thêm nữa!`:(n===3?`✓ ${n} vật liệu — tìm combo!`:"✓ Tối đa 4 vật liệu!"))),
+  de: (n) => n===0?"":(n===1?"Noch 1 Material auswählen!":(n===2?`✓ ${n} Materialien — weiter oder mehr wählen!`:(n===3?`✓ ${n} Materialien — Kombination suchen!`:"✓ Maximum 4 Materialien!"))),
+};
+function updateSelCount() {
+  const n = state.selectedMats.length;
+  const el = document.getElementById("sel-count");
+  el.textContent = (SEL_HINTS[state.lang]||SEL_HINTS.vi)(n);
+  el.style.color = n <= 1 ? "rgba(251,191,36,.55)" : n === 2 ? "rgba(52,211,153,.65)" : "#34d399";
+}
+
+function goToExplain() { stopRecord(); showScreen("explain"); }
+
+/* ═══════════════════════════════════════
+   EXPLAIN SCREEN
+═══════════════════════════════════════ */
+function buildExplainBase(s) {
+  const t = T();
+  setLvBadge("lv-badge-3", s.level);
+  document.getElementById("explain-question").textContent = L(s.questionText);
+  document.getElementById("idea-textarea").value = "";
+  document.getElementById("idea-textarea").placeholder = t.micPlaceholder;
+  document.getElementById("word-count").textContent = t.wc(0);
+  document.getElementById("word-hint").textContent = "";
+  document.getElementById("btn-submit").disabled = true;
+  document.getElementById("explain-your-invent-lbl").textContent = t.yourInvent;
+  document.getElementById("explain-question-lbl").textContent = t.questionSection;
+  document.getElementById("explain-listen-btn").textContent = t.listenBtn;
+  const bst = document.getElementById("btn-submit-txt");
+  if (bst) bst.textContent = t.btnSubmit;
+  document.getElementById("mic-label").textContent = t.micLabel;
+  document.getElementById("mic-hint").textContent = t.micHint;
+  state.explanation = "";
+}
+
+function buildExplainPreview() {
+  const mats = document.getElementById("explain-mats");
+  mats.innerHTML = "";
+  state.selectedMats.forEach(emoji => {
+    const s = state.scenario.materials.find(m => m.emoji === emoji);
+    const chip = document.createElement("div");
+    chip.style.cssText = "display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border-radius:14px;background:rgba(16,185,129,.1);border:1.5px solid rgba(52,211,153,.25);";
+    chip.innerHTML = `<span style="font-size:1.6rem;">${emoji}</span><span style="font-size:.6rem;font-weight:900;color:rgba(255,255,255,.4);">${L(s?.label)||""}</span>`;
+    mats.appendChild(chip);
+  });
+  const comboEl = document.getElementById("explain-combo");
+  if (state.combo) {
+    comboEl.style.display = "block";
+    comboEl.innerHTML = `${state.combo.emoji} <strong>${L(state.combo.name)}</strong> — ${L(state.combo.desc)}`;
+    speak(L(state.combo.name));
+  } else {
+    comboEl.style.display = "none";
+  }
+}
+
+function onTextareaInput() {
+  const val   = this.value;
+  const words = val.trim() === "" ? 0 : val.trim().split(/\s+/).filter(w => w.length > 0).length;
+  state.explanation = val;
+  const t = T();
+  document.getElementById("word-count").textContent = t.wc(words);
+  const hint = document.getElementById("word-hint");
+  hint.textContent = t.wcHint(words);
+  hint.style.color  = t.wcColor(words);
+  document.getElementById("btn-submit").disabled = words < 4;
+}
+
+/* ═══════════════════════════════════════
+   SUBMIT
+═══════════════════════════════════════ */
+function submitIdea() {
+  const s     = state.scenario;
+  const words = state.explanation.trim() === "" ? 0 : state.explanation.trim().split(/\s+/).length;
+
+  let creativity = 1;
+  if (state.combo) creativity += 2;
+  if (state.selectedMats.length >= 3) creativity += 1;
+  creativity = Math.min(creativity, 4);
+
+  let logic = 0;
+  if (words >= 4) logic = 1;
+  if (words >= 10) logic = 2;
+  if (words >= 20) logic = 3;
+  if (words >= 35) logic = 4;
+
+  let fun = 1 + Math.floor(Math.random() * 2);
+  if (state.combo) fun += 1;
+  if (s.level >= 3) fun += 1;
+  fun = Math.min(fun, 4);
+
+  const total = creativity + logic + fun;
+  state.totalScore += Math.floor(total / 2);
+  state.completedIds.add(s.id);
+
+  const prevRank = state.prevRank;
+  state.prevRank = getCurrentRank();
+  const rankUp = state.prevRank.title !== prevRank.title;
+
+  refreshAvatar();
+  renderGroupGrid();
+  renderScenarioList();
+
+  const showUnlock = !state.unlockedSpecials.has(s.id);
+  if (showUnlock) state.unlockedSpecials.add(s.id);
+
+  buildFeedback(creativity, logic, fun, total, s, showUnlock || rankUp);
+  showScreen("feedback");
+  if (total >= 5) spawnConfetti(total);
+
+  // TTS feedback
+  const ttsPool = T().feedbackPool;
+  const ttsFb   = ttsPool.find(p => total >= p.min);
+  const ttsSay  = ttsFb ? ttsFb.msgs[0] : "";
+  setTimeout(() => speak(ttsSay), 400);
+}
+
+function buildFeedback(c, l, f, total, s, showUnlock) {
+  const pools = T().feedbackPool;
+  const pool = pools.find(p => total >= p.min);
+  const msgs = pool.msgs;
+  const msg  = msgs[Math.floor(Math.random() * msgs.length)];
+
+  document.getElementById("fb-big-emoji").textContent = pool.emoji;
+  document.getElementById("fb-headline").textContent  = pool.headline;
+  document.getElementById("fb-message").textContent   = msg;
+
+  // stars
+  const starsEl = document.getElementById("fb-stars");
+  starsEl.innerHTML = "";
+  const totalStars = Math.min(Math.round(total / 2), 6);
+  for (let i = 0; i < 6; i++) {
+    const star = document.createElement("span");
+    star.style.cssText = `font-size:1.6rem;display:inline-block;transition:all .3s;animation-delay:${i*80}ms;`;
+    star.textContent = i < totalStars ? "⭐" : "☆";
+    if (i < totalStars) star.classList.add("star-burst");
+    starsEl.appendChild(star);
+  }
+
+  // sub-scores (emoji bars)
+  const scLabels = ["","😐","🙂","💡","🚀"];
+  document.getElementById("fb-sc1").textContent = scLabels[c] || "";
+  document.getElementById("fb-sc2").textContent = scLabels[l] || "";
+  document.getElementById("fb-sc3").textContent = scLabels[f] || "";
+
+  // mats
+  const fbMats = document.getElementById("fb-mats");
+  fbMats.innerHTML = "";
+  state.selectedMats.forEach(emoji => {
+    const mat = state.scenario.materials.find(m => m.emoji === emoji);
+    const chip = document.createElement("div");
+    chip.style.cssText = "display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:7px 10px;border-radius:12px;background:rgba(16,185,129,.09);border:1px solid rgba(52,211,153,.2);";
+    chip.innerHTML = `<span style="font-size:1.4rem;">${emoji}</span><span style="font-size:.58rem;font-weight:900;color:rgba(255,255,255,.35);">${L(mat?.label)||""}</span>`;
+    fbMats.appendChild(chip);
+  });
+  if (state.combo) {
+    const cc = document.createElement("div");
+    cc.style.cssText = "display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:12px;background:rgba(52,211,153,.15);border:1.5px solid rgba(52,211,153,.38);font-size:.82rem;font-weight:900;color:#34d399;";
+    cc.innerHTML = `${state.combo.emoji} ${L(state.combo.name)}`;
+    fbMats.appendChild(cc);
+  }
+  const noExplain = state.lang==="de" ? "(Keine Erklärung)" : "(Chưa giải thích)";
+  document.getElementById("fb-text").textContent = state.explanation ? `"${state.explanation}"` : noExplain;
+
+  // feedback buttons
+  const t2 = T();
+  document.getElementById("btn-fb-next").textContent = t2.btnNext;
+  document.getElementById("btn-fb-retry").textContent = t2.btnRetry;
+  document.getElementById("btn-fb-home").textContent = t2.btnHome;
+  document.getElementById("fb-your-invent-lbl").textContent = t2.yourInventFb;
+  const unlockLbl = document.getElementById("fb-unlock-label");
+  if (unlockLbl) unlockLbl.textContent = t2.unlockLabel;
+}
+
+/* ═══════════════════════════════════════
+   CONFETTI
+═══════════════════════════════════════ */
+function spawnConfetti(score) {
+  const colors = ["#34d399","#fbbf24","#f87171","#60a5fa","#c084fc","#fb923c"];
+  const count  = Math.min(score * 6, 55);
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const el = document.createElement("div"); el.className = "conf";
+      const sz = 5 + Math.random() * 10;
+      el.style.cssText = `width:${sz}px;height:${sz}px;background:${colors[i % colors.length]};left:${Math.random()*100}vw;top:-5vh;animation-duration:${1.6+Math.random()*.9}s;animation-delay:${Math.random()*.5}s;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }, i * 22);
+  }
+}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+function nextScenario() {
+  const idx = SCENARIOS.findIndex(x => x.id === state.scenario.id);
+  startScenario(SCENARIOS[(idx + 1) % SCENARIOS.length].id);
+}
+function retryScenario() { startScenario(state.scenario.id); }
+function setLvBadge(id, level) {
+  const el  = document.getElementById(id);
+  const cls = ["","lv1","lv2","lv3","lv4","lv5"][level] || "lv1";
+  const txt = T().lvTexts[level - 1] || "";
+  el.className   = `lv-badge ${cls}`;
+  el.textContent = `LV${level} · ${txt}`;
+}
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+function init() {
+  document.getElementById("idea-textarea").addEventListener("input", onTextareaInput);
+  // warm up TTS voices
+  if (window.speechSynthesis) {
+    const loadVoices = () => {
+      _cachedVoices = window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+  }
+  applyI18N();
+  renderGroupGrid();
+  renderScenarioList();
+  refreshAvatar();
+}
+init();
+</script>
+</body>
+</html>
