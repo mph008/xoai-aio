@@ -8,7 +8,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getDatabase, ref, set, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+    import { getDatabase, ref, set, onValue, get, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
     // ── Firebase config (public project for this game) ──────────────────────
     const firebaseConfig = {
       apiKey: "AIzaSyDcyL_8wVvQtzol2w7IRDx5UAUC9_k1DDI",
@@ -27,6 +27,7 @@
     window._fbSet = set;
     window._fbOnValue = onValue;
     window._fbGet = get;
+    window._fbPush = push;
   </script>
   <style>
     :root {
@@ -206,7 +207,7 @@
     }
     .st-top { display:flex; align-items:center; gap:8px; }
     .st-top img { width:32px; height:32px; object-fit:contain; border-radius:50%; background:rgba(255,255,255,.08); padding:2px; }
-    .st-name { font-weight:800; font-size:.95rem; color:var(--gold); letter-spacing:.5px; }
+    .st-name { font-weight:800; font-size:.95rem; letter-spacing:.5px; }
     .st-msg { font-size:.75rem; color:#fca5a5; opacity:.85; text-align:center; }
     #logbox {
       background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.06); border-radius:9px; padding:6px 8px;
@@ -272,7 +273,8 @@
     .sstart-btn:hover{background:linear-gradient(135deg,#ef4444,#991b1b);transform:translateY(-2px)}
 
     /* WIN */
-    #win{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;align-items:center;justify-content:center;}
+    #win{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:200;
+      align-items:center;justify-content:center;flex-direction:column;}
     #win.show{display:flex}
     .wbox{
       background:linear-gradient(145deg,#0d0000,#1a0505);
@@ -297,6 +299,30 @@
       .piece{width:22px;height:22px;font-size:7px;border-width:2px}
     }
 
+    /* ── CHAT ─────────────────────────────────────────────── */
+    #chat-panel{display:none;flex-direction:column;gap:6px}
+    #chat-panel.show{display:flex}
+    #chatbox{
+      background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.07);border-radius:9px;
+      padding:6px 8px;height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+    }
+    #chatbox::-webkit-scrollbar{width:3px}
+    #chatbox::-webkit-scrollbar-thumb{background:rgba(220,38,38,.3);border-radius:2px}
+    .cl{display:flex;align-items:flex-start;gap:5px;padding:2px 0}
+    .cl img{width:16px;height:16px;border-radius:50%;flex-shrink:0;margin-top:2px;
+      background:rgba(255,255,255,.08);object-fit:contain}
+    .cl-body{display:flex;flex-direction:column;gap:1px}
+    .cl-name{font-size:.62rem;font-weight:700;opacity:.7}
+    .cl-msg{font-size:.75rem;color:#f1f5f9;line-height:1.35;word-break:break-word}
+    .cl.mine .cl-name{color:var(--gold)}
+    .chat-input-row{display:flex;gap:6px}
+    #chat-input{flex:1;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);
+      background:rgba(0,0,0,.5);color:#fff;font-size:.8rem;outline:none;transition:border .2s}
+    #chat-input:focus{border-color:rgba(212,175,55,.5)}
+    #chat-send{padding:7px 12px;border:none;border-radius:8px;
+      background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fff;font-size:.8rem;
+      font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+    #chat-send:hover{background:linear-gradient(135deg,#ef4444,#991b1b)}
     /* ── LOBBY ─────────────────────────────────────────────── */
     #lobby{position:fixed;inset:0;z-index:150;
       background:linear-gradient(rgba(0,0,0,.82),rgba(5,0,0,.92)),
@@ -338,8 +364,7 @@
     @keyframes wdot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1.1);opacity:1}}
 
     /* Online badge in sidebar */
-    #online-badge{display:none;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);
-      border-radius:8px;padding:5px 10px;font-size:.72rem;color:#86efac;text-align:center;font-weight:700}
+    #online-badge{display:none;border-radius:8px;padding:5px 10px;font-size:.72rem;text-align:center;font-weight:700;border:1px solid transparent;transition:color .3s,border-color .3s,background .3s}
     #online-badge.show{display:block}
     .my-turn-indicator{animation:glow-badge .8s infinite alternate}
     @keyframes glow-badge{from{box-shadow:none}to{box-shadow:0 0 12px rgba(34,197,94,.6)}}
@@ -454,10 +479,9 @@
 <!-- Win -->
 <div id="win">
   <div class="wbox">
-    <div id="win-e" style="font-size:3.5rem;margin-bottom:8px">&#127942;</div>
+    <div id="win-e" style="font-size:3.5rem;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px">&#127942;</div>
     <h2 id="win-t">Chúc mừng!</h2>
-    <p id="win-s">Đã đưa hết 4 quân về đích trước!</p>
-    <button onclick="resetGame()">🔄 Chơi lại</button>
+    <button onclick="MP.mode==='online'?goToLobby():resetGame()">🔄 Chơi lại</button>
   </div>
 </div>
 
@@ -478,7 +502,18 @@
     <div id="status">Nhấn "Tung xúc xắc" để bắt đầu!</div>
     <div class="lbl">📋 Nhật ký</div>
     <div id="logbox"></div>
+    <!-- Chat (online only) -->
+    <div id="chat-panel">
+      <div class="lbl">💬 Chat</div>
+      <div id="chatbox"></div>
+      <div class="chat-input-row">
+        <input id="chat-input" placeholder="Nhắn gì đó..." maxlength="120"
+          onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="chat-send" onclick="sendChat()">Gửi</button>
+      </div>
+    </div>
     <button id="btn-new" onclick="resetGame()">🔄 Trò chơi mới</button>
+    <button id="btn-leave" onclick="onlineLeave()" style="display:none;width:100%;padding:7px;border-radius:9px;font-size:.82rem;font-weight:600;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.1);color:#fca5a5;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(239,68,68,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(239,68,68,.1)';this.style.color='#fca5a5'">❌ Thoát khỏi game</button>
     <button id="btn-lobby" onclick="goToLobby()" style="width:100%;padding:7px;border-radius:9px;font-size:.82rem;font-weight:600;border:1px solid rgba(59,130,246,.35);background:rgba(59,130,246,.1);color:#93c5fd;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#93c5fd'">🌐 Đổi sang Online</button>
   </div>
 </div>
@@ -536,6 +571,7 @@ const BARN = {
 };
 
 const PNAMES  = {red:'Iron Man', green:'Hulk', blue:'Cap. America', yellow:'Thanos'};
+const PCOLOR  = {red:'#ef4444', green:'#22c55e', blue:'#60a5fa', yellow:'#eab308'};
 const PICON   = {
   red:    'https://img.icons8.com/?size=96&id=12268&format=png',
   green:  'https://img.icons8.com/?size=96&id=38038&format=png',
@@ -1325,7 +1361,7 @@ function setSt(m) {
   el.innerHTML=
     '<div class="st-top">'+
       '<img src="'+PICON[cc]+'" alt="'+PNAMES[cc]+'">'+
-      '<span class="st-name">'+PNAMES[cc]+'</span>'+
+      '<span class="st-name" style="color:'+PCOLOR[cc]+'">'+PNAMES[cc]+'</span>'+
     '</div>'+
     '<div class="st-msg">'+msg+'</div>';
 }
@@ -1350,7 +1386,6 @@ function addLog(m) {
 function showWin(color) {
   document.getElementById('win-e').innerHTML=pIcon(color,48)+' &#127942;';
   document.getElementById('win-t').innerHTML=PNAMES[color]+' thắng!';
-  document.getElementById('win-s').innerHTML=pIcon(color)+' đã đưa hết 4 quân về đích!';
   document.getElementById('win').classList.add('show');
 }
 
@@ -1472,6 +1507,8 @@ function resetGame() {
 }
 
 document.addEventListener('keydown',e=>{
+  const tag = document.activeElement?.tagName;
+  if(tag === 'INPUT' || tag === 'TEXTAREA') return;
   if(e.code==='Space'&&G.phase==='roll'){e.preventDefault();roll();}
 });
 document.getElementById('dice').addEventListener('click',()=>{
@@ -1482,6 +1519,42 @@ document.getElementById('dice2').addEventListener('click',()=>{
   if(G.phase==='diceselect') selectActiveDie2(1);
 });
 drawDiceOn('dice',1);
+
+// ── Handle browser close / tab close ──────────────────────────
+window.addEventListener('beforeunload', () => {
+  if(MP.mode === 'online' && MP.roomId && MP.myColor) {
+    // Use sendBeacon for reliable fire-and-forget on page close
+    // We do a best-effort synchronous doLeave via navigator.sendBeacon
+    // Since async isn't reliable on unload, we do a direct REST call
+    const db = window._fbDb;
+    if(!db) return;
+    // Build the updated state inline (stripped-down)
+    const color = MP.myColor;
+    const players = G.players.filter(c => c !== color);
+    if(players.length === 0) return;
+    const pieces = {};
+    G.players.forEach(c => { pieces[c] = G.pieces[c]; });
+    if(pieces[color]) pieces[color].forEach(p => { p.inBarn=true; p.pos=-1; p.finished=false; p.visitedTurnoff=false; });
+    const winner = players.length === 1 ? players[0] : null;
+    const patch = {
+      players,
+      pieces,
+      turn: G.turn % Math.max(players.length, 1),
+      phase: winner ? 'done' : 'roll',
+      winners: winner ? [winner] : G.winners,
+      by: color,
+      logSeq: _logSeq + 1,
+      logs: [PNAMES[color] + ' đã rời game.' + (winner ? ' ' + PNAMES[winner] + ' thắng!' : '')],
+      // carry over unchanged fields
+      dice: G.dice, dice2: G.dice2, diceMode: G.diceMode,
+      dice2Roll: G.dice2Roll, dice2Avail: G.dice2Avail,
+      activeDie2: G.activeDie2, extraOneDie: G.extraOneDie,
+      extraDieSlot: G.extraDieSlot, rollsInTurn: G.rollsInTurn, isAI: G.isAI,
+    };
+    // Best-effort write (may not complete on fast close)
+    window._fbSet(window._fbRef(db, 'rooms/'+MP.roomId+'/G'), patch).catch(()=>{});
+  }
+});
 
 // =======================================================
 //  ONLINE MULTIPLAYER — Firebase
@@ -1514,6 +1587,66 @@ function fbListen(path, cb) {
   const u = window._fbOnValue(fbRef(path), snap => cb(snap.val()));
   return u; // returns unsubscribe function
 }
+async function fbPushMsg(path, val) { return window._fbPush(fbRef(path), val); }
+
+// ── CHAT ──────────────────────────────────────────────
+let _chatUnsub = null;
+let _chatLastKey = null; // track last rendered message key to avoid dupes
+
+function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const msg = inp.value.trim();
+  if(!msg || !MP.roomId) return;
+  inp.value = '';
+  fbPushMsg('rooms/'+MP.roomId+'/chat', {
+    color: MP.myColor,
+    name:  PNAMES[MP.myColor],
+    msg:   msg,
+    ts:    Date.now(),
+  });
+}
+
+function startChatListener(roomId) {
+  if(_chatUnsub) { _chatUnsub(); _chatUnsub = null; }
+  _chatLastKey = null;
+  document.getElementById('chatbox').innerHTML = '';
+  _chatUnsub = fbListen('rooms/'+roomId+'/chat', (data) => {
+    if(!data) return;
+    const box = document.getElementById('chatbox');
+    const entries = Object.entries(data).sort((a,b) => a[1].ts - b[1].ts);
+    // Only render NEW messages (after last rendered key)
+    let rendering = (_chatLastKey === null);
+    for(const [key, d] of entries) {
+      if(!rendering) { if(key === _chatLastKey) rendering = true; continue; }
+      // Skip the _chatLastKey itself (already rendered)
+      if(key === _chatLastKey) continue;
+      _chatLastKey = key;
+      const isMine = d.color === MP.myColor;
+      const el = document.createElement('div');
+      el.className = 'cl' + (isMine ? ' mine' : '');
+      el.innerHTML =
+        '<img src="'+PICON[d.color]+'" alt="'+d.name+'">' +
+        '<div class="cl-body">' +
+          '<span class="cl-name" style="color:var(--'+d.color+')">'+
+            (isMine ? 'Bạn' : d.name)+
+          '</span>' +
+          '<span class="cl-msg">'+escHtml(d.msg)+'</span>' +
+        '</div>';
+      box.appendChild(el);
+    }
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function stopChatListener() {
+  if(_chatUnsub) { _chatUnsub(); _chatUnsub = null; }
+  _chatLastKey = null;
+  document.getElementById('chatbox').innerHTML = '';
+}
 
 // ── LOBBY UI ──────────────────────────────────────────
 function lobbySelectSolo() {
@@ -1531,7 +1664,13 @@ function goToLobby() {
   if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
   MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
   MP.gameStarted = false; MP.lastLogSeq = -1; _pendingLogs = []; _logSeq = 0;
+  stopChatListener();
+  document.getElementById('chat-panel').classList.remove('show');
   document.getElementById('online-badge').classList.remove('show');
+  // Restore solo buttons
+  document.getElementById('btn-new').style.display   = 'block';
+  document.getElementById('btn-lobby').style.display = 'block';
+  document.getElementById('btn-leave').style.display = 'none';
   document.getElementById('win').classList.remove('show');
   document.getElementById('setup').style.display = 'none';
   document.getElementById('setup-step2').style.display = 'none';
@@ -1591,8 +1730,8 @@ async function onlineJoinRoom() {
   const joined = Object.keys(room.players||{});
   if(joined.length >= 4) { alert('Phòng đã đủ 4 người!'); return; }
 
-  // Assign a color not yet taken
-  const allColors = ['red','green','blue','yellow'];
+  // Assign a color not yet taken (same order as solo selection: red→green→yellow→blue)
+  const allColors = ['red','green','yellow','blue'];
   const myColor   = allColors.find(c => !joined.includes(c));
   if(!myColor) { alert('Phòng đã đủ!'); return; }
 
@@ -1667,7 +1806,9 @@ async function onlineStartGame() {
   const snap = await fbGet('rooms/'+MP.roomId);
   if(!snap.exists()) return;
   const room = snap.val();
+  const COLOR_ORDER = ['red','green','yellow','blue'];
   const playerColors = Object.keys(room.players||{});
+  playerColors.sort((a,b) => COLOR_ORDER.indexOf(a) - COLOR_ORDER.indexOf(b));
 
   // Init game state
   initGame(playerColors.length);
@@ -1722,6 +1863,12 @@ function onlineGameStarted() {
   document.getElementById('lobby').style.display  = 'none';
   document.getElementById('setup').style.display  = 'none';
   document.getElementById('lo-waiting').style.display = 'none';
+  document.getElementById('chat-panel').classList.add('show');
+  // Swap buttons: hide solo buttons, show leave button
+  document.getElementById('btn-new').style.display   = 'none';
+  document.getElementById('btn-lobby').style.display = 'none';
+  document.getElementById('btn-leave').style.display = 'block';
+  startChatListener(MP.roomId);
   updateOnlineBadge();
   if(MP.isHost) {
     render(); setSt();
@@ -1735,7 +1882,9 @@ function onlineGameStarted() {
 function syncStateFromRemote(remoteG) {
   if(!remoteG) return;
   // Deep-restore G
-  G.players    = remoteG.players    || G.players;
+  // Firebase may return arrays as objects — always coerce to array
+  const rPlayers = remoteG.players;
+  G.players = Array.isArray(rPlayers) ? rPlayers : Object.values(rPlayers || {});
   G.turn       = remoteG.turn       ?? G.turn;
   G.dice       = remoteG.dice       ?? 0;
   G.dice2      = remoteG.dice2      ?? 0;
@@ -1760,6 +1909,12 @@ function syncStateFromRemote(remoteG) {
 
   const d2 = document.getElementById('dice2');
   d2.style.display = G.diceMode===2 ? 'block' : 'none';
+
+  // Check if someone has won (including via opponent leaving)
+  if(G.winners.length > 0 && G.phase === 'done' && !document.getElementById('win').classList.contains('show')) {
+    const winner = G.winners[0];
+    setTimeout(() => showWin(winner), 300);
+  }
 
   render(); setSt();
   updateOnlineBadge();
@@ -1824,11 +1979,52 @@ function updateOnlineBadge() {
   if(MP.mode !== 'online') return;
   const el = document.getElementById('online-badge');
   el.classList.add('show');
+  const cc = cur();
+  if(!cc || !PNAMES[cc]) {
+    el.innerHTML = '⏳ Đang xử lý...';
+    return;
+  }
   const isMy = isMyTurn();
+  const color = isMy ? MP.myColor : cc;
+  const hex = PCOLOR[color];
+  el.style.color = hex;
+  el.style.borderColor = hex+'99';
+  el.style.background = hex+'22';
   el.innerHTML = isMy
-    ? '🟢 Lượt của bạn (<b>'+PNAMES[MP.myColor]+'</b>)'
-    : '⏳ Lượt của <b>'+PNAMES[cur()]+'</b>';
+    ? '● Lượt của bạn (<b>'+PNAMES[MP.myColor]+'</b>)'
+    : '⏳ Lượt của <b>'+PNAMES[cc]+'</b>';
   el.classList.toggle('my-turn-indicator', isMy);
+}
+
+// ── LEAVE ONLINE GAME ─────────────────────────────────
+async function onlineLeave() {
+  if(!MP.roomId || !MP.myColor) { goToLobby(); return; }
+  const color = MP.myColor;
+
+  // Remove this player's pieces
+  if(G.pieces[color]) {
+    G.pieces[color].forEach(p => {
+      p.inBarn = true; p.pos = -1; p.finished = false; p.visitedTurnoff = false;
+    });
+  }
+
+  // Remove from active players
+  G.players = G.players.filter(c => c !== color);
+
+  if(G.players.length === 1) {
+    // Only 1 left → they win
+    const winner = G.players[0];
+    if(!G.winners.includes(winner)) G.winners.push(winner);
+    G.phase = 'done';
+    _pendingLogs.push('⚔️ ' + PNAMES[color] + ' rời game — ' + PNAMES[winner] + ' 🏆 thắng!');
+  } else if(G.players.length > 1) {
+    if(G.turn >= G.players.length) G.turn = G.turn % G.players.length;
+    G.phase = 'roll';
+    _pendingLogs.push('👋 ' + PNAMES[color] + ' đã rời game.');
+  }
+
+  await fbPushState();
+  goToLobby();
 }
 
 // ── CANCEL ROOM ───────────────────────────────────────
@@ -1929,7 +2125,13 @@ window.resetGame = function() {
   if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
   MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
   MP.gameStarted = false; MP.lastLogSeq = -1; _pendingLogs = []; _logSeq = 0;
+  stopChatListener();
+  document.getElementById('chat-panel').classList.remove('show');
   document.getElementById('online-badge').classList.remove('show');
+  // Restore solo buttons
+  document.getElementById('btn-new').style.display   = 'block';
+  document.getElementById('btn-lobby').style.display = 'block';
+  document.getElementById('btn-leave').style.display = 'none';
   document.getElementById('dice2').style.display = 'none';
   document.getElementById('lobby').style.display = 'flex';
   document.getElementById('lobby-online').style.display = 'none';
