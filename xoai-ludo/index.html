@@ -154,7 +154,7 @@
       border: 1px solid rgba(220,38,38,.3); border-radius: 16px;
       padding: 18px; min-width: 220px; max-width: 240px;
       color: #fff; display: flex; flex-direction: column; gap: 14px; flex-shrink: 0;
-      box-shadow: 0 0 30px rgba(220,38,38,.15);
+      box-shadow: 0 0 30px rgba(220,38,38,.15); overflow: hidden;
     }
     .pcard { border-radius: 10px; padding: 9px 12px; border: 2px solid transparent; display: flex; align-items: center; gap: 10px; transition: all .3s; }
     .pcard.active { border-color: var(--gold); box-shadow: 0 0 14px rgba(212,175,55,.5); }
@@ -300,7 +300,7 @@
     }
 
     /* ── CHAT ─────────────────────────────────────────────── */
-    #chat-panel{display:none;flex-direction:column;gap:6px}
+    #chat-panel{display:none;flex-direction:column;gap:6px;min-width:0;width:100%}
     #chat-panel.show{display:flex}
     #chatbox{
       background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.07);border-radius:9px;
@@ -319,7 +319,7 @@
     #chat-input{flex:1;min-width:0;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.15);
       background:rgba(0,0,0,.5);color:#fff;font-size:.8rem;outline:none;transition:border .2s}
     #chat-input:focus{border-color:rgba(212,175,55,.5)}
-    #chat-send{padding:7px 12px;border:none;border-radius:8px;
+    #chat-send{padding:7px 10px;border:none;border-radius:8px;flex-shrink:0;
       background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fff;font-size:.8rem;
       font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
     #chat-send:hover{background:linear-gradient(135deg,#ef4444,#991b1b)}
