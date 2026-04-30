@@ -5,6 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Xoài chơi cá ngựa</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, set, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+    // ── Firebase config (public project for this game) ──────────────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyDcyL_8wVvQtzol2w7IRDx5UAUC9_k1DDI",
+      authDomain: "xoai-ludo.firebaseapp.com",
+      databaseURL: "https://xoai-ludo-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "xoai-ludo",
+      storageBucket: "xoai-ludo.firebasestorage.app",
+      messagingSenderId: "1035115669408",
+      appId: "1:1035115669408:web:8cc37cba782ef1c6ef66c5",
+      measurementId: "G-WD10710F3Q"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+    window._fbDb  = db;
+    window._fbRef = ref;
+    window._fbSet = set;
+    window._fbOnValue = onValue;
+    window._fbGet = get;
+  </script>
   <style>
     :root {
       --cs: 50px;
@@ -205,7 +228,7 @@
       position:fixed; inset:0;
       background: linear-gradient(rgba(0,0,0,.8), rgba(5,0,0,.9)),
                   url('https://wallpapers.com/images/featured-full/dark-avengers-27iqznzroib1dxqg.jpg') center/cover;
-      display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px; color:#fff; z-index:100;
+      display:none; align-items:center; justify-content:center; flex-direction:column; gap:18px; color:#fff; z-index:100;
     }
     #setup h2 { font-size:2rem; font-weight:900; color:var(--gold); text-align:center;
                 text-shadow:0 0 24px rgba(220,38,38,.8), 0 2px 8px #000; letter-spacing:2px; }
@@ -243,6 +266,8 @@
     .sp-badge{font-size:.65rem;padding:2px 7px;border-radius:99px;background:rgba(212,175,55,.25);color:var(--gold);font-weight:700;white-space:nowrap}
     .sback-btn{background:none;border:1px solid rgba(255,255,255,.2);color:#fca5a5;font-size:.78rem;padding:5px 16px;border-radius:8px;cursor:pointer}
     .sback-btn:hover{background:rgba(255,255,255,.08)}
+    .back-to-lobby-btn{background:none;border:1px solid rgba(255,255,255,.2);color:#fca5a5;font-size:.78rem;font-weight:600;padding:7px 20px;border-radius:8px;cursor:pointer;transition:background .2s;width:100%;text-align:center}
+    .back-to-lobby-btn:hover{background:rgba(255,255,255,.08);color:#fff}
     .sstart-btn{padding:12px 40px;background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fff;border:none;border-radius:14px;font-size:1.1rem;font-weight:900;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px rgba(220,38,38,.5);transition:all .2s}
     .sstart-btn:hover{background:linear-gradient(135deg,#ef4444,#991b1b);transform:translateY(-2px)}
 
@@ -271,12 +296,115 @@
       .dt{width:6px;height:6px}
       .piece{width:22px;height:22px;font-size:7px;border-width:2px}
     }
+
+    /* ── LOBBY ─────────────────────────────────────────────── */
+    #lobby{position:fixed;inset:0;z-index:150;
+      background:linear-gradient(rgba(0,0,0,.82),rgba(5,0,0,.92)),
+      url('https://wallpapers.com/images/featured-full/dark-avengers-27iqznzroib1dxqg.jpg') center/cover;
+      display:flex;align-items:center;justify-content:center;}
+    .lbox{background:rgba(10,0,0,.75);backdrop-filter:blur(18px);
+      border:1px solid rgba(220,38,38,.35);border-radius:22px;
+      padding:36px 44px;display:flex;flex-direction:column;align-items:center;gap:18px;
+      color:#fff;min-width:320px;box-shadow:0 0 60px rgba(220,38,38,.2),0 24px 80px #000c;}
+    .lbox h2{font-size:1.8rem;font-weight:900;color:var(--gold);letter-spacing:2px;
+      text-shadow:0 0 20px rgba(220,38,38,.6)}
+    .lbox p{color:#fca5a5;font-size:.85rem;text-align:center;max-width:280px;line-height:1.5}
+    .lmode-row{display:flex;gap:14px;}
+    .lmode-btn{width:130px;height:100px;border-radius:16px;border:2px solid rgba(220,38,38,.35);
+      background:rgba(220,38,38,.1);color:#fff;font-weight:800;font-size:.88rem;
+      cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+    .lmode-btn span.icon{font-size:2.2rem}
+    .lmode-btn:hover{background:rgba(220,38,38,.28);border-color:var(--gold);transform:scale(1.05);box-shadow:0 0 20px rgba(212,175,55,.35)}
+    /* Online sub-screens */
+    #lobby-online{display:none;flex-direction:column;align-items:center;gap:14px;width:100%}
+    .oinput{width:100%;padding:11px 16px;border-radius:10px;border:1px solid rgba(220,38,38,.4);
+      background:rgba(0,0,0,.5);color:#fff;font-size:1rem;font-weight:700;letter-spacing:3px;
+      text-align:center;outline:none;transition:border .2s}
+    .oinput:focus{border-color:var(--gold)}
+    .obtn{width:100%;padding:11px;border:none;border-radius:10px;
+      background:linear-gradient(135deg,#dc2626,#7f1d1d);color:#fff;font-weight:800;
+      font-size:.95rem;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,.45);transition:all .2s;letter-spacing:.5px}
+    .obtn:hover{background:linear-gradient(135deg,#ef4444,#991b1b);transform:translateY(-2px)}
+    .obtn.secondary{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.4);
+      box-shadow:none;color:#fca5a5}
+    .obtn.secondary:hover{background:rgba(220,38,38,.3)}
+    .room-code-display{font-size:2.2rem;font-weight:900;letter-spacing:8px;color:var(--gold);
+      background:rgba(0,0,0,.5);border:2px solid rgba(212,175,55,.4);border-radius:12px;
+      padding:14px 28px;text-shadow:0 0 14px rgba(212,175,55,.5)}
+    .waiting-dots{display:flex;gap:6px;align-items:center}
+    .wd{width:8px;height:8px;border-radius:50%;background:var(--gold);
+      animation:wdot .9s infinite ease-in-out}
+    .wd:nth-child(2){animation-delay:.18s}.wd:nth-child(3){animation-delay:.36s}
+    @keyframes wdot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1.1);opacity:1}}
+
+    /* Online badge in sidebar */
+    #online-badge{display:none;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);
+      border-radius:8px;padding:5px 10px;font-size:.72rem;color:#86efac;text-align:center;font-weight:700}
+    #online-badge.show{display:block}
+    .my-turn-indicator{animation:glow-badge .8s infinite alternate}
+    @keyframes glow-badge{from{box-shadow:none}to{box-shadow:0 0 12px rgba(34,197,94,.6)}}
   </style>
 </head>
 <body>
 
+<!-- Lobby (mode select) -->
+<div id="lobby">
+  <div class="lbox">
+    <span style="font-size:3rem">🎲</span>
+    <h2>Xoài Cá Ngựa</h2>
+    <p id="lobby-subtitle">Chọn chế độ chơi</p>
+    <div class="lmode-row" id="lmode-row">
+      <button class="lmode-btn" onclick="lobbySelectSolo()">
+        <span class="icon">🎮</span>
+        Chơi một mình<br><span style="font-size:.68rem;opacity:.6;font-weight:400">vs AI / offline</span>
+      </button>
+      <button class="lmode-btn" onclick="lobbySelectOnline()">
+        <span class="icon">🌐</span>
+        Chơi Online<br><span style="font-size:.68rem;opacity:.6;font-weight:400">2-4 người qua mạng</span>
+      </button>
+    </div>
+
+    <!-- Online sub-panel -->
+    <div id="lobby-online">
+      <hr style="width:100%;border-color:rgba(255,255,255,.1)">
+      <div id="lo-create" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%">
+        <p style="margin:0">Tạo phòng mới hoặc nhập mã để tham gia</p>
+        <button class="obtn" onclick="onlineCreateRoom()">🏠 Tạo phòng mới</button>
+        <div style="display:flex;gap:8px;width:100%;align-items:center">
+          <input id="join-code-input" class="oinput" placeholder="MÃ PHÒNG" maxlength="6"
+            oninput="this.value=this.value.toUpperCase()" style="flex:1">
+          <button class="obtn" style="width:auto;padding:11px 18px" onclick="onlineJoinRoom()">Vào</button>
+        </div>
+        <button class="back-to-lobby-btn" onclick="lobbyBackToMain()">← Về màn hình chính</button>
+      </div>
+      <div id="lo-waiting" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%">
+        <p style="margin:0">Chia sẻ mã phòng này với bạn bè</p>
+        <div class="room-code-display" id="lo-code-display">------</div>
+        <div style="display:flex;align-items:center;gap:10px;color:#fca5a5;font-size:.82rem">
+          <div class="waiting-dots"><div class="wd"></div><div class="wd"></div><div class="wd"></div></div>
+          <span id="lo-wait-msg">Đang chờ người chơi...</span>
+        </div>
+        <div id="lo-players-list" style="width:100%;display:flex;flex-direction:column;gap:6px"></div>
+        <!-- Dice mode (host only) -->
+        <div id="lo-dice-mode" style="display:none;width:100%;flex-direction:column;align-items:center;gap:8px">
+          <div style="font-size:.75rem;color:#fca5a5;font-weight:700">Chế độ xúc xắc</div>
+          <div style="display:flex;gap:10px">
+            <button class="dmbtn active" id="lo-dm1" onclick="onlineSetDiceMode(1)">🎲 1 xúc xắc</button>
+            <button class="dmbtn" id="lo-dm2" onclick="onlineSetDiceMode(2)">🎲🎲 2 xúc xắc</button>
+          </div>
+        </div>
+        <div id="lo-start-wrap" style="display:none;width:100%">
+          <div style="font-size:.75rem;color:#86efac;text-align:center;margin-bottom:8px" id="lo-start-hint"></div>
+          <button class="obtn" id="lo-start-btn" onclick="onlineStartGame()">🚀 Bắt đầu trò chơi!</button>
+        </div>
+        <button class="obtn secondary" onclick="onlineCancelRoom()">✕ Huỷ phòng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Setup -->
-<div id="setup">
+<div id="setup" style="display:none">
   <!-- Step 1: choose number of players -->
   <div id="setup-step1" style="display:flex;flex-direction:column;align-items:center;gap:18px">
     <h2>🎲 Xoài chơi cá ngựa</h2>
@@ -311,6 +439,7 @@
       <button class="cbtn" onclick="setupChooseCount(3)">3<span>người</span></button>
       <button class="cbtn" onclick="setupChooseCount(4)">4<span>người</span></button>
     </div>
+    <button class="back-to-lobby-btn" onclick="goToLobby()">← Về màn hình chính</button>
   </div>
   <!-- Step 2: choose human/AI per player -->
   <div id="setup-step2">
@@ -337,6 +466,7 @@
 <div id="main">
   <div id="board-wrap"><div id="board"></div></div>
   <div id="sidebar">
+    <div id="online-badge"></div>
     <div id="pcards"></div>
     <div id="dice-wrap">
       <div class="dice-duo">
@@ -349,6 +479,7 @@
     <div class="lbl">📋 Nhật ký</div>
     <div id="logbox"></div>
     <button id="btn-new" onclick="resetGame()">🔄 Trò chơi mới</button>
+    <button id="btn-lobby" onclick="goToLobby()" style="width:100%;padding:7px;border-radius:9px;font-size:.82rem;font-weight:600;border:1px solid rgba(59,130,246,.35);background:rgba(59,130,246,.1);color:#93c5fd;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(59,130,246,.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(59,130,246,.1)';this.style.color='#93c5fd'">🌐 Đổi sang Online</button>
   </div>
 </div>
 
@@ -1329,13 +1460,14 @@ function pickAIMove(color, movableArr) {
 }
 
 function resetGame() {
+  // This function is overridden below by the online multiplayer patch.
+  // Fallback (solo mode): go back to lobby
   document.getElementById('win').classList.remove('show');
   document.getElementById('setup-step2').style.display = 'none';
   document.getElementById('setup-step1').style.display = 'flex';
-  document.getElementById('setup').style.display = 'flex';
-  // Reset dice mode toggle to 1 by default
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('lobby').style.display = 'flex';
   selectDiceMode(setupState.diceMode||1);
-  // Hide 2nd dice until next game starts
   document.getElementById('dice2').style.display='none';
 }
 
@@ -1350,6 +1482,435 @@ document.getElementById('dice2').addEventListener('click',()=>{
   if(G.phase==='diceselect') selectActiveDie2(1);
 });
 drawDiceOn('dice',1);
+
+// =======================================================
+//  ONLINE MULTIPLAYER — Firebase
+// =======================================================
+const MP = {
+  mode: 'solo',       // 'solo' | 'online'
+  roomId: null,
+  myColor: null,
+  isHost: false,
+  fbUnsubscribe: null,
+  hostColor: 'red',   // host always gets first player color
+  diceMode: 1,
+};
+
+// ── Helper: generate 6-char room code ──
+function genRoomId() {
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+// ── Firebase helpers (loaded as module above) ──
+function fbDb()  { return window._fbDb; }
+function fbRef(path) { return window._fbRef(fbDb(), path); }
+async function fbSet(path, val) { return window._fbSet(fbRef(path), val); }
+async function fbGet(path) { return window._fbGet(fbRef(path)); }
+function fbListen(path, cb) {
+  const u = window._fbOnValue(fbRef(path), snap => cb(snap.val()));
+  return u; // returns unsubscribe function
+}
+
+// ── LOBBY UI ──────────────────────────────────────────
+function lobbySelectSolo() {
+  MP.mode = 'solo';
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('setup').style.display  = 'flex';
+}
+function lobbySelectOnline() {
+  document.getElementById('lobby-online').style.display = 'flex';
+  document.getElementById('lmode-row').style.display = 'none';
+  document.getElementById('lobby-subtitle').style.display = 'none';
+}
+function goToLobby() {
+  // Return to lobby from in-game (solo or online)
+  if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
+  MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
+  document.getElementById('online-badge').classList.remove('show');
+  document.getElementById('win').classList.remove('show');
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('setup-step2').style.display = 'none';
+  document.getElementById('setup-step1').style.display = 'flex';
+  document.getElementById('lobby-online').style.display = 'none';
+  document.getElementById('lmode-row').style.display = 'flex';
+  document.getElementById('lobby-subtitle').style.display = 'block';
+  document.getElementById('lo-create').style.display  = 'flex';
+  document.getElementById('lo-waiting').style.display = 'none';
+  document.getElementById('dice2').style.display = 'none';
+  document.getElementById('lobby').style.display = 'flex';
+}
+function lobbyBackToMain() {
+  document.getElementById('lobby-online').style.display = 'none';
+  document.getElementById('lmode-row').style.display = 'flex';
+  document.getElementById('lobby-subtitle').style.display = 'block';
+}
+
+// ── CREATE ROOM ───────────────────────────────────────
+async function onlineCreateRoom() {
+  if(!fbDb()) { alert('⚠️ Firebase chưa được cấu hình!\n\nHãy đọc hướng dẫn bên dưới để tạo Firebase project.'); return; }
+  const roomId = genRoomId();
+  MP.roomId   = roomId;
+  MP.isHost   = true;
+  MP.myColor  = 'red'; // host picks first
+
+  const roomData = {
+    host: 'red',
+    diceMode: MP.diceMode || 1,
+    state: 'waiting',    // waiting | playing | done
+    players: { red: { name: 'Host', joined: true } },
+    G: null,
+    action: null,
+    createdAt: Date.now(),
+  };
+  try {
+    await fbSet('rooms/'+roomId, roomData);
+    showWaitingRoom(roomId, true);
+    fbListenRoom(roomId);
+  } catch(e) {
+    alert('Lỗi kết nối Firebase:\n'+e.message);
+  }
+}
+
+// ── JOIN ROOM ─────────────────────────────────────────
+async function onlineJoinRoom() {
+  if(!fbDb()) { alert('⚠️ Firebase chưa được cấu hình!'); return; }
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length !== 6) { alert('Nhập đúng 6 ký tự mã phòng!'); return; }
+
+  let snap;
+  try { snap = await fbGet('rooms/'+code); } catch(e) { alert('Lỗi kết nối: '+e.message); return; }
+  if(!snap.exists()) { alert('Không tìm thấy phòng "'+code+'"!'); return; }
+
+  const room = snap.val();
+  if(room.state === 'playing') { alert('Trò chơi đã bắt đầu rồi!'); return; }
+  const joined = Object.keys(room.players||{});
+  if(joined.length >= 4) { alert('Phòng đã đủ 4 người!'); return; }
+
+  // Assign a color not yet taken
+  const allColors = ['red','green','blue','yellow'];
+  const myColor   = allColors.find(c => !joined.includes(c));
+  if(!myColor) { alert('Phòng đã đủ!'); return; }
+
+  MP.roomId  = code;
+  MP.isHost  = false;
+  MP.myColor = myColor;
+
+  try {
+    await fbSet('rooms/'+code+'/players/'+myColor, { name: PNAMES[myColor], joined: true });
+    showWaitingRoom(code, false);
+    fbListenRoom(code);
+  } catch(e) { alert('Lỗi: '+e.message); }
+}
+
+// ── WAITING ROOM UI ───────────────────────────────────
+function showWaitingRoom(roomId, isHost) {
+  document.getElementById('lo-create').style.display  = 'none';
+  document.getElementById('lo-waiting').style.display = 'flex';
+  document.getElementById('lo-code-display').textContent = roomId;
+  document.getElementById('lo-wait-msg').textContent = isHost
+    ? 'Đang chờ người chơi tham gia...'
+    : 'Đã tham gia — đang chờ host bắt đầu...';
+}
+
+function updateWaitingRoomUI(room) {
+  if(!room) return;
+  const players = Object.keys(room.players||{});
+  const listEl  = document.getElementById('lo-players-list');
+  listEl.innerHTML = players.map(c =>
+    `<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);
+      border-radius:8px;padding:7px 12px;">
+      <img src="${PICON[c]}" style="width:28px;height:28px;object-fit:contain">
+      <span style="font-weight:700;font-size:.85rem;">${PNAMES[c]}</span>
+      ${c===room.host?'<span style="font-size:.65rem;background:rgba(212,175,55,.25);color:var(--gold);padding:2px 8px;border-radius:99px;font-weight:700">HOST</span>':''}
+    </div>`
+  ).join('');
+
+  // Sync dice mode from room
+  const dm = room.diceMode || 1;
+  MP.diceMode = dm;
+  const dm1 = document.getElementById('lo-dm1');
+  const dm2 = document.getElementById('lo-dm2');
+  if(dm1) dm1.classList.toggle('active', dm===1);
+  if(dm2) dm2.classList.toggle('active', dm===2);
+
+  // Show dice mode selector (host only)
+  const diceModeEl = document.getElementById('lo-dice-mode');
+  if(diceModeEl) diceModeEl.style.display = MP.isHost ? 'flex' : 'none';
+
+  // Host can start with 2+ players
+  const startWrap = document.getElementById('lo-start-wrap');
+  if(MP.isHost && players.length >= 2) {
+    startWrap.style.display = 'block';
+    document.getElementById('lo-start-hint').textContent =
+      players.length < 4 ? `${players.length}/4 người — có thể bắt đầu!` : '4/4 người — sẵn sàng!';
+  } else {
+    startWrap.style.display = 'none';
+  }
+}
+
+async function onlineSetDiceMode(m) {
+  if(!MP.isHost || !MP.roomId) return;
+  MP.diceMode = m;
+  document.getElementById('lo-dm1').classList.toggle('active', m===1);
+  document.getElementById('lo-dm2').classList.toggle('active', m===2);
+  try { await fbSet('rooms/'+MP.roomId+'/diceMode', m); } catch(e){}
+}
+
+// ── HOST START GAME ───────────────────────────────────
+async function onlineStartGame() {
+  if(!MP.isHost) return;
+  const snap = await fbGet('rooms/'+MP.roomId);
+  if(!snap.exists()) return;
+  const room = snap.val();
+  const playerColors = Object.keys(room.players||{});
+
+  // Init game state
+  initGame(playerColors.length); // sets G.players based on count
+  // Override G.players order to match who joined
+  G.players = playerColors;
+  // Make non-host colors that are not joined as AI=false (all are humans in online mode)
+  G.isAI = {};
+  G.players.forEach(c => G.isAI[c] = false);
+  G.diceMode = room.diceMode || 1;
+
+  const d2 = document.getElementById('dice2');
+  d2.style.display = G.diceMode===2 ? 'block' : 'none';
+
+  await fbSet('rooms/'+MP.roomId+'/state', 'playing');
+  await fbSet('rooms/'+MP.roomId+'/playerOrder', playerColors);
+  await fbPushState();
+  // Local start
+  onlineGameStarted();
+}
+
+// ── LISTEN TO ROOM ────────────────────────────────────
+function fbListenRoom(roomId) {
+  if(MP.fbUnsubscribe) MP.fbUnsubscribe();
+  MP.fbUnsubscribe = fbListen('rooms/'+roomId, (room) => {
+    if(!room) return;
+    if(room.state === 'waiting') {
+      updateWaitingRoomUI(room);
+      return;
+    }
+    if(room.state === 'playing') {
+      // First time entering playing state
+      if(document.getElementById('lobby').style.display !== 'none' ||
+         document.getElementById('lo-waiting').style.display !== 'none') {
+        onlineGameStarted();
+      }
+      // Sync game state (only update if the action is from someone else)
+      if(room.G && room.action && room.action.by !== MP.myColor) {
+        syncStateFromRemote(room.G);
+      }
+    }
+    if(room.state === 'done') {
+      // Handled by checkWin already
+    }
+  });
+}
+
+// ── GAME STARTED ──────────────────────────────────────
+function onlineGameStarted() {
+  MP.mode = 'online';
+  document.getElementById('lobby').style.display  = 'none';
+  document.getElementById('setup').style.display  = 'none';
+  updateOnlineBadge();
+  if(!MP.isHost) {
+    // Non-host: wait for state from Firebase
+    fbListen('rooms/'+MP.roomId+'/G', (remoteG) => {
+      if(!remoteG) return;
+      syncStateFromRemote(remoteG);
+    });
+  } else {
+    render(); setSt(); setBR(true);
+    addLog('🌐 Trò chơi online bắt đầu!');
+  }
+}
+
+// ── SYNC STATE FROM REMOTE ────────────────────────────
+function syncStateFromRemote(remoteG) {
+  if(!remoteG) return;
+  // Deep-restore G
+  G.players    = remoteG.players    || G.players;
+  G.turn       = remoteG.turn       ?? G.turn;
+  G.dice       = remoteG.dice       ?? 0;
+  G.dice2      = remoteG.dice2      ?? 0;
+  G.diceMode   = remoteG.diceMode   ?? 1;
+  G.dice2Roll  = remoteG.dice2Roll  || [];
+  G.dice2Avail = remoteG.dice2Avail || [];
+  G.activeDie2 = remoteG.activeDie2 ?? -1;
+  G.extraOneDie  = remoteG.extraOneDie  ?? false;
+  G.extraDieSlot = remoteG.extraDieSlot ?? -1;
+  G.phase      = remoteG.phase      || 'roll';
+  G.rollsInTurn= remoteG.rollsInTurn ?? 0;
+  G.winners    = remoteG.winners    || [];
+  G.isAI       = remoteG.isAI       || {};
+
+  // Restore pieces (deep copy)
+  if(remoteG.pieces) {
+    G.pieces = {};
+    for(const color of G.players) {
+      G.pieces[color] = (remoteG.pieces[color]||[]).map(p=>({...p}));
+    }
+  }
+
+  const d2 = document.getElementById('dice2');
+  d2.style.display = G.diceMode===2 ? 'block' : 'none';
+
+  render(); setSt();
+  updateOnlineBadge();
+
+  // If it's now my turn and phase is roll, enable button
+  const isMy = isMyTurn();
+  setBR(isMy && G.phase === 'roll' && !G.winners.includes(cur()));
+  if(!isMy && G.phase === 'move') {
+    // Disable piece clicks for remote players — already handled by mkP
+  }
+}
+
+// ── PUSH STATE TO FIREBASE ────────────────────────────
+async function fbPushState() {
+  if(MP.mode !== 'online' || !MP.roomId) return;
+  // Serialize G (plain object, no functions)
+  const serialized = {
+    players:     G.players,
+    turn:        G.turn,
+    dice:        G.dice,
+    dice2:       G.dice2,
+    diceMode:    G.diceMode,
+    dice2Roll:   G.dice2Roll,
+    dice2Avail:  G.dice2Avail,
+    activeDie2:  G.activeDie2,
+    extraOneDie: G.extraOneDie,
+    extraDieSlot:G.extraDieSlot,
+    phase:       G.phase,
+    rollsInTurn: G.rollsInTurn,
+    winners:     G.winners,
+    isAI:        G.isAI,
+    pieces:      G.pieces,
+  };
+  try {
+    await fbSet('rooms/'+MP.roomId+'/G', serialized);
+    await fbSet('rooms/'+MP.roomId+'/action', { by: MP.myColor, ts: Date.now() });
+  } catch(e) {
+    console.warn('Firebase push error:', e);
+  }
+}
+
+// ── IS MY TURN ────────────────────────────────────────
+function isMyTurn() {
+  if(MP.mode !== 'online') return true; // solo: always your turn
+  return cur() === MP.myColor;
+}
+
+// ── ONLINE BADGE ──────────────────────────────────────
+function updateOnlineBadge() {
+  if(MP.mode !== 'online') return;
+  const el = document.getElementById('online-badge');
+  el.classList.add('show');
+  const isMy = isMyTurn();
+  el.innerHTML = isMy
+    ? '🟢 Lượt của bạn (<b>'+PNAMES[MP.myColor]+'</b>)'
+    : '⏳ Lượt của <b>'+PNAMES[cur()]+'</b>';
+  el.classList.toggle('my-turn-indicator', isMy);
+}
+
+// ── CANCEL ROOM ───────────────────────────────────────
+async function onlineCancelRoom() {
+  if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
+  if(MP.roomId) {
+    try { await fbSet('rooms/'+MP.roomId, null); } catch(e){}
+  }
+  MP.roomId = null; MP.isHost = false;
+  document.getElementById('lo-waiting').style.display = 'none';
+  document.getElementById('lo-create').style.display  = 'flex';
+  document.getElementById('join-code-input').value = '';
+}
+
+// =======================================================
+//  PATCH GAME FUNCTIONS FOR ONLINE
+// =======================================================
+// We wrap roll / pickPiece / pickPiece2 to guard turn ownership
+// and push state after each action.
+
+const _origRoll = roll;
+window.roll = function() {
+  if(MP.mode === 'online' && !isMyTurn()) return;
+  _origRoll();
+};
+
+const _origHumanRoll = humanRoll;
+window.humanRoll = function() {
+  if(MP.mode === 'online' && !isMyTurn()) return;
+  if(G.phase === 'roll') roll();
+};
+
+// Patch afterRoll to push state
+const _origAfterRoll = afterRoll;
+window.afterRoll = function(v) {
+  _origAfterRoll(v);
+  if(MP.mode === 'online') fbPushState();
+};
+
+const _origAfterRoll2 = afterRoll2;
+window.afterRoll2 = function(v1,v2) {
+  _origAfterRoll2(v1,v2);
+  if(MP.mode === 'online') fbPushState();
+};
+
+// Patch animateMove to push after animation
+const _origAnimateMove = animateMove;
+window.animateMove = function(color, pieceIdx, onDone) {
+  _origAnimateMove(color, pieceIdx, ()=>{
+    onDone();
+    if(MP.mode === 'online') fbPushState();
+  });
+};
+
+// Patch nextTurn
+const _origNextTurn = nextTurn;
+window.nextTurn = function(extra) {
+  _origNextTurn(extra);
+  if(MP.mode === 'online') { fbPushState(); updateOnlineBadge(); }
+};
+
+// Patch setSt to also update badge
+const _origSetSt = setSt;
+window.setSt = function(m) {
+  _origSetSt(m);
+  if(MP.mode === 'online') updateOnlineBadge();
+};
+
+// Patch mkP — disable clicks for pieces not belonging to current player
+const _origMkP = mkP;
+window.mkP = function(color, i, mv, cc) {
+  const el = _origMkP(color, i, mv, cc);
+  if(MP.mode === 'online' && color !== MP.myColor) {
+    el.classList.remove('clickable');
+    el.onclick = null;
+  }
+  return el;
+};
+
+// Patch resetGame to reset online state
+const _origResetGame = resetGame;
+window.resetGame = function() {
+  if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
+  MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
+  document.getElementById('online-badge').classList.remove('show');
+  document.getElementById('dice2').style.display = 'none';
+  document.getElementById('lobby').style.display = 'flex';
+  document.getElementById('lobby-online').style.display = 'none';
+  document.getElementById('lo-create').style.display  = 'flex';
+  document.getElementById('lo-waiting').style.display = 'none';
+  document.getElementById('join-code-input').value = '';
+  document.getElementById('win').classList.remove('show');
+  document.getElementById('setup').style.display = 'none';
+  selectDiceMode(1);
+};
+
 </script>
 </body>
 </html>
