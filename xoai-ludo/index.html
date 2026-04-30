@@ -1487,13 +1487,15 @@ drawDiceOn('dice',1);
 //  ONLINE MULTIPLAYER — Firebase
 // =======================================================
 const MP = {
-  mode: 'solo',       // 'solo' | 'online'
+  mode: 'solo',
   roomId: null,
   myColor: null,
   isHost: false,
   fbUnsubscribe: null,
-  hostColor: 'red',   // host always gets first player color
+  hostColor: 'red',
   diceMode: 1,
+  gameStarted: false,
+  lastLogSeq: -1,  // dedup: track last log sequence number seen
 };
 
 // ── Helper: generate 6-char room code ──
@@ -1528,6 +1530,7 @@ function goToLobby() {
   // Return to lobby from in-game (solo or online)
   if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
   MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
+  MP.gameStarted = false; MP.lastLogSeq = -1; _pendingLogs = []; _logSeq = 0;
   document.getElementById('online-badge').classList.remove('show');
   document.getElementById('win').classList.remove('show');
   document.getElementById('setup').style.display = 'none';
@@ -1667,13 +1670,13 @@ async function onlineStartGame() {
   const playerColors = Object.keys(room.players||{});
 
   // Init game state
-  initGame(playerColors.length); // sets G.players based on count
-  // Override G.players order to match who joined
+  initGame(playerColors.length);
   G.players = playerColors;
-  // Make non-host colors that are not joined as AI=false (all are humans in online mode)
   G.isAI = {};
   G.players.forEach(c => G.isAI[c] = false);
   G.diceMode = room.diceMode || 1;
+  MP.gameStarted = false;   // reset so onlineGameStarted() can run cleanly
+  _pendingLogs = [];
 
   const d2 = document.getElementById('dice2');
   d2.style.display = G.diceMode===2 ? 'block' : 'none';
@@ -1701,7 +1704,7 @@ function fbListenRoom(roomId) {
         onlineGameStarted();
       }
       // Sync game state (only update if the action is from someone else)
-      if(room.G && room.action && room.action.by !== MP.myColor) {
+      if(room.G && room.G.by !== MP.myColor) {
         syncStateFromRemote(room.G);
       }
     }
@@ -1713,20 +1716,19 @@ function fbListenRoom(roomId) {
 
 // ── GAME STARTED ──────────────────────────────────────
 function onlineGameStarted() {
+  if(MP.gameStarted) return;
+  MP.gameStarted = true;
   MP.mode = 'online';
   document.getElementById('lobby').style.display  = 'none';
   document.getElementById('setup').style.display  = 'none';
+  document.getElementById('lo-waiting').style.display = 'none';
   updateOnlineBadge();
-  if(!MP.isHost) {
-    // Non-host: wait for state from Firebase
-    fbListen('rooms/'+MP.roomId+'/G', (remoteG) => {
-      if(!remoteG) return;
-      syncStateFromRemote(remoteG);
-    });
-  } else {
-    render(); setSt(); setBR(true);
+  if(MP.isHost) {
+    render(); setSt();
+    setBR(isMyTurn() && G.phase === 'roll');
     addLog('🌐 Trò chơi online bắt đầu!');
   }
+  // Non-host: state arrives via fbListenRoom → syncStateFromRemote — no extra listener needed
 }
 
 // ── SYNC STATE FROM REMOTE ────────────────────────────
@@ -1762,6 +1764,14 @@ function syncStateFromRemote(remoteG) {
   render(); setSt();
   updateOnlineBadge();
 
+  // Replay log entries — use logSeq to avoid duplicates
+  if(remoteG.logSeq !== undefined && remoteG.logSeq > MP.lastLogSeq) {
+    MP.lastLogSeq = remoteG.logSeq;
+    if(remoteG.logs && remoteG.logs.length > 0) {
+      remoteG.logs.forEach(m => _origAddLog(m));
+    }
+  }
+
   // If it's now my turn and phase is roll, enable button
   const isMy = isMyTurn();
   setBR(isMy && G.phase === 'roll' && !G.winners.includes(cur()));
@@ -1771,9 +1781,10 @@ function syncStateFromRemote(remoteG) {
 }
 
 // ── PUSH STATE TO FIREBASE ────────────────────────────
+let _logSeq = 0;
 async function fbPushState() {
   if(MP.mode !== 'online' || !MP.roomId) return;
-  // Serialize G (plain object, no functions)
+  const logs = _pendingLogs.splice(0);
   const serialized = {
     players:     G.players,
     turn:        G.turn,
@@ -1790,10 +1801,13 @@ async function fbPushState() {
     winners:     G.winners,
     isAI:        G.isAI,
     pieces:      G.pieces,
+    logs:        logs,
+    logSeq:      ++_logSeq,  // increment so receiver knows this is a new batch
+    by:          MP.myColor, // merged: no separate /action write
   };
   try {
+    // Single write = Firebase listener fires exactly once
     await fbSet('rooms/'+MP.roomId+'/G', serialized);
-    await fbSet('rooms/'+MP.roomId+'/action', { by: MP.myColor, ts: Date.now() });
   } catch(e) {
     console.warn('Firebase push error:', e);
   }
@@ -1832,8 +1846,23 @@ async function onlineCancelRoom() {
 // =======================================================
 //  PATCH GAME FUNCTIONS FOR ONLINE
 // =======================================================
-// We wrap roll / pickPiece / pickPiece2 to guard turn ownership
-// and push state after each action.
+
+// ── Capture log entries to sync to remote players ──
+let _pendingLogs = [];
+const _origAddLog = addLog;
+window.addLog = function(m) {
+  _origAddLog(m);
+  if(MP.mode === 'online') _pendingLogs.push(m);
+};
+
+// ── setBR: only enable if it's actually my turn ──
+const _origSetBR = setBR;
+window.setBR = function(en) {
+  if(MP.mode === 'online' && en) {
+    en = isMyTurn() && G.phase === 'roll' && !G.winners.includes(cur());
+  }
+  _origSetBR(en);
+};
 
 const _origRoll = roll;
 window.roll = function() {
@@ -1899,6 +1928,7 @@ const _origResetGame = resetGame;
 window.resetGame = function() {
   if(MP.fbUnsubscribe) { MP.fbUnsubscribe(); MP.fbUnsubscribe = null; }
   MP.mode = 'solo'; MP.roomId = null; MP.isHost = false; MP.myColor = null;
+  MP.gameStarted = false; MP.lastLogSeq = -1; _pendingLogs = []; _logSeq = 0;
   document.getElementById('online-badge').classList.remove('show');
   document.getElementById('dice2').style.display = 'none';
   document.getElementById('lobby').style.display = 'flex';
