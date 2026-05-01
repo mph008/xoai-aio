@@ -249,9 +249,13 @@
   </div>
 
   <div id="difficulty-panel">
-    <button class="diff-btn easy active" data-size="3">3×3</button>
-    <button class="diff-btn medium"      data-size="4">4×4</button>
-    <button class="diff-btn hard"        data-size="5">5×5</button>
+    <button class="diff-btn active" data-rows="3" data-cols="3">3×3</button>
+    <button class="diff-btn"        data-rows="3" data-cols="4">3×4</button>
+    <button class="diff-btn"        data-rows="4" data-cols="3">4×3</button>
+    <button class="diff-btn"        data-rows="4" data-cols="4">4×4</button>
+    <button class="diff-btn"        data-rows="4" data-cols="5">4×5</button>
+    <button class="diff-btn"        data-rows="5" data-cols="4">5×4</button>
+    <button class="diff-btn"        data-rows="5" data-cols="5">5×5</button>
   </div>
 
   <div id="grid-wrapper">
@@ -271,13 +275,13 @@
 (() => {
   'use strict';
 
-  let SIZE = 3, cells = [], emptyIdx = -1, hintTimer = null;
+  let ROWS = 3, COLS = 3, cells = [], emptyIdx = -1, hintTimer = null;
 
   function getCellPx() {
-    const maxW = Math.floor((window.innerWidth  - 80) / SIZE);
-    const maxH = Math.floor((window.innerHeight - 260) / SIZE);
-    const caps = { 3: 104, 4: 90, 5: 76 };
-    return Math.min(maxW, maxH, caps[SIZE]);
+    var maxW = Math.floor((window.innerWidth  - 80) / COLS);
+    var maxH = Math.floor((window.innerHeight - 260) / ROWS);
+    var cap  = Math.max(ROWS, COLS) <= 3 ? 104 : Math.max(ROWS, COLS) <= 4 ? 90 : 76;
+    return Math.min(maxW, maxH, cap);
   }
 
   const gridEl      = document.getElementById('grid');
@@ -313,9 +317,9 @@
     return a;
   }
 
-  function generateBoard(size) {
+  function generateBoard(total) {
     var nums = [];
-    for (var i = 1; i < size * size; i++) nums.push(i);
+    for (var i = 1; i < total; i++) nums.push(i);
     var s;
     do { s = shuffle(nums); }
     while (s.every(function(v,i){ return v === i+1; }));
@@ -323,8 +327,8 @@
     return s;
   }
 
-  function buildGrid(size) {
-    SIZE = size;
+  function buildGrid(rows, cols) {
+    ROWS = rows; COLS = cols;
     cancelDrag();
     gridEl.innerHTML = ''; cells = [];
     winOverlay.classList.remove('show');
@@ -332,12 +336,12 @@
 
     var cellPx = getCellPx();
     var fontSize = Math.floor(cellPx * 0.42) + 'px';
-    gridEl.style.gridTemplateColumns = 'repeat(' + size + ', ' + cellPx + 'px)';
-    gridEl.style.gridTemplateRows    = 'repeat(' + size + ', ' + cellPx + 'px)';
+    gridEl.style.gridTemplateColumns = 'repeat(' + cols + ', ' + cellPx + 'px)';
+    gridEl.style.gridTemplateRows    = 'repeat(' + rows + ', ' + cellPx + 'px)';
 
-    var board = generateBoard(size);
+    var board = generateBoard(rows * cols);
 
-    for (var i = 0; i < size * size; i++) {
+    for (var i = 0; i < rows * cols; i++) {
       var cell = document.createElement('div');
       cell.className = 'cell';
       cell.style.width = cellPx + 'px';
@@ -373,7 +377,7 @@
   }
 
   function checkWin() {
-    for (var i = 0; i < SIZE * SIZE - 1; i++) {
+    for (var i = 0; i < ROWS * COLS - 1; i++) {
       if (cells[i].value !== i + 1) return false;
     }
     playWin();
@@ -408,8 +412,8 @@
   }
 
   function isAdjacent(idxA, idxB) {
-    var rA = Math.floor(idxA / SIZE), cA = idxA % SIZE;
-    var rB = Math.floor(idxB / SIZE), cB = idxB % SIZE;
+    var rA = Math.floor(idxA / COLS), cA = idxA % COLS;
+    var rB = Math.floor(idxB / COLS), cB = idxB % COLS;
     return (rA === rB && Math.abs(cA - cB) === 1) ||
            (cA === cB && Math.abs(rA - rB) === 1);
   }
@@ -494,15 +498,15 @@
     btn.addEventListener('click', function() {
       diffBtns.forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
-      buildGrid(parseInt(btn.dataset.size, 10));
+      buildGrid(parseInt(btn.dataset.rows, 10), parseInt(btn.dataset.cols, 10));
     });
   });
 
   playAgainBtn.addEventListener('click', function() {
-    winOverlay.classList.remove('show'); buildGrid(SIZE);
+    winOverlay.classList.remove('show'); buildGrid(ROWS, COLS);
   });
 
-  buildGrid(3);
+  buildGrid(3, 3);
 })();
 </script>
 </body>
