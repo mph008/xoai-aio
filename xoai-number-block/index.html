@@ -325,6 +325,7 @@
 
   function buildGrid(size) {
     SIZE = size;
+    cancelDrag();
     gridEl.innerHTML = ''; cells = [];
     winOverlay.classList.remove('show');
     clearTimeout(hintTimer);
@@ -406,6 +407,13 @@
     return -1;
   }
 
+  function isAdjacent(idxA, idxB) {
+    var rA = Math.floor(idxA / SIZE), cA = idxA % SIZE;
+    var rB = Math.floor(idxB / SIZE), cB = idxB % SIZE;
+    return (rA === rB && Math.abs(cA - cB) === 1) ||
+           (cA === cB && Math.abs(rA - rB) === 1);
+  }
+
   function nearestCell(x, y) {
     var best = -1, bestD = Infinity, cellPx = getCellPx();
     cells.forEach(function(c, i) {
@@ -418,11 +426,24 @@
 
   var drag = null;
 
+  function cancelDrag() {
+    if (!drag) return;
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerUp);
+    drag.ghost.remove();
+    try { drag.block.style.opacity = ''; } catch(e) {}
+    if (drag.lastHover >= 0 && cells[drag.lastHover])
+      cells[drag.lastHover].el.classList.remove('hover-target');
+    drag = null;
+  }
+
   function onPointerDown(e) {
     e.preventDefault();
     if (ac && ac.state === 'suspended') ac.resume();
     var block = e.currentTarget, fromIdx = idxOf(block);
     if (fromIdx < 0) return;
+    if (!isAdjacent(fromIdx, emptyIdx)) return;
     var rect = block.getBoundingClientRect();
     var ghost = block.cloneNode(true);
     ghost.style.cssText = 'position:fixed;width:'+rect.width+'px;height:'+rect.height+'px;' +
