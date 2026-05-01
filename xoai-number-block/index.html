@@ -83,12 +83,8 @@
       letter-spacing: 1px;
     }
     .diff-btn:hover { transform: scale(1.07); }
-    .diff-btn.easy.active   { border-color:#4ade80; color:#4ade80; background:rgba(74,222,128,.1);  box-shadow:0 0 14px rgba(74,222,128,.2); }
-    .diff-btn.medium.active { border-color:#facc15; color:#facc15; background:rgba(250,204,21,.1);  box-shadow:0 0 14px rgba(250,204,21,.2); }
-    .diff-btn.hard.active   { border-color:#f87171; color:#f87171; background:rgba(248,113,113,.1); box-shadow:0 0 14px rgba(248,113,113,.2); }
-    .diff-btn.easy:hover   { border-color:#4ade80; color:#4ade80; }
-    .diff-btn.medium:hover { border-color:#facc15; color:#facc15; }
-    .diff-btn.hard:hover   { border-color:#f87171; color:#f87171; }
+    .diff-btn.active { border-color:#4ade80; color:#4ade80; background:rgba(74,222,128,.1); box-shadow:0 0 14px rgba(74,222,128,.2); }
+    .diff-btn:hover    { border-color:#4ade80; color:#4ade80; }
 
 
 
@@ -363,11 +359,10 @@
       gridEl.appendChild(cell);
     }
 
-    if (size === 3) syncEasyHighlights();
+    syncEasyHighlights();
   }
 
   function syncEasyHighlights() {
-    if (SIZE !== 3) return;
     cells.forEach(function(c, i) {
       if (!c.blockEl) return;
       var ok = (c.value === i + 1);
@@ -396,7 +391,7 @@
     src.blockEl = null; src.value = 0; emptyIdx = fromIdx;
 
     triggerAnim(dest.blockEl, 'do-bounce');
-    if (SIZE === 3) syncEasyHighlights();
+    syncEasyHighlights();
     playMove(); checkWin();
   }
 
