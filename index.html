@@ -337,6 +337,24 @@
                     box-shadow: 0 4px 30px rgba(59, 130, 246, 0.12), 0 2px 12px rgba(0,0,0,0.5); }
     .card-connect4 .card-ring { border-color: rgba(59,130,246,0.35); box-shadow: 0 0 18px rgba(59,130,246,0.2) inset; }
 
+    /* Card: Number Block — Amber/Gold theme */
+    .card-numblock {
+      --card-bg: linear-gradient(145deg, rgba(80, 45, 0, 0.55), rgba(22, 12, 0, 0.75));
+      --card-border: rgba(251, 191, 36, 0.5);
+      --card-glow: rgba(251, 191, 36, 0.4);
+      --card-accent: #fbbf24;
+      --card-accent-light: #fde68a;
+    }
+    .card-numblock:hover {
+      border-color: rgba(251, 191, 36, 0.75) !important;
+      box-shadow: 0 0 0 1.5px rgba(251, 191, 36, 0.5),
+                  0 20px 60px rgba(251, 191, 36, 0.25),
+                  0 8px 25px rgba(0, 0, 0, 0.6);
+    }
+    .card-numblock { border-color: rgba(251, 191, 36, 0.2);
+                     box-shadow: 0 4px 30px rgba(251, 191, 36, 0.1), 0 2px 12px rgba(0,0,0,0.5); }
+    .card-numblock .card-ring { border-color: rgba(251,191,36,0.35); box-shadow: 0 0 18px rgba(251,191,36,0.2) inset; }
+
     .card-emoji {
       font-size: 3.8rem;
       line-height: 1;
@@ -554,9 +572,9 @@
       </div>
 
       <!-- Toán -->
-      <div class="app-card card-math card-enter" onclick="openApp('xoai-math/index.html', '🔢 Toán')">
+      <div class="app-card card-math card-enter" onclick="openApp('xoai-math/index.html', '🧮 Toán')">
         <div class="card-ring"></div>
-        <div class="card-emoji">🔢</div>
+        <div class="card-emoji">🧮</div>
         <div class="card-name">Toán</div>
         <div class="card-desc">Luyện tính nhẩm cộng, trừ, nhân có giới hạn thời gian. Nhanh tay nào!</div>
         <div class="card-badge">+  −  ×</div>
@@ -642,6 +660,15 @@
         <div class="card-name">Invent Lab</div>
         <div class="card-desc">Giải quyết vấn đề, chọn vật liệu, tạo phát minh và giải thích ý tưởng sáng tạo của con!</div>
         <div class="card-badge">6 thử thách · 3 cấp độ</div>
+      </div>
+
+      <!-- Number Block -->
+      <div class="app-card card-numblock card-enter" onclick="openApp('xoai-number-block/index.html', '🔢 Xếp Số')">
+        <div class="card-ring"></div>
+        <div class="card-emoji">🔢</div>
+        <div class="card-name">Xếp Số</div>
+        <div class="card-desc">Kéo thả các ô số vào đúng thứ tự 1 → N. 3 cấp độ khó với lưới 3×3, 4×4 và 5×5!</div>
+        <div class="card-badge">3×3 · 4×4 · 5×5</div>
       </div>
 
     </div>
