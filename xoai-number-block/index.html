@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Xoài - Xếp Số 🔢</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4af37;
+      --gold-glow: rgba(212,175,55,.75);
+    }
+
+    body {
+      font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+      min-height: 100dvh;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%,   rgba(212,175,55,.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(30,80,160,.08)  0%, transparent 60%),
+        linear-gradient(170deg, #0a0810 0%, #08070e 50%, #060810 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px 28px;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .header-emoji {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 12px rgba(212,175,55,.5));
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    .header-title {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: var(--gold);
+      text-shadow: 0 0 24px var(--gold-glow), 0 2px 8px rgba(0,0,0,.9);
+    }
+    .header-sub {
+      color: rgba(255,255,255,.3);
+      font-size: .65rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    #difficulty-panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .diff-btn {
+      padding: 7px 20px;
+      font-family: inherit;
+      font-size: .95rem;
+      font-weight: 800;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,.1);
+      cursor: pointer;
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.4);
+      transition: all .2s;
+      letter-spacing: 1px;
+    }
+    .diff-btn:hover { transform: scale(1.07); }
+    .diff-btn.easy.active   { border-color:#4ade80; color:#4ade80; background:rgba(74,222,128,.1);  box-shadow:0 0 14px rgba(74,222,128,.2); }
+    .diff-btn.medium.active { border-color:#facc15; color:#facc15; background:rgba(250,204,21,.1);  box-shadow:0 0 14px rgba(250,204,21,.2); }
+    .diff-btn.hard.active   { border-color:#f87171; color:#f87171; background:rgba(248,113,113,.1); box-shadow:0 0 14px rgba(248,113,113,.2); }
+    .diff-btn.easy:hover   { border-color:#4ade80; color:#4ade80; }
+    .diff-btn.medium:hover { border-color:#facc15; color:#facc15; }
+    .diff-btn.hard:hover   { border-color:#f87171; color:#f87171; }
+
+
+
+    #grid-wrapper {
+      padding: 4px;
+      background: rgba(255,255,255,.03);
+      border: 2px solid rgba(255,255,255,.09);
+      border-radius: 20px;
+      box-shadow: 0 0 40px rgba(212,175,55,.1), 0 24px 60px rgba(0,0,0,.7);
+    }
+
+    #grid {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 16px;
+      touch-action: none;
+    }
+
+    .cell {
+      position: relative;
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(255,255,255,.08);
+      transition: background .18s, border-color .18s, box-shadow .18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cell.empty-cell {
+      background: rgba(255,255,255,.02);
+      border: 1.5px dashed rgba(255,255,255,.12);
+    }
+    .cell.correct-slot {
+      border-color: rgba(74,222,128,.5);
+      box-shadow: 0 0 0 2px rgba(74,222,128,.2), inset 0 0 14px rgba(74,222,128,.06);
+    }
+    .cell.hover-target {
+      background: rgba(212,175,55,.12);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px var(--gold-glow), 0 4px 20px rgba(0,0,0,.4);
+    }
+    .cell.hint-wrong {
+      border-color: #f87171;
+      background: rgba(248,113,113,.18);
+      box-shadow: 0 0 0 3px rgba(248,113,113,.5), 0 0 18px rgba(248,113,113,.3);
+      animation: hint-pulse 0.7s ease-in-out infinite alternate;
+    }
+    @keyframes hint-pulse {
+      from { box-shadow: 0 0 0 3px rgba(248,113,113,.5), 0 0 12px rgba(248,113,113,.2); }
+      to   { box-shadow: 0 0 0 4px rgba(248,113,113,.9), 0 0 28px rgba(248,113,113,.5); }
+    }
+
+    .block {
+      position: absolute;
+      inset: 0;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      cursor: grab;
+      background: linear-gradient(145deg, #fbbf24 0%, #c57d08 100%);
+      color: #1a0e00;
+      border: 2px solid rgba(255,255,255,.22);
+      box-shadow: 0 4px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.28);
+      transition: box-shadow .15s;
+      z-index: 1;
+    }
+    .block:hover {
+      box-shadow: 0 6px 22px rgba(0,0,0,.5), 0 0 14px rgba(251,191,36,.25),
+                  inset 0 1px 0 rgba(255,255,255,.28);
+    }
+    .block:active { cursor: grabbing; }
+    .block.correct-placed {
+      background: linear-gradient(145deg, #4ade80 0%, #15803d 100%);
+      color: #052e16;
+      box-shadow: 0 4px 14px rgba(0,0,0,.4), 0 0 14px rgba(74,222,128,.3),
+                  inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .block.do-bounce { animation: bounce .42s cubic-bezier(.36,.07,.19,.97) both; }
+    .block.do-shake  { animation: shake  .35s ease both; }
+
+    @keyframes bounce {
+      0%   { transform: scale(1); }
+      38%  { transform: scale(1.18); }
+      65%  { transform: scale(.94); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      22%     { transform: translateX(-7px); }
+      44%     { transform: translateX(7px); }
+      66%     { transform: translateX(-4px); }
+      88%     { transform: translateX(4px); }
+    }
+
+    #win-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.78);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #win-overlay.show { display: flex; }
+    #win-box {
+      background: #0e0c18;
+      border: 2px solid rgba(212,175,55,.38);
+      border-radius: 24px;
+      padding: 40px 52px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(212,175,55,.22), 0 20px 60px rgba(0,0,0,.85);
+      animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    @keyframes popIn {
+      from { transform: scale(.6); opacity: 0; }
+      to   { transform: scale(1);  opacity: 1; }
+    }
+    .win-emoji { font-size: 3rem; }
+    #win-box h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--gold);
+      text-shadow: 0 0 20px var(--gold-glow);
+    }
+    #win-box p { font-size: .95rem; font-weight: 700; color: rgba(255,255,255,.5); }
+    #play-again-btn {
+      margin-top: 8px;
+      padding: 11px 34px;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      border: 2px solid rgba(212,175,55,.45);
+      border-radius: 50px;
+      background: rgba(212,175,55,.1);
+      color: var(--gold);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    #play-again-btn:hover {
+      background: rgba(212,175,55,.22);
+      border-color: var(--gold);
+      box-shadow: 0 0 22px var(--gold-glow);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-emoji">🔢</div>
+    <div class="header-title">XẾP SỐ</div>
+    <div class="header-sub">Number Block</div>
+  </div>
+
+  <div id="difficulty-panel">
+    <button class="diff-btn easy active" data-size="3">3×3</button>
+    <button class="diff-btn medium"      data-size="4">4×4</button>
+    <button class="diff-btn hard"        data-size="5">5×5</button>
+  </div>
+
+  <div id="grid-wrapper">
+    <div id="grid"></div>
+  </div>
+
+  <div id="win-overlay">
+    <div id="win-box">
+      <div class="win-emoji">🏆</div>
+      <h2>TUYỆT VỜI!</h2>
+      <p id="win-msg">Bạn đã xếp đúng tất cả các số!</p>
+      <button id="play-again-btn">▶ CHƠI LẠI</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  let SIZE = 3, cells = [], emptyIdx = -1, hintTimer = null;
+
+  function getCellPx() {
+    const maxW = Math.floor((window.innerWidth  - 80) / SIZE);
+    const maxH = Math.floor((window.innerHeight - 260) / SIZE);
+    const caps = { 3: 104, 4: 90, 5: 76 };
+    return Math.min(maxW, maxH, caps[SIZE]);
+  }
+
+  const gridEl      = document.getElementById('grid');
+
+  const winOverlay  = document.getElementById('win-overlay');
+  const winMsg      = document.getElementById('win-msg');
+  const playAgainBtn= document.getElementById('play-again-btn');
+  const diffBtns    = document.querySelectorAll('.diff-btn');
+
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ac = AC ? new AC() : null;
+  function tone(freq, type, dur, vol) {
+    if (!ac) return;
+    vol = vol || 0.28;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = type;
+    o.frequency.setValueAtTime(freq, ac.currentTime);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    o.start(); o.stop(ac.currentTime + dur);
+  }
+  function playMove() { tone(480, 'triangle', .1, .22); }
+  function playSnap() { tone(280, 'sine', .15, .15); }
+  function playWin()  { [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){ tone(f,'triangle',.22); }, i*130); }); }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function generateBoard(size) {
+    var nums = [];
+    for (var i = 1; i < size * size; i++) nums.push(i);
+    var s;
+    do { s = shuffle(nums); }
+    while (s.every(function(v,i){ return v === i+1; }));
+    s.push(0);
+    return s;
+  }
+
+  function buildGrid(size) {
+    SIZE = size;
+    gridEl.innerHTML = ''; cells = [];
+    winOverlay.classList.remove('show');
+    clearTimeout(hintTimer);
+
+    var cellPx = getCellPx();
+    var fontSize = Math.floor(cellPx * 0.42) + 'px';
+    gridEl.style.gridTemplateColumns = 'repeat(' + size + ', ' + cellPx + 'px)';
+    gridEl.style.gridTemplateRows    = 'repeat(' + size + ', ' + cellPx + 'px)';
+
+    var board = generateBoard(size);
+
+    for (var i = 0; i < size * size; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = cellPx + 'px';
+      cell.style.height = cellPx + 'px';
+      var val = board[i];
+
+      if (val === 0) {
+        cell.classList.add('empty-cell');
+        emptyIdx = i;
+        cells.push({ el: cell, blockEl: null, value: 0 });
+      } else {
+        var block = document.createElement('div');
+        block.className = 'block';
+        block.style.fontSize = fontSize;
+        block.textContent = val;
+        cell.appendChild(block);
+        cells.push({ el: cell, blockEl: block, value: val });
+        block.addEventListener('pointerdown', onPointerDown);
+      }
+      gridEl.appendChild(cell);
+    }
+
+    if (size === 3) syncEasyHighlights();
+  }
+
+  function syncEasyHighlights() {
+    if (SIZE !== 3) return;
+    cells.forEach(function(c, i) {
+      if (!c.blockEl) return;
+      var ok = (c.value === i + 1);
+      c.el.classList.toggle('correct-slot', ok);
+      c.blockEl.classList.toggle('correct-placed', ok);
+    });
+  }
+
+  function checkWin() {
+    for (var i = 0; i < SIZE * SIZE - 1; i++) {
+      if (cells[i].value !== i + 1) return false;
+    }
+    playWin();
+    winMsg.textContent = 'Bạn đã xếp đúng tất cả! 🌟';
+    setTimeout(function(){ winOverlay.classList.add('show'); }, 450);
+    return true;
+  }
+
+  function moveToEmpty(fromIdx) {
+    if (fromIdx === emptyIdx || fromIdx < 0) return;
+    var src = cells[fromIdx], dest = cells[emptyIdx];
+    dest.el.classList.remove('empty-cell');
+    dest.el.appendChild(src.blockEl);
+    src.el.classList.add('empty-cell');
+    dest.blockEl = src.blockEl; dest.value = src.value;
+    src.blockEl = null; src.value = 0; emptyIdx = fromIdx;
+
+    triggerAnim(dest.blockEl, 'do-bounce');
+    if (SIZE === 3) syncEasyHighlights();
+    playMove(); checkWin();
+  }
+
+  function triggerAnim(el, cls) {
+    if (!el) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    el.addEventListener('animationend', function(){ el.classList.remove(cls); }, { once: true });
+  }
+
+  function idxOf(blockEl) {
+    for (var i = 0; i < cells.length; i++) { if (cells[i].blockEl === blockEl) return i; }
+    return -1;
+  }
+
+  function nearestCell(x, y) {
+    var best = -1, bestD = Infinity, cellPx = getCellPx();
+    cells.forEach(function(c, i) {
+      var r = c.el.getBoundingClientRect();
+      var d = Math.hypot(x - (r.left + r.width/2), y - (r.top + r.height/2));
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    return bestD < cellPx * 1.35 ? best : -1;
+  }
+
+  var drag = null;
+
+  function onPointerDown(e) {
+    e.preventDefault();
+    if (ac && ac.state === 'suspended') ac.resume();
+    var block = e.currentTarget, fromIdx = idxOf(block);
+    if (fromIdx < 0) return;
+    var rect = block.getBoundingClientRect();
+    var ghost = block.cloneNode(true);
+    ghost.style.cssText = 'position:fixed;width:'+rect.width+'px;height:'+rect.height+'px;' +
+      'left:'+rect.left+'px;top:'+rect.top+'px;pointer-events:none;z-index:9999;' +
+      'border-radius:11px;font-size:'+block.style.fontSize+';font-weight:900;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'background:linear-gradient(145deg,#fde68a 0%,#d97706 100%);color:#1a0e00;' +
+      'border:2px solid rgba(255,255,255,.38);' +
+      'box-shadow:0 18px 44px rgba(0,0,0,.65),0 0 22px rgba(251,191,36,.45);' +
+      'transform:scale(1.22);transition:none;opacity:.95;';
+    document.body.appendChild(ghost);
+    block.style.opacity = '0.15';
+    drag = { fromIdx: fromIdx, block: block, ghost: ghost,
+             offX: e.clientX - rect.left, offY: e.clientY - rect.top, lastHover: -1 };
+    document.addEventListener('pointermove', onPointerMove, { passive: false });
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    e.preventDefault();
+    if (!drag) return;
+    drag.ghost.style.left = (e.clientX - drag.offX) + 'px';
+    drag.ghost.style.top  = (e.clientY - drag.offY) + 'px';
+    var hover = nearestCell(e.clientX, e.clientY);
+    if (hover !== drag.lastHover) {
+      if (drag.lastHover >= 0) cells[drag.lastHover].el.classList.remove('hover-target');
+      if (hover === emptyIdx) cells[hover].el.classList.add('hover-target');
+      drag.lastHover = hover;
+    }
+  }
+
+  function onPointerUp(e) {
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerUp);
+    if (!drag) return;
+    var fromIdx = drag.fromIdx, block = drag.block, ghost = drag.ghost, lastHover = drag.lastHover;
+    drag = null;
+    if (lastHover >= 0) cells[lastHover].el.classList.remove('hover-target');
+    ghost.remove(); block.style.opacity = '';
+    var toIdx = nearestCell(e.clientX, e.clientY);
+    if (toIdx === emptyIdx) { moveToEmpty(fromIdx); }
+    else { triggerAnim(block, 'do-shake'); playSnap(); }
+  }
+
+  diffBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      diffBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      buildGrid(parseInt(btn.dataset.size, 10));
+    });
+  });
+
+  playAgainBtn.addEventListener('click', function() {
+    winOverlay.classList.remove('show'); buildGrid(SIZE);
+  });
+
+  buildGrid(3);
+})();
+</script>
+</body>
+</html>
