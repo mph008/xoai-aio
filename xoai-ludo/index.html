@@ -907,7 +907,7 @@ function kickAt(color,absPos) {
 function checkWin(color) {
   if(G.pieces[color].every(p=>p.pos>=40)&&!G.winners.includes(color)) {
     G.winners.push(color);
-    if(G.winners.length===1) showWin(color);
+    if(G.winners.length===1) { G.phase='done'; showWin(color); }
   }
 }
 
@@ -1911,7 +1911,7 @@ function syncStateFromRemote(remoteG) {
   d2.style.display = G.diceMode===2 ? 'block' : 'none';
 
   // Check if someone has won (including via opponent leaving)
-  if(G.winners.length > 0 && G.phase === 'done' && !document.getElementById('win').classList.contains('show')) {
+  if(G.winners.length > 0 && !document.getElementById('win').classList.contains('show')) {
     const winner = G.winners[0];
     setTimeout(() => showWin(winner), 300);
   }
