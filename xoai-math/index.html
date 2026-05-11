@@ -202,6 +202,7 @@
         .check-btn {
             display: block;
             width: 100%;
+            max-width: 340px;
             padding: 13px;
             border: none;
             border-radius: 14px;
@@ -214,7 +215,7 @@
             cursor: pointer;
             box-shadow: 0 4px 16px rgba(220,38,38,0.45);
             transition: all 0.2s;
-            margin-top: 4px;
+            margin: 4px auto 0;
         }
         .check-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(220,38,38,0.65); background: linear-gradient(135deg,#ef4444,#991b1b); }
         .check-btn:active:not(:disabled) { transform: scale(0.97); }
@@ -283,6 +284,41 @@
         #results-list li.correct   { background: rgba(34,197,94,0.15);  border: 1px solid rgba(34,197,94,0.3);  color: #86efac; }
         #results-list li.incorrect { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
 
+        /* ===== NUMPAD ===== */
+        #numpad {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 16px auto 0;
+            max-width: 264px;
+            width: 100%;
+        }
+        .numpad-btn {
+            background: rgba(255,255,255,0.07);
+            border: 1.5px solid rgba(220,38,38,0.25);
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            padding: 16px 0;
+            cursor: pointer;
+            transition: background 0.12s, transform 0.1s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .numpad-btn:hover:not(:disabled) { background: rgba(255,255,255,0.13); border-color: rgba(220,38,38,0.5); }
+        .numpad-btn:active:not(:disabled) { background: rgba(220,38,38,0.35); transform: scale(0.9); }
+        .numpad-btn.numpad-backspace { color: #f87171; font-size: 1.25rem; }
+        .numpad-btn.numpad-confirm {
+            background: linear-gradient(135deg, #16a34a, #14532d);
+            border-color: #22c55e;
+            color: #fff;
+            font-size: 1.25rem;
+        }
+        .numpad-btn.numpad-confirm:hover:not(:disabled) { background: linear-gradient(135deg, #22c55e, #15803d); }
+
         @media (max-width: 480px) {
             #game-container { padding: 20px 14px; border-radius: 18px; }
             h1 { font-size: 2.6rem; letter-spacing: 2px; margin-bottom: 16px; }
@@ -327,9 +363,24 @@
 
         <div id="question"></div>
         <div>
-            <input type="number" id="answer" disabled placeholder="?">
+            <input type="text" id="answer" disabled placeholder="?" readonly inputmode="none">
         </div>
         <button class="check-btn" onclick="checkAnswer()" disabled>✅ Tiếp theo</button>
+
+        <div id="numpad">
+            <button class="numpad-btn" onclick="numpadInput('7')">7</button>
+            <button class="numpad-btn" onclick="numpadInput('8')">8</button>
+            <button class="numpad-btn" onclick="numpadInput('9')">9</button>
+            <button class="numpad-btn" onclick="numpadInput('4')">4</button>
+            <button class="numpad-btn" onclick="numpadInput('5')">5</button>
+            <button class="numpad-btn" onclick="numpadInput('6')">6</button>
+            <button class="numpad-btn" onclick="numpadInput('1')">1</button>
+            <button class="numpad-btn" onclick="numpadInput('2')">2</button>
+            <button class="numpad-btn" onclick="numpadInput('3')">3</button>
+            <button class="numpad-btn numpad-backspace" onclick="numpadBackspace()">⌫</button>
+            <button class="numpad-btn" onclick="numpadInput('0')">0</button>
+            <button class="numpad-btn numpad-confirm" onclick="checkAnswer()">✓</button>
+        </div>
 
         <div id="result"></div>
         <div id="timer"></div>
@@ -404,6 +455,7 @@
                 gameStarted = true;
                 answerInput.disabled = false;
                 checkButton.disabled = false;
+                document.getElementById('numpad').style.display = 'grid';
                 generateQuestion();
 
             } catch (error) {
@@ -425,19 +477,24 @@
                 operator = operations[Math.floor(Math.random() * operations.length)];
 
                 if (operator === '+') {
-                    num1 = Math.floor(Math.random() * 40);
-                    num2 = Math.floor(Math.random() * 40);
+                    num1 = Math.floor(Math.random() * 100);
+                    num2 = Math.floor(Math.random() * (100 - num1));
                     correctAnswer = num1 + num2;
                 } else if (operator === '-') {
-                    num1 = Math.floor(Math.random() * 80);
-                    num2 = Math.floor(Math.random() * num1);
+                    num1 = Math.floor(Math.random() * 100);
+                    num2 = Math.floor(Math.random() * (num1 + 1));
                     correctAnswer = num1 - num2;
                 } else if (operator === 'x') {
                     do {
-                        num1 = Math.floor(Math.random() * 16);
-                        num2 = Math.floor(Math.random() * 16);
+                        if (Math.random() < 0.5) {
+                            num1 = Math.floor(Math.random() * 9) + 7; // 7–15
+                            num2 = Math.floor(Math.random() * 16);    // 0–15
+                        } else {
+                            num1 = Math.floor(Math.random() * 16);    // 0–15
+                            num2 = Math.floor(Math.random() * 9) + 7; // 7–15
+                        }
                         correctAnswer = num1 * num2;
-                    } while (correctAnswer >= 82);
+                    } while (correctAnswer >= 100);
                 }
 
                 questionDiv.textContent = `${num1} ${operator} ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
@@ -459,12 +516,7 @@
                 let isCorrect = userAnswer === correctAnswer;
 
                 if (isCorrect) {
-                    resultDiv.className = "correct";
-                    resultDiv.style.backgroundColor = "rgba(76, 175, 80, 0.7)";
-                    score++; // Increment score if answer is correct
-                } else {
-                    resultDiv.className = "incorrect";
-                    resultDiv.style.backgroundColor = "rgba(244, 67, 54, 0.7)";
+                    score++;
                 }
 
                 questions.push({
@@ -483,11 +535,6 @@
 
                 currentQuestionIndex++;
                 generateQuestion();
-
-                setTimeout(() => {
-                    resultDiv.style.backgroundColor = "transparent";
-                    resultDiv.className = "";
-                }, 300);
 
             } catch (error) {
                 console.error("Lỗi khi kiểm tra đáp án:", error);
@@ -557,6 +604,7 @@
                 questionDiv.textContent = "Đã hết bài!";
                 answerInput.disabled = true;
                 checkButton.disabled = true;
+                document.getElementById('numpad').style.display = 'none';
                 resultDiv.textContent = "";
                 timerDiv.textContent = "";
                 resultDiv.style.backgroundColor = "transparent";
@@ -589,6 +637,29 @@
                 console.error("Lỗi khi hiển thị kết quả:", error);
             }
         }
+        function numpadInput(digit) {
+            if (!gameStarted) return;
+            if (answerInput.value.length >= 2) return;
+            answerInput.value += digit;
+        }
+
+        function numpadBackspace() {
+            if (!gameStarted) return;
+            answerInput.value = answerInput.value.slice(0, -1);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (!gameStarted) return;
+            if (e.key >= '0' && e.key <= '9') {
+                numpadInput(e.key);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                numpadBackspace();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                checkAnswer();
+            }
+        });
     </script>
 </body>
 </html>
