@@ -284,6 +284,10 @@
         #results-list li.correct   { background: rgba(34,197,94,0.15);  border: 1px solid rgba(34,197,94,0.3);  color: #86efac; }
         #results-list li.incorrect { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.3);  color: #fca5a5; }
 
+        #results-list .ans-ok    { text-decoration: underline; font-weight: 900; }
+        #results-list .ans-wrong { text-decoration: line-through; opacity: 0.65; }
+        #results-list .ans-fixed { color: #4ade80; font-weight: 900; }
+
         /* ===== NUMPAD ===== */
         #numpad {
             display: none;
@@ -402,7 +406,7 @@
         const resultsList = document.getElementById('results-list');
         const progressContainer = document.getElementById('progress-container');
 
-        let num1, num2, operator, userAnswer, correctAnswer;
+        let num1, num2, operator, userAnswer, correctAnswer, missingPosition, equationResult;
         let timeLeft;
         let timerInterval;
         let currentQuestionIndex = 0;
@@ -476,15 +480,39 @@
                 const operations = ['+', '-', 'x'];
                 operator = operations[Math.floor(Math.random() * operations.length)];
 
+                const positions = ['num1', 'num2', 'result'];
                 if (operator === '+') {
                     num1 = Math.floor(Math.random() * 100);
                     num2 = Math.floor(Math.random() * (100 - num1));
-                    correctAnswer = num1 + num2;
+                    equationResult = num1 + num2;
+                    missingPosition = positions[Math.floor(Math.random() * 3)];
+                    if (missingPosition === 'num1') {
+                        correctAnswer = num1;
+                        questionDiv.textContent = `? + ${num2} = ${equationResult} (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    } else if (missingPosition === 'num2') {
+                        correctAnswer = num2;
+                        questionDiv.textContent = `${num1} + ? = ${equationResult} (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    } else {
+                        correctAnswer = equationResult;
+                        questionDiv.textContent = `${num1} + ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    }
                 } else if (operator === '-') {
                     num1 = Math.floor(Math.random() * 100);
                     num2 = Math.floor(Math.random() * (num1 + 1));
-                    correctAnswer = num1 - num2;
+                    equationResult = num1 - num2;
+                    missingPosition = positions[Math.floor(Math.random() * 3)];
+                    if (missingPosition === 'num1') {
+                        correctAnswer = num1;
+                        questionDiv.textContent = `? - ${num2} = ${equationResult} (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    } else if (missingPosition === 'num2') {
+                        correctAnswer = num2;
+                        questionDiv.textContent = `${num1} - ? = ${equationResult} (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    } else {
+                        correctAnswer = equationResult;
+                        questionDiv.textContent = `${num1} - ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
+                    }
                 } else if (operator === 'x') {
+                    missingPosition = 'result';
                     do {
                         if (Math.random() < 0.5) {
                             num1 = Math.floor(Math.random() * 9) + 7; // 7–15
@@ -495,9 +523,9 @@
                         }
                         correctAnswer = num1 * num2;
                     } while (correctAnswer >= 100);
+                    equationResult = correctAnswer;
+                    questionDiv.textContent = `${num1} ${operator} ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
                 }
-
-                questionDiv.textContent = `${num1} ${operator} ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
                 answerInput.value = '';
                 answerInput.focus();
                 resetTimer();
@@ -525,7 +553,9 @@
                     num2: num2,
                     userAnswer: userAnswer,
                     correctAnswer: correctAnswer,
-                    isCorrect: isCorrect
+                    isCorrect: isCorrect,
+                    missingPosition: missingPosition,
+                    equationResult: equationResult
                 });
 
                 // Update progress dot color
@@ -561,7 +591,9 @@
                         num2: num2,
                         userAnswer: userAnswer,
                         correctAnswer: correctAnswer,
-                        isCorrect: false
+                        isCorrect: false,
+                        missingPosition: missingPosition,
+                        equationResult: equationResult
                     });
 
                     if (currentQuestionIndex < totalQuestions) {
@@ -619,18 +651,31 @@
         }
 
         function displayResults() {
-             try {
-                resultsList.innerHTML = ""; // Clear previous results
+            try {
+                resultsList.innerHTML = "";
 
                 questions.forEach((q, index) => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${index + 1}) ${q.num1} ${q.operator} ${q.num2} = ${q.userAnswer}`;
                     listItem.classList.add(q.isCorrect ? 'correct' : 'incorrect');
 
-                    if (!q.isCorrect) {
-                        listItem.textContent += ` (Đúng: ${q.correctAnswer})`;
+                    const mp = q.missingPosition || 'result';
+                    const er = q.equationResult !== undefined ? q.equationResult : q.correctAnswer;
+                    const ua = (q.userAnswer === undefined || isNaN(q.userAnswer)) ? '—' : q.userAnswer;
+
+                    const ansSpan = q.isCorrect
+                        ? `<span class="ans-ok">${ua}</span>`
+                        : `<span class="ans-wrong">${ua}</span> <span class="ans-fixed">${q.correctAnswer}</span>`;
+
+                    let eqHTML;
+                    if (mp === 'num1') {
+                        eqHTML = `${ansSpan} ${q.operator} ${q.num2} = ${er}`;
+                    } else if (mp === 'num2') {
+                        eqHTML = `${q.num1} ${q.operator} ${ansSpan} = ${er}`;
+                    } else {
+                        eqHTML = `${q.num1} ${q.operator} ${q.num2} = ${ansSpan}`;
                     }
 
+                    listItem.innerHTML = `${index + 1}) ${eqHTML}`;
                     resultsList.appendChild(listItem);
                 });
             } catch (error) {
