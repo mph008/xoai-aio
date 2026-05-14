@@ -122,6 +122,33 @@
         }
         .setting-row input:focus { border-color: #d4af37; box-shadow: 0 0 10px rgba(212,175,55,0.3); }
 
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            width: 108px;
+            justify-content: center;
+        }
+
+        #question-count { width: 108px; }
+        .time-sep {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #d4af37;
+            line-height: 1;
+            padding: 0 1px;
+        }
+        .time-input-group input {
+            width: 46px;
+            padding: 6px 4px;
+        }
+        /* Hide number spinners so text centers properly */
+        .time-input-group input::-webkit-inner-spin-button,
+        .time-input-group input::-webkit-outer-spin-button,
+        #question-count::-webkit-inner-spin-button,
+        #question-count::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .time-input-group input, #question-count { -moz-appearance: textfield; }
+
         /* ===== START BUTTON ===== */
         #start-button {
             width: 100%;
@@ -140,8 +167,9 @@
             transition: all 0.2s;
             margin-top: 4px;
         }
-        #start-button:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(220,38,38,0.7); background: linear-gradient(135deg,#ef4444,#991b1b); }
-        #start-button:active { transform: scale(0.97); }
+        #start-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(220,38,38,0.7); background: linear-gradient(135deg,#ef4444,#991b1b); }
+        #start-button:active:not(:disabled) { transform: scale(0.97); }
+        #start-button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
 
         /* ===== PROGRESS DOTS ===== */
         #progress-container {
@@ -245,9 +273,10 @@
 
         /* ===== SCORE ===== */
         #score {
-            font-family: 'Bangers', sans-serif;
+            font-family: 'Nunito', sans-serif;
             font-size: 1.6rem;
-            letter-spacing: 2px;
+            font-weight: 900;
+            letter-spacing: 1px;
             color: #d4af37;
             text-shadow: 0 0 16px rgba(212,175,55,0.5);
             margin-top: 12px;
@@ -331,6 +360,9 @@
             .setting-row { padding: 10px 12px; }
             .setting-row label { font-size: 0.78rem; }
             .setting-row input { font-size: 0.9rem; width: 80px; padding: 5px 8px; }
+            .time-input-group input { width: 40px; padding: 5px 3px; }
+            .time-input-group { width: 94px; }
+            #question-count { width: 94px; }
             #start-button, .check-btn { font-size: 0.95rem; padding: 12px; }
             .divider { margin: 12px 0; }
             #score { font-size: 1.3rem; }
@@ -350,8 +382,12 @@
 
         <div id="settings">
             <div class="setting-row">
-                <label for="time-limit">⏱ Thời gian mỗi câu</label>
-                <input type="text" id="time-limit" placeholder="mm:ss" value="03:00">
+                <label>⏱ Thời gian mỗi câu</label>
+                <div class="time-input-group">
+                    <input type="number" id="time-minutes" value="3" min="0" max="99" inputmode="numeric">
+                    <span class="time-sep">:</span>
+                    <input type="number" id="time-seconds" value="0" min="0" max="59" inputmode="numeric">
+                </div>
             </div>
             <div class="setting-row">
                 <label for="question-count">📋 Số câu hỏi</label>
@@ -398,7 +434,8 @@
         const answerInput = document.getElementById('answer');
         const resultDiv = document.getElementById('result');
         const timerDiv = document.getElementById('timer');
-        const timeLimitInput = document.getElementById('time-limit');
+        const timeMinutesInput = document.getElementById('time-minutes');
+        const timeSecondsInput = document.getElementById('time-seconds');
         const questionCountInput = document.getElementById('question-count');
         const scoreDiv = document.getElementById('score');
         const startButton = document.getElementById('start-button');
@@ -414,18 +451,18 @@
         let totalQuestions;
         let gameStarted = false;
         let questions = [];
-        let progressDots = []; // Lưu trữ các chấm tiến trình
+        let progressDots = [];
+        let gameStartTime = 0;
 
-        function parseTime(timeString) {
-            const parts = timeString.split(':');
-            const minutes = parseInt(parts[0]);
-            const seconds = parseInt(parts[1]);
+        function getTimeLimitSeconds() {
+            const minutes = parseInt(timeMinutesInput.value) || 0;
+            const seconds = Math.min(parseInt(timeSecondsInput.value) || 0, 59);
             return (minutes * 60) + seconds;
         }
 
         function startGame() {
             try {
-                const totalSeconds = parseTime(timeLimitInput.value);
+                const totalSeconds = getTimeLimitSeconds();
                 if (isNaN(totalSeconds) || totalSeconds <= 0) {
                     alert("Vui lòng nhập thời gian hợp lệ (ví dụ: 01:30)!");
                     return;
@@ -457,6 +494,8 @@
                 }
 
                 gameStarted = true;
+                gameStartTime = Date.now();
+                startButton.disabled = true;
                 answerInput.disabled = false;
                 checkButton.disabled = false;
                 document.getElementById('numpad').style.display = 'grid';
@@ -618,7 +657,7 @@
         function startTimer() {
             try {
                 clearInterval(timerInterval);
-                timeLeft = parseTime(timeLimitInput.value);
+                timeLeft = getTimeLimitSeconds();
                 updateTimer();
                 timerInterval = setInterval(updateTimer, 1000);
             } catch (error) {
@@ -642,7 +681,17 @@
                 resultDiv.style.backgroundColor = "transparent";
 
                 scoreDiv.textContent = `Bạn đạt ${score}/${totalQuestions} điểm!`;
+
+                const elapsed = Math.round((Date.now() - gameStartTime) / 1000);
+                const em = Math.floor(elapsed / 60);
+                const es = elapsed % 60;
+                const timeEl = document.createElement('div');
+                timeEl.style.cssText = "font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:#d4af37;margin-top:4px;letter-spacing:1px;";
+                timeEl.textContent = `⏱ Tổng thời gian: ${String(em).padStart(2,'0')}:${String(es).padStart(2,'0')}`;
+                scoreDiv.appendChild(timeEl);
+
                 gameStarted = false;
+                startButton.disabled = false;
 
                 displayResults();
             } catch (error) {
@@ -692,6 +741,21 @@
             if (!gameStarted) return;
             answerInput.value = answerInput.value.slice(0, -1);
         }
+
+        function padTimeInput(input) {
+            const v = parseInt(input.value);
+            if (!isNaN(v)) input.value = String(v).padStart(2, '0');
+        }
+
+        timeMinutesInput.addEventListener('change', () => { padTimeInput(timeMinutesInput); startButton.disabled = false; });
+        timeSecondsInput.addEventListener('change', () => { padTimeInput(timeSecondsInput); startButton.disabled = false; });
+        timeMinutesInput.addEventListener('blur', () => padTimeInput(timeMinutesInput));
+        timeSecondsInput.addEventListener('blur', () => padTimeInput(timeSecondsInput));
+        questionCountInput.addEventListener('input', () => { startButton.disabled = false; });
+
+        // Init padding on load
+        padTimeInput(timeMinutesInput);
+        padTimeInput(timeSecondsInput);
 
         document.addEventListener('keydown', function(e) {
             if (!gameStarted) return;
