@@ -521,8 +521,8 @@
 
                 const positions = ['num1', 'num2', 'result'];
                 if (operator === '+') {
-                    num1 = Math.floor(Math.random() * 100);
-                    num2 = Math.floor(Math.random() * (100 - num1));
+                    num1 = Math.floor(Math.random() * 140);
+                    num2 = Math.floor(Math.random() * (140 - num1));
                     equationResult = num1 + num2;
                     missingPosition = positions[Math.floor(Math.random() * 3)];
                     if (missingPosition === 'num1') {
@@ -536,7 +536,7 @@
                         questionDiv.textContent = `${num1} + ${num2} = ? (${currentQuestionIndex + 1}/${totalQuestions})`;
                     }
                 } else if (operator === '-') {
-                    num1 = Math.floor(Math.random() * 100);
+                    num1 = Math.floor(Math.random() * 140);
                     num2 = Math.floor(Math.random() * (num1 + 1));
                     equationResult = num1 - num2;
                     missingPosition = positions[Math.floor(Math.random() * 3)];
